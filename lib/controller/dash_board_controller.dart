@@ -45,7 +45,6 @@ class DashBoardController extends GetxController {
     getUsrData();
     locationSubscription = location.onLocationChanged.listen((event) {});
     getCurrentLocation();
-    updateToken();
     updateCurrentLocation();
     getPaymentSettingData();
 
@@ -208,6 +207,7 @@ class DashBoardController extends GetxController {
     }
     log("Constant.parcelActive :: ${Constant.parcelActive.toString() == "yes"}  || ${userModel.value.userData?.parcelDelivery.toString() == "yes"}");
     getDrawerItems();
+    updateToken();
   }
 
   RxBool isActive = true.obs;
