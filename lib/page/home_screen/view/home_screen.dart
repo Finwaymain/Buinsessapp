@@ -58,9 +58,7 @@ import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
-import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:location/location.dart';
+
 import '../../features/Taxi/taxi_dashboard/taxi_dashboard.dart';
 
 import '../../wallet/wallet_screen.dart';
@@ -256,93 +254,44 @@ class MainHomeScreen extends StatelessWidget {
                               ),
                             ),
 
-                            // Interactive OSM Live Map
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 20),
-                              child: const DashboardMapWidget(),
-                            ),
-
-                            // Primary Hero Action CTA for receiving rides
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                              child: GestureDetector(
-                                onTap: () {
-                                  if (homeController.getLoginStatus(inProgress: false)) {
-                                    Get.to(() => TaxiDashBoard(), transition: Transition.rightToLeftWithFade);
-                                  }
-                                },
-                                child: Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.all(20),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(20),
-                                    gradient: LinearGradient(
-                                      colors: isDark
-                                          ? [const Color(0xFF201D16), const Color(0xFF151413)]
-                                          : [const Color(0xFFFFF9E6), const Color(0XFFFFFFFF)],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ),
-                                    border: Border.all(
-                                      color: AppThemeData.primary200,
-                                      width: 1.5,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: AppThemeData.primary200.withValues(alpha: isDark ? 0.08 : 0.15),
-                                        blurRadius: 20,
-                                        offset: const Offset(0, 8),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(12),
-                                        decoration: BoxDecoration(
-                                          color: AppThemeData.primary200.withValues(alpha: 0.2),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Icon(
-                                          Icons.directions_car_filled_rounded,
-                                          color: AppThemeData.primary200,
-                                          size: 32,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              "Ride Console".tr,
-                                              style: TextStyle(
-                                                fontSize: 18,
-                                                fontFamily: AppThemeData.bold,
-                                                color: isDark ? AppThemeData.grey900Dark : AppThemeData.grey900,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              "Go online, view requests, and track active bookings in real time.".tr,
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                fontFamily: AppThemeData.regular,
-                                                color: isDark ? AppThemeData.grey500Dark : AppThemeData.grey500,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Icon(
-                                        Icons.chevron_right_rounded,
-                                        color: AppThemeData.primary200,
-                                        size: 28,
-                                      ),
-                                    ],
-                                  ),
+                            // Quick Access Section (Repositioned to the top)
+                            VerticalLineSection(
+                              text: "Quick Access",
+                              margin: const EdgeInsets.only(top: 20),
+                              cardChildren: [
+                                VerticalIconWithText(
+                                  icon: Icons.directions_car_outlined,
+                                  text: 'Ride Booking',
+                                  onTap: () {
+                                    Get.to(() => TaxiDashBoard(),
+                                        transition: Transition.rightToLeftWithFade);
+                                  },
                                 ),
-                              ),
+                                VerticalIconWithText(
+                                  icon: Icons.car_rental_outlined,
+                                  text: 'Rental Vehicle',
+                                  onTap: () {
+                                    Get.to(() => const InProgressScreen(),
+                                        transition: Transition.rightToLeftWithFade);
+                                  },
+                                ),
+                                VerticalIconWithText(
+                                  icon: Icons.local_shipping_outlined,
+                                  text: 'Parcel Service',
+                                  onTap: () {
+                                    Get.to(() => const AllParcelScreen(),
+                                        transition: Transition.rightToLeftWithFade);
+                                  },
+                                ),
+                                VerticalIconWithText(
+                                  icon: Icons.groups_outlined,
+                                  text: 'Shared Ride',
+                                  onTap: () {
+                                    Get.to(() => const InProgressScreen(),
+                                        transition: Transition.rightToLeftWithFade);
+                                  },
+                                ),
+                              ],
                             ),
 
                             // Asymmetrical grid/row of actions and value programs
@@ -485,46 +434,6 @@ class MainHomeScreen extends StatelessWidget {
                               ),
                             ),
 
-                            // Quick Access Section
-                            VerticalLineSection(
-                              text: "Quick Access",
-                              margin: const EdgeInsets.only(top: 20),
-                              cardChildren: [
-                                VerticalIconWithText(
-                                  icon: Icons.directions_car_outlined,
-                                  text: 'Ride Booking',
-                                  onTap: () {
-                                    Get.to(() => TaxiDashBoard(),
-                                        transition: Transition.rightToLeftWithFade);
-                                  },
-                                ),
-                                VerticalIconWithText(
-                                  icon: Icons.car_rental_outlined,
-                                  text: 'Rental Vehicle',
-                                  onTap: () {
-                                    Get.to(() => const InProgressScreen(),
-                                        transition: Transition.rightToLeftWithFade);
-                                  },
-                                ),
-                                VerticalIconWithText(
-                                  icon: Icons.local_shipping_outlined,
-                                  text: 'Parcel Service',
-                                  onTap: () {
-                                    Get.to(() => const AllParcelScreen(),
-                                        transition: Transition.rightToLeftWithFade);
-                                  },
-                                ),
-                                VerticalIconWithText(
-                                  icon: Icons.groups_outlined,
-                                  text: 'Shared Ride',
-                                  onTap: () {
-                                    Get.to(() => const InProgressScreen(),
-                                        transition: Transition.rightToLeftWithFade);
-                                  },
-                                ),
-                              ],
-                            ),
-
                             // Smart Value Section
                             VerticalLineSection(
                               text: "Smart Value",
@@ -619,230 +528,6 @@ class MainHomeScreen extends StatelessWidget {
 }
 
 
-
-class DashboardMapWidget extends StatefulWidget {
-  const DashboardMapWidget({super.key});
-
-  @override
-  State<DashboardMapWidget> createState() => _DashboardMapWidgetState();
-}
-
-class _DashboardMapWidgetState extends State<DashboardMapWidget> {
-  static GeoPoint? cachedPosition;
-  MapController? mapController;
-  GoogleMapController? googleMapController;
-  double? currentLat;
-  double? currentLng;
-  bool isReady = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _initMapController();
-  }
-
-  Future<void> _initMapController() async {
-    double? lat;
-    double? lng;
-
-    if (Constant.currentLocation != null &&
-        Constant.currentLocation!.latitude != null &&
-        Constant.currentLocation!.longitude != null) {
-      lat = Constant.currentLocation!.latitude;
-      lng = Constant.currentLocation!.longitude;
-    } else if (cachedPosition != null) {
-      lat = cachedPosition!.latitude;
-      lng = cachedPosition!.longitude;
-    } else {
-      try {
-        final loc = await Location().getLocation();
-        lat = loc.latitude;
-        lng = loc.longitude;
-        if (loc.latitude != null && loc.longitude != null) {
-          Constant.currentLocation = loc;
-        }
-      } catch (e) {
-        // ignore
-      }
-    }
-
-    if (lat != null && lng != null) {
-      cachedPosition = GeoPoint(latitude: lat, longitude: lng);
-      currentLat = lat;
-      currentLng = lng;
-      if (mounted) {
-        setState(() {
-          mapController = MapController(
-            initPosition: cachedPosition!,
-          );
-        });
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    mapController?.dispose();
-    googleMapController?.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final themeChange = Provider.of<DarkThemeProvider>(context);
-    final isDark = themeChange.getThem();
-
-    if (Constant.selectedMapType == 'google') {
-      if (currentLat == null || currentLng == null) {
-        return Container(
-          height: 200,
-          width: double.infinity,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            color: isDark ? AppThemeData.surface50Dark : AppThemeData.surface50,
-            border: Border.all(
-              color: isDark
-                  ? AppThemeData.primary200.withValues(alpha: 0.15)
-                  : AppThemeData.primary200.withValues(alpha: 0.25),
-              width: 1,
-            ),
-          ),
-          child: Center(
-            child: CircularProgressIndicator(
-              color: AppThemeData.primary200,
-              strokeWidth: 2,
-            ),
-          ),
-        );
-      }
-
-      return Container(
-        height: 200,
-        width: double.infinity,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isDark
-                ? AppThemeData.primary200.withValues(alpha: 0.15)
-                : AppThemeData.primary200.withValues(alpha: 0.25),
-            width: 1,
-          ),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(15),
-          child: GoogleMap(
-            zoomControlsEnabled: false,
-            myLocationButtonEnabled: false,
-            compassEnabled: false,
-            initialCameraPosition: CameraPosition(
-              target: LatLng(currentLat!, currentLng!),
-              zoom: 14.0,
-            ),
-            onMapCreated: (GoogleMapController controller) {
-              googleMapController = controller;
-            },
-            myLocationEnabled: true,
-          ),
-        ),
-      );
-    }
-
-    if (mapController == null) {
-      return Container(
-        height: 200,
-        width: double.infinity,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: isDark ? AppThemeData.surface50Dark : AppThemeData.surface50,
-          border: Border.all(
-            color: isDark
-                ? AppThemeData.primary200.withValues(alpha: 0.15)
-                : AppThemeData.primary200.withValues(alpha: 0.25),
-            width: 1,
-          ),
-        ),
-        child: Center(
-          child: CircularProgressIndicator(
-            color: AppThemeData.primary200,
-            strokeWidth: 2,
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      height: 200,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark
-              ? AppThemeData.primary200.withValues(alpha: 0.15)
-              : AppThemeData.primary200.withValues(alpha: 0.25),
-          width: 1,
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(15),
-        child: Stack(
-          children: [
-            OSMFlutter(
-              controller: mapController!,
-              osmOption: OSMOption(
-                userLocationMarker: UserLocationMaker(
-                  directionArrowMarker: MarkerIcon(
-                    iconWidget: Image.asset(
-                      "assets/images/ic_taxi.png",
-                      width: 40,
-                      height: 40,
-                    ),
-                  ),
-                  personMarker: MarkerIcon(
-                    iconWidget: Image.asset(
-                      "assets/images/ic_taxi.png",
-                      width: 40,
-                      height: 40,
-                    ),
-                  ),
-                ),
-                userTrackingOption: const UserTrackingOption(
-                  enableTracking: true,
-                  unFollowUser: false,
-                ),
-                zoomOption: const ZoomOption(
-                  initZoom: 14,
-                  minZoomLevel: 3,
-                  maxZoomLevel: 19,
-                  stepZoom: 1.0,
-                ),
-                roadConfiguration: const RoadOption(
-                  roadColor: Colors.blue,
-                ),
-              ),
-              onMapIsReady: (ready) {
-                if (mounted) {
-                  setState(() {
-                    isReady = ready;
-                  });
-                }
-              },
-            ),
-            if (!isReady)
-              Container(
-                color: isDark ? AppThemeData.surface50Dark : AppThemeData.surface50,
-                child: Center(
-                  child: CircularProgressIndicator(
-                    color: AppThemeData.primary200,
-                    strokeWidth: 2,
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class AddFundScreen extends StatelessWidget {
   AddFundScreen({super.key});
