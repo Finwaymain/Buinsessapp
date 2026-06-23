@@ -29,10 +29,10 @@ class _MainDashboardState extends State<MainDashboard> {
   int currentIndex = 0;
 
   final List<Widget> _screens =  [
-    NewRideScreen(isTab: true),
+    MainHomeScreen(),
     const AddressSearchScreen(isTab: true),
     const InProgressScreen(), // Center fingerprint button (index 2) does not use this screen directly
-    MainHomeScreen(),
+    NewRideScreen(isTab: true),
     WalletScreen(isTab: true),
   ];
 

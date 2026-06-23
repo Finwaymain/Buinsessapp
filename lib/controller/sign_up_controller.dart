@@ -12,6 +12,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 
+import 'package:cabme_driver/model/user_category_model.dart';
+
 class SignUpController extends GetxController {
   var phoneNumber = TextEditingController().obs;
   final firstNameController = TextEditingController().obs;
@@ -20,9 +22,16 @@ class SignUpController extends GetxController {
 
   final passwordController = TextEditingController().obs;
   final conformPasswordController = TextEditingController().obs;
+  final categoryController = TextEditingController().obs;
+  final subCategoryController = TextEditingController().obs;
 
   RxString loginType = "".obs;
 
+  RxList<UserCategoryData> parentCategories = <UserCategoryData>[].obs;
+  RxList<UserCategoryData> subCategories = <UserCategoryData>[].obs;
+  RxBool isLoadingCategories = false.obs;
+  Rx<UserCategoryData?> selectedParentCategory = Rx<UserCategoryData?>(null);
+  Rx<UserCategoryData?> selectedSubCategory = Rx<UserCategoryData?>(null);
 
   @override
   void onInit() {
@@ -37,7 +46,48 @@ class SignUpController extends GetxController {
         lastNameController.value.text = argumentData['lastname'] ?? "";
       }
     }
+    fetchUserCategories();
     super.onInit();
+  }
+
+  void selectParentCategory(UserCategoryData? parent) {
+    selectedParentCategory.value = parent;
+    selectedSubCategory.value = null;
+    categoryController.value.text = parent?.title ?? "";
+    subCategoryController.value.text = "";
+    if (parent != null && parent.subcategories != null) {
+      subCategories.assignAll(parent.subcategories!);
+    } else {
+      subCategories.clear();
+    }
+  }
+
+  void selectSubCategory(UserCategoryData? sub) {
+    selectedSubCategory.value = sub;
+    subCategoryController.value.text = sub?.title ?? "";
+  }
+
+  Future<void> fetchUserCategories() async {
+    try {
+      isLoadingCategories.value = true;
+      final response = await http.get(Uri.parse(API.userCategories), headers: API.authheader);
+      showLog("API :: URL :: ${API.userCategories}");
+      showLog("API :: responseStatus :: ${response.statusCode}");
+      showLog("API :: responseBody :: ${response.body}");
+      if (response.statusCode == 200) {
+        Map<String, dynamic> responseBody = json.decode(response.body);
+        if (responseBody['success'] == "success") {
+          UserCategoryModel model = UserCategoryModel.fromJson(responseBody);
+          if (model.data != null) {
+            parentCategories.assignAll(model.data!);
+          }
+        }
+      }
+    } catch (e) {
+      showLog("Error fetching categories: $e");
+    } finally {
+      isLoadingCategories.value = false;
+    }
   }
 
   Future<UserModel?> signUp(Map<String, String> bodyParams) async {

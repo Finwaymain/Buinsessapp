@@ -84,6 +84,7 @@ class API {
 
   static const vehicleRegister = "${baseUrl}vehicle";
   static const vehicleCategory = "${baseUrl}Vehicle-category";
+  static const userCategories = "${baseUrl}user-categories";
 
   static const driverAllRides = "${baseUrl}driver-all-rides";
   static const newRide = "${baseUrl}requete";

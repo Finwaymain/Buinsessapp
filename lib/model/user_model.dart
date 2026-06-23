@@ -112,6 +112,7 @@ class UserData {
   String? subscriptionPlanId;
   String? subscriptionExpiryDate;
   String? subscriptionTotalOrders;
+  String? categoryId;
   SubscriptionPlanData? subscriptionPlan;
   AdminCommission? adminCommission;
 
@@ -199,6 +200,7 @@ class UserData {
     this.subscriptionPlanId,
     this.subscriptionExpiryDate,
     this.subscriptionTotalOrders,
+    this.categoryId,
     this.subscriptionPlan,
     this.adminCommission,
   });
@@ -284,6 +286,7 @@ class UserData {
     parcelDelivery = json['parcel_delivery']?.toString();
     zoneId = json['zone_id']?.toString();
     driverOnRide = json['driver_on_ride']?.toString();
+    categoryId = json['category_id']?.toString();
     subscriptionPlanId = json['subscriptionPlanId']?.toString();
     subscriptionExpiryDate = json['subscriptionExpiryDate']?.toString();
     subscriptionTotalOrders = json['subscriptionTotalOrders']?.toString();
@@ -377,6 +380,7 @@ class UserData {
     data['parcel_delivery'] = parcelDelivery;
     data['zone_id'] = zoneId;
     data['driver_on_ride'] = driverOnRide;
+    data['category_id'] = categoryId;
     data['subscriptionPlanId'] = subscriptionPlanId;
     data['subscriptionExpiryDate'] = subscriptionExpiryDate;
     data['subscriptionTotalOrders'] = subscriptionTotalOrders;

@@ -18,6 +18,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:provider/provider.dart';
+import 'package:cabme_driver/model/user_category_model.dart';
 
 class SignupScreen extends StatelessWidget {
   const SignupScreen({super.key});
@@ -240,6 +241,48 @@ class SignupScreen extends StatelessWidget {
                                       }
                                     },
                                   ),
+                                  InkWell(
+                                    onTap: () {
+                                      categoryDialog(context, controller);
+                                    },
+                                    child: AbsorbPointer(
+                                      child: TextFieldWidget(
+                                        prefix: IconButton(
+                                          onPressed: () {},
+                                          icon: Icon(
+                                            Icons.category,
+                                            color: themeChange.getThem() ? AppThemeData.grey500Dark : AppThemeData.grey500,
+                                          ),
+                                        ),
+                                        hintText: 'Select Category'.tr,
+                                        controller: controller.categoryController.value,
+                                        textInputType: TextInputType.text,
+                                        contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                                      ),
+                                    ),
+                                  ),
+                                  Obx(() => controller.subCategories.isNotEmpty
+                                      ? InkWell(
+                                          onTap: () {
+                                            subCategoryDialog(context, controller);
+                                          },
+                                          child: AbsorbPointer(
+                                            child: TextFieldWidget(
+                                              prefix: IconButton(
+                                                onPressed: () {},
+                                                icon: Icon(
+                                                  Icons.subdirectory_arrow_right,
+                                                  color: themeChange.getThem() ? AppThemeData.grey500Dark : AppThemeData.grey500,
+                                                ),
+                                              ),
+                                              hintText: 'Select Subcategory'.tr,
+                                              controller: controller.subCategoryController.value,
+                                              textInputType: TextInputType.text,
+                                              contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                                            ),
+                                          ),
+                                        )
+                                      : SizedBox()),
                                   controller.loginType.value == "google" || controller.loginType.value == "apple"
                                       ? SizedBox()
                                       : TextFieldWidget(
@@ -306,6 +349,10 @@ class SignupScreen extends StatelessWidget {
                                           if (_formKey.currentState!.validate()) {
                                             if (controller.phoneNumber.value.value.text.isEmpty) {
                                               ShowToastDialog.showToast("Phone number is empty");
+                                            } else if (controller.selectedParentCategory.value == null) {
+                                              ShowToastDialog.showToast("Please select a Category");
+                                            } else if (controller.subCategories.isNotEmpty && controller.selectedSubCategory.value == null) {
+                                              ShowToastDialog.showToast("Please select a Subcategory");
                                             } else {
                                               Map<String, String> bodyParams = {
                                                 'firstname': controller.firstNameController.value.text.trim().toString(),
@@ -316,6 +363,7 @@ class SignupScreen extends StatelessWidget {
                                                 'login_type': controller.loginType.value,
                                                 'tonotify': 'yes',
                                                 'account_type': 'driver',
+                                                'category_id': (controller.selectedSubCategory.value?.id ?? controller.selectedParentCategory.value?.id ?? "").toString(),
                                               };
                                               await controller.signUp(bodyParams).then((value) {
                                                 if (value != null) {
@@ -380,6 +428,72 @@ class SignupScreen extends StatelessWidget {
                 ],
               ),
             ),
+          );
+        });
+  }
+
+  void categoryDialog(BuildContext context, SignUpController controller) {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Select Category'.tr),
+            content: Obx(() => SizedBox(
+              height: 300.0,
+              width: 300.0,
+              child: controller.parentCategories.isEmpty
+                  ? Center(child: Text("No categories found".tr))
+                  : ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: controller.parentCategories.length,
+                      itemBuilder: (BuildContext context, int index) {
+                        return ListTile(
+                          title: InkWell(
+                              onTap: () {
+                                controller.selectParentCategory(controller.parentCategories[index]);
+                                Get.back();
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                child: Text(controller.parentCategories[index].title.toString()),
+                              )),
+                        );
+                      },
+                    ),
+            )),
+          );
+        });
+  }
+
+  void subCategoryDialog(BuildContext context, SignUpController controller) {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Select Subcategory'.tr),
+            content: Obx(() => SizedBox(
+              height: 300.0,
+              width: 300.0,
+              child: controller.subCategories.isEmpty
+                  ? Center(child: Text("No subcategories found".tr))
+                  : ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: controller.subCategories.length,
+                      itemBuilder: (BuildContext context, int index) {
+                        return ListTile(
+                          title: InkWell(
+                              onTap: () {
+                                controller.selectSubCategory(controller.subCategories[index]);
+                                Get.back();
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                child: Text(controller.subCategories[index].title.toString()),
+                              )),
+                        );
+                      },
+                    ),
+            )),
           );
         });
   }

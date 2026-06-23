@@ -58,7 +58,9 @@ import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
-
+import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:location/location.dart';
 import '../../features/Taxi/taxi_dashboard/taxi_dashboard.dart';
 
 import '../../wallet/wallet_screen.dart';
@@ -254,44 +256,87 @@ class MainHomeScreen extends StatelessWidget {
                               ),
                             ),
 
-                            // Quick Access Section (Repositioned to the top)
-                            VerticalLineSection(
-                              text: "Quick Access",
-                              margin: const EdgeInsets.only(top: 20),
-                              cardChildren: [
-                                VerticalIconWithText(
-                                  icon: Icons.directions_car_outlined,
-                                  text: 'Ride Booking',
-                                  onTap: () {
-                                    Get.to(() => TaxiDashBoard(),
-                                        transition: Transition.rightToLeftWithFade);
-                                  },
+                            // Primary Hero Action CTA for receiving rides
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                              child: GestureDetector(
+                                onTap: () {
+                                  if (homeController.getLoginStatus(inProgress: false)) {
+                                    Get.to(() => TaxiDashBoard(), transition: Transition.rightToLeftWithFade);
+                                  }
+                                },
+                                child: Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(20),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(20),
+                                    gradient: LinearGradient(
+                                      colors: isDark
+                                          ? [const Color(0xFF201D16), const Color(0xFF151413)]
+                                          : [const Color(0xFFFFF9E6), const Color(0XFFFFFFFF)],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    border: Border.all(
+                                      color: AppThemeData.primary200,
+                                      width: 1.5,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppThemeData.primary200.withValues(alpha: isDark ? 0.08 : 0.15),
+                                        blurRadius: 20,
+                                        offset: const Offset(0, 8),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: AppThemeData.primary200.withValues(alpha: 0.2),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Icon(
+                                          Icons.directions_car_filled_rounded,
+                                          color: AppThemeData.primary200,
+                                          size: 32,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              "Ride Console".tr,
+                                              style: TextStyle(
+                                                fontSize: 18,
+                                                fontFamily: AppThemeData.bold,
+                                                color: isDark ? AppThemeData.grey900Dark : AppThemeData.grey900,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              "Go online, view requests, and track active bookings in real time.".tr,
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontFamily: AppThemeData.regular,
+                                                color: isDark ? AppThemeData.grey500Dark : AppThemeData.grey500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Icon(
+                                        Icons.chevron_right_rounded,
+                                        color: AppThemeData.primary200,
+                                        size: 28,
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                                VerticalIconWithText(
-                                  icon: Icons.car_rental_outlined,
-                                  text: 'Rental Vehicle',
-                                  onTap: () {
-                                    Get.to(() => const InProgressScreen(),
-                                        transition: Transition.rightToLeftWithFade);
-                                  },
-                                ),
-                                VerticalIconWithText(
-                                  icon: Icons.local_shipping_outlined,
-                                  text: 'Parcel Service',
-                                  onTap: () {
-                                    Get.to(() => const AllParcelScreen(),
-                                        transition: Transition.rightToLeftWithFade);
-                                  },
-                                ),
-                                VerticalIconWithText(
-                                  icon: Icons.groups_outlined,
-                                  text: 'Shared Ride',
-                                  onTap: () {
-                                    Get.to(() => const InProgressScreen(),
-                                        transition: Transition.rightToLeftWithFade);
-                                  },
-                                ),
-                              ],
+                              ),
                             ),
 
                             // Asymmetrical grid/row of actions and value programs
@@ -434,6 +479,46 @@ class MainHomeScreen extends StatelessWidget {
                               ),
                             ),
 
+                            // Quick Access Section
+                            VerticalLineSection(
+                              text: "Quick Access",
+                              margin: const EdgeInsets.only(top: 20),
+                              cardChildren: [
+                                VerticalIconWithText(
+                                  icon: Icons.directions_car_outlined,
+                                  text: 'Ride Booking',
+                                  onTap: () {
+                                    Get.to(() => TaxiDashBoard(),
+                                        transition: Transition.rightToLeftWithFade);
+                                  },
+                                ),
+                                VerticalIconWithText(
+                                  icon: Icons.car_rental_outlined,
+                                  text: 'Rental Vehicle',
+                                  onTap: () {
+                                    Get.to(() => const InProgressScreen(),
+                                        transition: Transition.rightToLeftWithFade);
+                                  },
+                                ),
+                                VerticalIconWithText(
+                                  icon: Icons.local_shipping_outlined,
+                                  text: 'Parcel Service',
+                                  onTap: () {
+                                    Get.to(() => const AllParcelScreen(),
+                                        transition: Transition.rightToLeftWithFade);
+                                  },
+                                ),
+                                VerticalIconWithText(
+                                  icon: Icons.groups_outlined,
+                                  text: 'Shared Ride',
+                                  onTap: () {
+                                    Get.to(() => const InProgressScreen(),
+                                        transition: Transition.rightToLeftWithFade);
+                                  },
+                                ),
+                              ],
+                            ),
+
                             // Smart Value Section
                             VerticalLineSection(
                               text: "Smart Value",
@@ -526,6 +611,8 @@ class MainHomeScreen extends StatelessWidget {
     );
   }
 }
+
+
 
 
 
