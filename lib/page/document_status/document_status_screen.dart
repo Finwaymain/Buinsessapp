@@ -74,7 +74,7 @@ class DocumentStatusScreen extends StatelessWidget {
                                         Expanded(
                                           child: Text(
                                             controller.documentList[index].documentName.toString(),
-                                            style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w600),
+                                            style: TextStyle(color: themeChange.getThem() ? Colors.white : Colors.black, fontSize: 16, fontWeight: FontWeight.w600),
                                           ),
                                         ),
                                         controller.documentList[index].documentStatus == "Disapprove"
@@ -250,9 +250,10 @@ class DocumentStatusScreen extends StatelessWidget {
                           children: [
                             IconButton(
                                 onPressed: () => pickFile(controller, source: ImageSource.camera, index: index, documentId: documentId),
-                                icon: const Icon(
+                                icon: Icon(
                                   Icons.camera_alt,
                                   size: 32,
+                                  color: isDarkMode ? AppThemeData.grey50 : AppThemeData.grey50Dark,
                                 )),
                             Padding(
                               padding: const EdgeInsets.only(top: 3),
@@ -348,7 +349,7 @@ class DocumentStatusScreen extends StatelessWidget {
                 "${"Your information send well. We will treat them and inform you after the treatment.".tr} ${"Your account will be active after validation of your information.".tr}",
                 textAlign: TextAlign.center,
                 softWrap: true,
-                style: const TextStyle(color: Colors.black54),
+                style: TextStyle(color: Provider.of<DarkThemeProvider>(context, listen: false).getThem() ? Colors.white70 : Colors.black54),
               ),
             ),
             const SizedBox(
