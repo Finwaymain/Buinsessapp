@@ -74,7 +74,7 @@ class SettingsController extends GetxController {
         SettingsModel model = SettingsModel.fromJson(responseBody);
         Constant.adminCommission = model.data!.adminCommission!;
         Constant.subscriptionModel = bool.parse(model.data!.subscriptionModel!);
-        Constant.liveTrackingMapType = model.data?.mapType ?? '';
+        Constant.liveTrackingMapType = "inappmap";
         if (Platform.isAndroid) {
           Constant.selectedMapType = 'google';
         } else {

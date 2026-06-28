@@ -29,6 +29,7 @@ import '../../features/SmartValue/Payout/view/payout_screen.dart';
 import '../../features/SmartValue/ScanAndTransfer/view/scanner_and_transfer_screen.dart';
 import '../../in_progress_screen.dart';
 import '../../parcel_service/all_parcel_screen.dart';
+import '../../parcel_service/parcel_console_screen.dart';
 import '../../features/SmartValue/AccountDetails/view/account_details.dart';
 import '../../features/SmartValue/AddPerson/view/add_user_screen.dart';
 import '../../referral_screen/referral_screen.dart';
@@ -500,14 +501,20 @@ class MainHomeScreen extends StatelessWidget {
                                         transition: Transition.rightToLeftWithFade);
                                   },
                                 ),
-                                VerticalIconWithText(
-                                  icon: Icons.local_shipping_outlined,
-                                  text: 'Parcel Service',
-                                  onTap: () {
-                                    Get.to(() => const AllParcelScreen(),
-                                        transition: Transition.rightToLeftWithFade);
-                                  },
-                                ),
+                                                                 Obx(() {
+                                   final rideController = Get.find<NewRideController>();
+                                   if (rideController.userModel.value.userData?.parcelDelivery == 'yes') {
+                                     return VerticalIconWithText(
+                                       icon: Icons.local_shipping_outlined,
+                                       text: 'Parcel Service',
+                                       onTap: () {
+                                         Get.to(() => const ParcelConsoleScreen(),
+                                             transition: Transition.rightToLeftWithFade);
+                                       },
+                                     );
+                                   }
+                                   return const SizedBox.shrink();
+                                 }),
                                 VerticalIconWithText(
                                   icon: Icons.groups_outlined,
                                   text: 'Shared Ride',
