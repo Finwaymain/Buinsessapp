@@ -85,19 +85,28 @@ class _IncomingRideScreenState extends State<IncomingRideScreen> with TickerProv
 
   /// Opens Google Maps navigation to the passenger pickup location.
   Future<void> _navigateToPickup() async {
-    final lat = widget.rideData.latitudeDepart ?? '0';
-    final lng = widget.rideData.longitudeDepart ?? '0';
-    final label = Uri.encodeComponent(widget.rideData.departName ?? 'Pickup');
-    final uri = Uri.parse('google.navigation:q=$lat,$lng&mode=d');
-    final fallback = Uri.parse('https://maps.google.com/?q=$lat,$lng&label=$label&navigate=yes');
-    try {
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri);
+    if (Constant.liveTrackingMapType == "inappmap") {
+      var argumentData = {'type': 'confirmed', 'data': widget.rideData};
+      if (Constant.selectedMapType == 'osm') {
+        Get.to(() => const RouteOsmViewScreen(), arguments: argumentData);
       } else {
-        await launchUrl(fallback, mode: LaunchMode.externalApplication);
+        Get.to(() => const RouteViewScreen(), arguments: argumentData);
       }
-    } catch (e) {
-      ShowToastDialog.showToast('Could not open navigation app');
+    } else {
+      final lat = widget.rideData.latitudeDepart ?? '0';
+      final lng = widget.rideData.longitudeDepart ?? '0';
+      final label = Uri.encodeComponent(widget.rideData.departName ?? 'Pickup');
+      final uri = Uri.parse('google.navigation:q=$lat,$lng&mode=d');
+      final fallback = Uri.parse('https://maps.google.com/?q=$lat,$lng&label=$label&navigate=yes');
+      try {
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri);
+        } else {
+          await launchUrl(fallback, mode: LaunchMode.externalApplication);
+        }
+      } catch (e) {
+        ShowToastDialog.showToast('Could not open navigation app');
+      }
     }
   }
 

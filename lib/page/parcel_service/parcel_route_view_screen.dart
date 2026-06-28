@@ -532,12 +532,27 @@ class _ParcelRouteViewScreenState extends State<ParcelRouteViewScreen> {
                               txtColor: Colors.black.withValues(alpha: 0.60),
                               btnBorderColor: Colors.black.withValues(alpha: 0.20),
                               onPress: () async {
-                                String googleUrl =
-                                    'https://www.google.com/maps/search/?api=1&query=${double.parse(parcelData!.latDestination.toString())},${double.parse(parcelData!.lngDestination.toString())}';
-                                if (await canLaunch(googleUrl)) {
-                                  await launch(googleUrl);
+                                if (Constant.liveTrackingMapType == "inappmap") {
+                                  _mapcontroller?.animateCamera(
+                                    CameraUpdate.newCameraPosition(
+                                      CameraPosition(
+                                        target: LatLng(
+                                          double.parse(parcelData!.latDestination.toString()),
+                                          double.parse(parcelData!.lngDestination.toString()),
+                                        ),
+                                        zoom: 16.0,
+                                      ),
+                                    ),
+                                  );
+                                  ShowToastDialog.showToast('Navigating to destination');
                                 } else {
-                                  throw 'Could not open the map.';
+                                  String googleUrl =
+                                      'https://www.google.com/maps/search/?api=1&query=${double.parse(parcelData!.latDestination.toString())},${double.parse(parcelData!.lngDestination.toString())}';
+                                  if (await canLaunch(googleUrl)) {
+                                    await launch(googleUrl);
+                                  } else {
+                                    throw 'Could not open the map.';
+                                  }
                                 }
                               },
                             ),

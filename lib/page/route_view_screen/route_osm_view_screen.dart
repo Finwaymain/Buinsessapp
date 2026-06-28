@@ -707,12 +707,22 @@ class _RouteOsmViewScreenState extends State<RouteOsmViewScreen> {
                               txtColor: Colors.black.withValues(alpha: 0.60),
                               btnBorderColor: Colors.black.withValues(alpha: 0.20),
                               onPress: () async {
-                                String googleUrl =
-                                    'https://www.google.com/maps/search/?api=1&query=${double.parse(rideData!.latitudeArrivee.toString())},${double.parse(rideData!.longitudeArrivee.toString())}';
-                                if (await canLaunch(googleUrl)) {
-                                  await launch(googleUrl);
+                                if (Constant.liveTrackingMapType == "inappmap") {
+                                  if (destinationLatLong != null) {
+                                    await mapController.moveTo(
+                                      destinationLatLong!,
+                                      animate: true,
+                                    );
+                                  }
+                                  ShowToastDialog.showToast('Navigating to destination');
                                 } else {
-                                  throw 'Could not open the map.';
+                                  String googleUrl =
+                                      'https://www.google.com/maps/search/?api=1&query=${double.parse(rideData!.latitudeArrivee.toString())},${double.parse(rideData!.longitudeArrivee.toString())}';
+                                  if (await canLaunch(googleUrl)) {
+                                    await launch(googleUrl);
+                                  } else {
+                                    throw 'Could not open the map.';
+                                  }
                                 }
                               },
                             ),

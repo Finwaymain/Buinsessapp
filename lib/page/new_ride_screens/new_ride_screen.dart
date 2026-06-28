@@ -896,12 +896,21 @@ class NewRideScreen extends StatelessWidget {
                                   btnColor: AppThemeData.secondary200,
                                   txtColor: isDarkMode ? AppThemeData.grey900 : AppThemeData.grey900,
                                   onPress: () async {
-                                    String googleUrl =
-                                        'https://www.google.com/maps/search/?api=1&query=${double.parse(data.latitudeArrivee.toString())},${double.parse(data.longitudeArrivee.toString())}';
-                                    if (await canLaunch(googleUrl)) {
-                                      await launch(googleUrl);
+                                    if (Constant.liveTrackingMapType == "inappmap") {
+                                      var argumentData = {'type': data.statut, 'data': data};
+                                      if (Constant.selectedMapType == 'osm') {
+                                        Get.to(const RouteOsmViewScreen(), arguments: argumentData);
+                                      } else {
+                                        Get.to(const RouteViewScreen(), arguments: argumentData);
+                                      }
                                     } else {
-                                      throw 'Could not open the map.';
+                                      String googleUrl =
+                                          'https://www.google.com/maps/search/?api=1&query=${double.parse(data.latitudeArrivee.toString())},${double.parse(data.longitudeArrivee.toString())}';
+                                      if (await canLaunch(googleUrl)) {
+                                        await launch(googleUrl);
+                                      } else {
+                                        throw 'Could not open the map.';
+                                      }
                                     }
                                   },
                                 ),
