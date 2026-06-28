@@ -96,14 +96,18 @@ class DocumentStatusController extends GetxController {
       showLog("API :: Request Body :: ${jsonEncode(request.fields)} ");
       showLog("API :: Response Status :: ${res.statusCode} ");
       showLog("API :: Response Body :: ${String.fromCharCodes(responseData)} ");
-      if (res.statusCode == 200) {
+
+      if (res.statusCode == 200 && response['success'].toString().toLowerCase() == 'success') {
         ShowToastDialog.closeLoader();
-        ShowToastDialog.showToast("Uploaded!");
+        ShowToastDialog.showToast("Document uploaded! Pending verification by admin.");
+        // Refresh the document list so UI reflects the new status
+        await getCarServiceBooks();
         return true;
       } else {
         ShowToastDialog.closeLoader();
-        ShowToastDialog.showToast('Something want wrong. Please try again later');
-        throw Exception('Failed to load album');
+        final errMsg = response['error'] ?? 'Upload failed. Please try again.';
+        ShowToastDialog.showToast(errMsg.toString());
+        return null;
       }
     } on TimeoutException catch (e) {
       ShowToastDialog.closeLoader();
@@ -118,5 +122,6 @@ class DocumentStatusController extends GetxController {
       ShowToastDialog.closeLoader();
       ShowToastDialog.showToast(e.toString());
     }
+    return null;
   }
 }

@@ -180,28 +180,56 @@ class DocumentStatusScreen extends StatelessWidget {
                                               placeholder: (context, url) => Constant.loader(context, isDarkMode: themeChange.getThem()),
                                             ),
                                           ),
-                                    controller.documentList[index].documentStatus == "Disapprove"
-                                        ? Padding(
-                                            padding: const EdgeInsets.only(top: 10),
-                                            child: Row(
-                                              mainAxisAlignment: MainAxisAlignment.end,
-                                              crossAxisAlignment: CrossAxisAlignment.end,
-                                              children: [
-                                                ButtonThem.buildButton(
-                                                  context,
-                                                  title: 'Upload'.tr,
-                                                  btnHeight: 40,
-                                                  btnWidthRatio: 0.30,
-                                                  btnColor: AppThemeData.primary200,
-                                                  txtColor: AppThemeData.surface50,
-                                                  onPress: () async {
-                                                    buildBottomSheet(context, controller, index, controller.documentList[index].id.toString(), themeChange.getThem());
-                                                  },
-                                                )
-                                              ],
-                                            ),
-                                          )
-                                        : SizedBox(),
+                                    if (controller.documentList[index].documentStatus == "Pending" &&
+                                        controller.documentList[index].documentPath!.isNotEmpty)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 10),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                          decoration: BoxDecoration(
+                                            color: Colors.amber.withOpacity(0.15),
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(color: Colors.amber.shade700, width: 1),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.hourglass_top_rounded, color: Colors.amber.shade700, size: 18),
+                                              const SizedBox(width: 8),
+                                              Expanded(
+                                                child: Text(
+                                                  "Pending verification by Fiinway team. We will notify you once approved.",
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    fontFamily: AppThemeData.regular,
+                                                    color: Colors.amber.shade800,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    if (controller.documentList[index].documentStatus == "Disapprove")
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 10),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.end,
+                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          children: [
+                                            ButtonThem.buildButton(
+                                              context,
+                                              title: 'Upload'.tr,
+                                              btnHeight: 40,
+                                              btnWidthRatio: 0.30,
+                                              btnColor: AppThemeData.primary200,
+                                              txtColor: AppThemeData.surface50,
+                                              onPress: () async {
+                                                buildBottomSheet(context, controller, index, controller.documentList[index].id.toString(), themeChange.getThem());
+                                              },
+                                            )
+                                          ],
+                                        ),
+                                      ),
                                   ],
                                 ),
                               );
@@ -235,7 +263,7 @@ class DocumentStatusScreen extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 18,
                         fontFamily: AppThemeData.semiBold,
-                        color: isDarkMode ? AppThemeData.grey50 : AppThemeData.grey50Dark,
+                        color: isDarkMode ? AppThemeData.grey900Dark : AppThemeData.grey900,
                       ),
                     ),
                   ),
@@ -313,11 +341,9 @@ class DocumentStatusScreen extends StatelessWidget {
       XFile? image = await _imagePicker.pickImage(source: source);
       if (image == null) return;
 
-      controller.updateDocument(documentId, image.path).then((value) {
-        controller.isLoading.value = true;
-        controller.getCarServiceBooks();
-      });
-      Get.back();
+      Get.back(); // Close bottom sheet before async upload
+      // updateDocument already calls getCarServiceBooks() on success
+      await controller.updateDocument(documentId, image.path);
     } on PlatformException catch (e) {
       ShowToastDialog.showToast("${"Failed to Pick".tr}: \n $e");
     }
