@@ -15,6 +15,7 @@ import 'package:cabme_driver/page/parcel_service/all_parcel_screen.dart';
 import 'package:cabme_driver/page/parcel_service/parcel_details_screen.dart';
 import 'package:cabme_driver/page/parcel_service/parcel_osm_route_view_screen.dart';
 import 'package:cabme_driver/page/parcel_service/parcel_route_view_screen.dart';
+import 'package:cabme_driver/page/parcel_service/search_parcel_screen.dart';
 import 'package:cabme_driver/themes/app_bar_custom.dart';
 import 'package:cabme_driver/themes/button_them.dart';
 import 'package:cabme_driver/themes/constant_colors.dart';
@@ -772,28 +773,29 @@ class _ScanningRadarState extends State<ScanningRadar> with SingleTickerProvider
     return Center(
       child: Stack(
         alignment: Alignment.center,
-        children: List.generate(3, (index) {
-          return AnimatedBuilder(
-            animation: _controller,
-            builder: (context, child) {
-              double progress = (_controller.value + (index / 3)) % 1.0;
-              double opacity = (1.0 - progress) * 0.5;
-              double size = 80.0 + (progress * 180.0);
-              return Container(
-                width: size,
-                height: size,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: baseColor.withOpacity(opacity),
-                  border: Border.all(
-                    color: AppThemeData.primary200.withOpacity(opacity * 0.4),
-                    width: 1.5,
+        children: <Widget>[
+          ...List.generate(3, (index) {
+            return AnimatedBuilder(
+              animation: _controller,
+              builder: (context, child) {
+                double progress = (_controller.value + (index / 3)) % 1.0;
+                double opacity = (1.0 - progress) * 0.5;
+                double size = 80.0 + (progress * 180.0);
+                return Container(
+                  width: size,
+                  height: size,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: baseColor.withOpacity(opacity),
+                    border: Border.all(
+                      color: AppThemeData.primary200.withOpacity(opacity * 0.4),
+                      width: 1.5,
+                    ),
                   ),
-                ),
-              );
-            },
-          );
-        }) + [
+                );
+              },
+            );
+          }),
           Container(
             width: 85,
             height: 85,
