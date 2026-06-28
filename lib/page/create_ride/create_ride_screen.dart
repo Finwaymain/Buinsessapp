@@ -108,6 +108,14 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
   void getCurrentLocation(bool isDepartureSet) async {
     final themeChange = Provider.of<DarkThemeProvider>(context);
     if (isDepartureSet) {
+      PermissionStatus permissionStatus = await currentLocation.hasPermission();
+      if (permissionStatus == PermissionStatus.denied) {
+        permissionStatus = await currentLocation.requestPermission();
+      }
+      if (permissionStatus != PermissionStatus.granted) {
+        print("Location permission denied in create ride screen");
+        return;
+      }
       LocationData location = await currentLocation.getLocation();
       List<get_cord_address.Placemark> placeMarks = await get_cord_address.placemarkFromCoordinates(location.latitude ?? 0.0, location.longitude ?? 0.0);
 
@@ -146,6 +154,14 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
             initialCameraPosition: _kInitialPosition,
             onMapCreated: (GoogleMapController controller) async {
               _controller = controller;
+              PermissionStatus permissionStatus = await currentLocation.hasPermission();
+              if (permissionStatus == PermissionStatus.denied) {
+                permissionStatus = await currentLocation.requestPermission();
+              }
+              if (permissionStatus != PermissionStatus.granted) {
+                print("Location permission denied in onMapCreated");
+                return;
+              }
               LocationData location = await currentLocation.getLocation();
               _controller!.moveCamera(CameraUpdate.newLatLngZoom(LatLng(location.latitude ?? 0.0, location.longitude ?? 0.0), 14));
             },

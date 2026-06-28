@@ -40,9 +40,9 @@ class UserCategoryData {
   UserCategoryData({this.id, this.title, this.slug, this.parentId, this.subcategories});
 
   UserCategoryData.fromJson(Map<String, dynamic> json) {
-    id = json['id'].toString();
-    title = json['title'].toString();
-    slug = json['slug'].toString();
+    id = json['id']?.toString();
+    title = (json['title'] ?? json['libelle'])?.toString();
+    slug = json['slug']?.toString();
     parentId = json['parent_id']?.toString();
     if (json['subcategories'] != null) {
       subcategories = <UserCategoryData>[];

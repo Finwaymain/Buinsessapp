@@ -34,6 +34,7 @@ import '../page/terms_of_service/terms_of_service_screen.dart';
 import '../page/wallet/wallet_screen.dart';
 import '../service/api.dart';
 import '../utils/Preferences.dart';
+import '../widget/permission_dialog.dart';
 import 'subscription_controller.dart';
 
 class DashBoardController extends GetxController {
@@ -43,10 +44,23 @@ class DashBoardController extends GetxController {
   @override
   void onInit() {
     getUsrData();
-    locationSubscription = location.onLocationChanged.listen((event) {});
-    getCurrentLocation();
-    updateCurrentLocation();
     getPaymentSettingData();
+
+    ever(isActive, (bool active) {
+      if (active) {
+        getCurrentLocation();
+        updateCurrentLocation();
+      } else {
+        locationSubscription?.cancel();
+        updateActiveStatusInRTDB(false);
+      }
+    });
+
+    if (isActive.value) {
+      locationSubscription = location.onLocationChanged.listen((event) {});
+      getCurrentLocation();
+      updateCurrentLocation();
+    }
 
     super.onInit();
   }
@@ -62,8 +76,12 @@ class DashBoardController extends GetxController {
   }
 
   Future<void> getCurrentLocation() async {
-    LocationData location = await Location().getLocation();
-    List<geocoding.Placemark> placeMarks = await geocoding.placemarkFromCoordinates(location.latitude ?? 0.0, location.longitude ?? 0.0);
+    PermissionStatus permissionStatus = await location.hasPermission();
+    if (permissionStatus != PermissionStatus.granted) {
+      return;
+    }
+    LocationData locationVal = await location.getLocation();
+    List<geocoding.Placemark> placeMarks = await geocoding.placemarkFromCoordinates(locationVal.latitude ?? 0.0, locationVal.longitude ?? 0.0);
     if (placeMarks.isNotEmpty) {
       String currentCountry = placeMarks.first.country?.toString().toUpperCase() ?? '';
       for (var i = 0; i < Constant.allTaxList.length; i++) {
@@ -74,7 +92,7 @@ class DashBoardController extends GetxController {
       }
     }
     print(Constant.taxList.length);
-    setCurrentLocation(location.latitude.toString(), location.longitude.toString());
+    setCurrentLocation(locationVal.latitude.toString(), locationVal.longitude.toString());
   }
 
   // getDrawerItem() {
@@ -258,44 +276,53 @@ class DashBoardController extends GetxController {
     if (isActive.value) {
       PermissionStatus permissionStatus = await location.hasPermission();
       if (permissionStatus == PermissionStatus.granted) {
-        location.enableBackgroundMode(enable: true);
-        location.changeSettings(accuracy: LocationAccuracy.high, distanceFilter: double.parse(Constant.driverLocationUpdateUnit.toString()));
-        locationSubscription?.cancel();
-        locationSubscription = location.onLocationChanged.listen((locationData) {
-          LocationData currentLocation = locationData;
-          Constant.currentLocation = locationData;
-          updateLocationInRTDB(
-            latitude: currentLocation.latitude.toString(),
-            longitude: currentLocation.longitude.toString(),
-            rotation: currentLocation.heading.toString(),
-            active: true,
-          );
-          setCurrentLocation(currentLocation.latitude.toString(), currentLocation.longitude.toString());
-        });
+        _enableBackgroundLocationTracking();
       } else {
-        location.requestPermission().then((permissionStatus) {
-          if (permissionStatus == PermissionStatus.granted) {
-            location.enableBackgroundMode(enable: true);
-            location.changeSettings(accuracy: LocationAccuracy.high, distanceFilter: double.parse(Constant.driverLocationUpdateUnit.toString()));
-            locationSubscription?.cancel();
-            locationSubscription = location.onLocationChanged.listen((locationData) {
-              LocationData currentLocation = locationData;
-              Constant.currentLocation = locationData;
-              updateLocationInRTDB(
-                latitude: currentLocation.latitude.toString(),
-                longitude: currentLocation.longitude.toString(),
-                rotation: currentLocation.heading.toString(),
-                active: true,
-              );
-              setCurrentLocation(currentLocation.latitude.toString(), currentLocation.longitude.toString());
-            });
-          }
-        });
+        Get.dialog(
+          LocationPermissionDisclosureDialog(
+            onAccept: () async {
+              Get.back();
+              PermissionStatus newStatus = await location.requestPermission();
+              if (newStatus == PermissionStatus.granted) {
+                _enableBackgroundLocationTracking();
+              } else {
+                ShowToastDialog.showToast("Permission Denied");
+                isActive.value = false;
+              }
+            },
+            onDecline: () {
+              Get.back();
+              ShowToastDialog.showToast("Permission Denied");
+              isActive.value = false;
+            },
+          ),
+          barrierDismissible: false,
+        );
       }
     } else {
       locationSubscription?.cancel();
       updateActiveStatusInRTDB(false);
     }
+  }
+
+  void _enableBackgroundLocationTracking() {
+    location.enableBackgroundMode(enable: true);
+    location.changeSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: double.parse(Constant.driverLocationUpdateUnit.toString()),
+    );
+    locationSubscription?.cancel();
+    locationSubscription = location.onLocationChanged.listen((locationData) {
+      LocationData currentLocation = locationData;
+      Constant.currentLocation = locationData;
+      updateLocationInRTDB(
+        latitude: currentLocation.latitude.toString(),
+        longitude: currentLocation.longitude.toString(),
+        rotation: currentLocation.heading.toString(),
+        active: true,
+      );
+      setCurrentLocation(currentLocation.latitude.toString(), currentLocation.longitude.toString());
+    });
   }
 
   // deleteCurrentOrderLocation() {
@@ -397,7 +424,6 @@ class DashBoardController extends GetxController {
       print(response.body);
       if (response.statusCode == 200) {
         ShowToastDialog.closeLoader();
-        updateCurrentLocation();
         return responseBody;
       } else {
         ShowToastDialog.closeLoader();

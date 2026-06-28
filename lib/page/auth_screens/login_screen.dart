@@ -40,15 +40,6 @@ class LoginScreen extends StatelessWidget {
     return GetBuilder(
         init: LoginController(),
         initState: (state) async {
-          try {
-            PermissionStatus location = await Location().hasPermission();
-            print(location);
-            if (PermissionStatus.granted != location) {
-              showDialogPermission(context);
-            }
-          } on PlatformException catch (e) {
-            ShowToastDialog.showToast("${e.message}");
-          }
         },
         builder: (controller) {
           return Scaffold(

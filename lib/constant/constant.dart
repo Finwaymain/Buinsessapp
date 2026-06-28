@@ -61,7 +61,7 @@ class Constant {
   // static CollectionReference locationUpdate = FirebaseFirestore.instance.collection('ride_location_update');
   static CollectionReference driverLocationUpdate = FirebaseFirestore.instance.collection('driver_location_update');
   static LocationData? currentLocation;
-  static String liveTrackingMapType = "google";
+  static String liveTrackingMapType = "inappmap";
   static String selectedMapType = 'google';
 
   static String driverLocationUpdateUnit = "10";

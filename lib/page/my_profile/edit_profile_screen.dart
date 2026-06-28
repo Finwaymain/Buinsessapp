@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
+import 'package:intl_phone_field/countries.dart';
 import 'package:provider/provider.dart';
 
 class EditProfileScreen extends StatelessWidget {
@@ -164,6 +165,8 @@ class EditProfileScreen extends StatelessWidget {
                             isDarkMode: themeChange.getThem(),
                           ),
                           IntlPhoneField(
+                            countries: countries.where((country) => country.code == 'IN').toList(),
+                            initialCountryCode: 'IN',
                             textAlign: TextAlign.start,
                             flagsButtonPadding: const EdgeInsets.symmetric(horizontal: 8),
                             readOnly: true,

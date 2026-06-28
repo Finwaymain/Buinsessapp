@@ -76,6 +76,14 @@ class _CreateOsmRideScreenState extends State<CreateOsmRideScreen> {
 
   void getCurrentLocation(bool isDepartureSet, bool isDarkMode) async {
     if (isDepartureSet) {
+      PermissionStatus permissionStatus = await currentLocation.hasPermission();
+      if (permissionStatus == PermissionStatus.denied) {
+        permissionStatus = await currentLocation.requestPermission();
+      }
+      if (permissionStatus != PermissionStatus.granted) {
+        print("Location permission denied in create osm ride screen");
+        return;
+      }
       GeoPoint location = await mapController.myLocation();
       String url = 'https://nominatim.openstreetmap.org/reverse?format=json&lat=${location.latitude}&lon=${location.longitude}&zoom=18&addressdetails=1';
 

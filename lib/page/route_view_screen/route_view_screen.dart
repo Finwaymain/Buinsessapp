@@ -23,7 +23,6 @@ import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:pinput/pinput.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:cabme_driver/service/api.dart';
 
 class RouteViewScreen extends StatefulWidget {
@@ -683,13 +682,10 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
                               txtColor: Colors.black.withValues(alpha: 0.60),
                               btnBorderColor: Colors.black.withValues(alpha: 0.20),
                               onPress: () async {
-                                String googleUrl =
-                                    'https://www.google.com/maps/search/?api=1&query=${double.parse(rideData!.latitudeArrivee.toString())},${double.parse(rideData!.longitudeArrivee.toString())}';
-                                if (await canLaunch(googleUrl)) {
-                                  await launch(googleUrl);
-                                } else {
-                                  throw 'Could not open the map.';
-                                }
+                                _mapcontroller?.animateCamera(
+                                  CameraUpdate.newLatLngZoom(destinationLatLong, 14),
+                                );
+                                ShowToastDialog.showToast('Navigating to destination');
                               },
                             ),
                           ),
