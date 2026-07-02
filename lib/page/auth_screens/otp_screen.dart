@@ -7,7 +7,7 @@ import 'package:cabme_driver/constant/show_toast_dialog.dart';
 import 'package:cabme_driver/controller/phone_number_controller.dart';
 import 'package:cabme_driver/model/user_model.dart';
 import 'package:cabme_driver/page/MainDashBoard/screen/main_dashboard.dart';
-import 'package:cabme_driver/page/auth_screens/login_screen.dart';
+import 'package:cabme_driver/page/auth_screens/phone_entry_screen.dart';
 import 'package:cabme_driver/page/subscription_plan_screen/subscription_plan_screen.dart';
 import 'package:cabme_driver/service/api.dart';
 import 'package:cabme_driver/themes/button_them.dart';
@@ -22,7 +22,7 @@ import 'package:pinput/pinput.dart';
 import 'package:provider/provider.dart';
 
 import '../../themes/constant_colors.dart';
-import 'signup_screen.dart';
+import 'phone_entry_screen.dart';
 
 class OtpScreen extends StatelessWidget {
   String? phoneNumber;
@@ -70,7 +70,7 @@ class OtpScreen extends StatelessWidget {
                       ),
                     ),
                     TextSpan(
-                      recognizer: TapGestureRecognizer()..onTap = () => Get.offAll(const LoginScreen()),
+                      recognizer: TapGestureRecognizer()..onTap = () => Get.offAll(PhoneEntryScreen(mode: 'signup')),
                       text: 'Log in'.tr,
                       style: TextStyle(
                         fontSize: 16,
@@ -105,7 +105,7 @@ class OtpScreen extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 24,
                           fontFamily: AppThemeData.semiBold,
-                          color: themeChange.getThem() ? AppThemeData.grey50 : AppThemeData.grey50Dark,
+                          color: themeChange.getThem() ? AppThemeData.grey50Dark : AppThemeData.grey50,
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -115,7 +115,7 @@ class OtpScreen extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 14,
                           fontFamily: AppThemeData.regular,
-                          color: themeChange.getThem() ? AppThemeData.grey50 : AppThemeData.grey50Dark,
+                          color: themeChange.getThem() ? AppThemeData.grey50Dark : AppThemeData.grey50,
                         ),
                       ),
                       const SizedBox(height: 60),
@@ -168,7 +168,7 @@ class OtpScreen extends StatelessWidget {
                           title: 'Verify OTP'.tr,
                           btnHeight: 50,
                           btnColor: AppThemeData.primary200,
-                          txtColor: themeChange.getThem() ? AppThemeData.grey50 : AppThemeData.grey50Dark,
+                          txtColor: themeChange.getThem() ? AppThemeData.grey50Dark : AppThemeData.grey50,
                           onPress: () async {
                             FocusScope.of(context).unfocus();
 
@@ -236,7 +236,7 @@ class OtpScreen extends StatelessWidget {
                                     });
                                   } else if (value == false) {
                                     ShowToastDialog.closeLoader();
-                                    Get.off(SignupScreen(), arguments: {'phoneNumber': controller.phoneNumber.value, 'login_type': "phoneNumber"});
+                                    Get.off(PhoneEntryScreen(mode: 'signup'), arguments: {'phoneNumber': controller.phoneNumber.value, 'login_type': "phoneNumber"});
                                   }
                                 });
                               }).catchError((error) {

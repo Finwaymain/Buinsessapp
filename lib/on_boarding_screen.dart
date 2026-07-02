@@ -51,7 +51,7 @@ class OnBoardingScreen extends StatelessWidget {
                   splashColor: Colors.transparent,
                   onTap: () {
                     Preferences.setBoolean(Preferences.isFinishOnBoardingKey, true);
-                    // Get.offAll(const LoginScreen());
+                    // Get.offAll(PhoneEntryScreen(mode: 'signup'));
                     Get.offAll(const MainDashboard());
                   },
                   child: Padding(
@@ -185,7 +185,7 @@ class OnBoardingScreen extends StatelessWidget {
                             onPress: () async {
                               Preferences.setBoolean(Preferences.isFinishOnBoardingKey, true);
                               Get.offAll(const MainDashboard());
-                              // Get.offAll(const LoginScreen());
+                              // Get.offAll(PhoneEntryScreen(mode: 'signup'));
                             },
                           ),
                         ),

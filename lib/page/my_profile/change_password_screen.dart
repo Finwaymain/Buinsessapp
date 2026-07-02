@@ -141,7 +141,7 @@ class ChangePasswordScreen extends StatelessWidget {
                     title: 'Save Password'.tr,
                     btnWidthRatio: 0.7,
                     btnColor: AppThemeData.primary200,
-                    txtColor: themeChange.getThem() ? AppThemeData.grey50 : AppThemeData.grey50Dark, onPress: () {
+                    txtColor: themeChange.getThem() ? AppThemeData.grey50Dark : AppThemeData.grey50, onPress: () {
                   if (_passwordKey.currentState!.validate()) {
                     myProfileController.updatePassword({
                       "id_driver": myProfileController.userID.value,

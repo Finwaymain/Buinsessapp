@@ -8,7 +8,7 @@ import 'package:cabme_driver/constant/logdata.dart';
 import 'package:cabme_driver/constant/show_toast_dialog.dart';
 import 'package:cabme_driver/model/ride_model.dart';
 import 'package:cabme_driver/model/user_model.dart';
-import 'package:cabme_driver/page/auth_screens/login_screen.dart';
+import 'package:cabme_driver/page/auth_screens/phone_entry_screen.dart';
 import 'package:cabme_driver/service/api.dart';
 import 'package:cabme_driver/utils/Preferences.dart';
 import 'package:flutter/material.dart';
@@ -122,7 +122,7 @@ class NewRideController extends GetxController with WidgetsBindingObserver {
         Preferences.clearKeyData(Preferences.userId);
         ShowToastDialog.showToast('An admin has deleted your account. You no longer have access.'.tr);
         ShowToastDialog.closeLoader();
-        Get.offAll(const LoginScreen());
+        Get.offAll(PhoneEntryScreen(mode: 'signup'));
       } else {
         rideList.clear();
         isLoading.value = false;

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../utils/Preferences.dart';
-import '../../auth_screens/login_screen.dart';
+import '../../auth_screens/phone_entry_screen.dart';
 import '../../features/SmartValue/ScanAndTransfer/view/scanner_and_transfer_screen.dart';
 import '../../features/SmartValue/Payout/view/payout_screen.dart';
 import '../../features/rewards_screen.dart';
@@ -103,7 +103,7 @@ class MainHomeController extends GetxController
     final bool isLogin = Preferences.getBoolean(Preferences.isLogin) ?? false;
 
     if (!isLogin) {
-      Get.to(() => const LoginScreen(),
+      Get.to(() => PhoneEntryScreen(mode: 'signup'),
           transition: Transition.rightToLeftWithFade);
     }
     else if (routeName == '/addFund') {
@@ -124,7 +124,7 @@ class MainHomeController extends GetxController
     final bool isLogin = Preferences.getBoolean(Preferences.isLogin) ?? false;
 
     if (!isLogin) {
-      Get.to(() => const LoginScreen(),
+      Get.to(() => PhoneEntryScreen(mode: 'signup'),
           transition: Transition.rightToLeftWithFade);
       return false; // user login nahi hai
     } else if (inProgress) {
@@ -144,7 +144,7 @@ class MainHomeController extends GetxController
     final String routeName = card['routeName']?.toString() ?? '';
 
     if (!isLogin) {
-      Get.to(() => const LoginScreen(),
+      Get.to(() => PhoneEntryScreen(mode: 'signup'),
           transition: Transition.rightToLeftWithFade);
     } else if (index == 0) {
       Get.to(() => TaxiDashBoard(), transition: Transition.rightToLeftWithFade);

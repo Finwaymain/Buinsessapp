@@ -6,20 +6,53 @@ import 'package:flutter/material.dart';
 class Styles {
   static ThemeData themeData(bool isDarkTheme, BuildContext context) {
     log("THEME :: $isDarkTheme");
+    
+    final primaryColor = isDarkTheme ? const Color(0XFF60A5FA) : const Color(0XFF1E3A8A);
+    final secondaryColor = isDarkTheme ? const Color(0XFF38BDF8) : const Color(0XFF0284C7);
+    final backgroundColor = isDarkTheme ? const Color(0XFF0F172A) : const Color(0XFFF8FAFC);
+    final cardColor = isDarkTheme ? const Color(0XFF1E293B) : const Color(0XFFFFFFFF);
+    final textColor = isDarkTheme ? const Color(0XFFF8FAFC) : const Color(0XFF0F172A);
+
     return ThemeData(
-      // scaffoldBackgroundColor: isDarkTheme ? AppThemeData.surface50Dark : AppThemeData.surface50,
-      scaffoldBackgroundColor: isDarkTheme ? AppThemeData.grey50Dark : AppThemeData.grey50,
-      primaryColor: isDarkTheme ? AppThemeData.grey900Dark : AppThemeData.grey900,
+      scaffoldBackgroundColor: backgroundColor,
+      primaryColor: primaryColor,
+      cardColor: cardColor,
       brightness: isDarkTheme ? Brightness.dark : Brightness.light,
+      
+      appBarTheme: AppBarTheme(
+        backgroundColor: cardColor,
+        elevation: 0,
+        iconTheme: IconThemeData(color: textColor),
+        titleTextStyle: TextStyle(
+          color: textColor,
+          fontSize: 18,
+          fontFamily: AppThemeData.semiBold,
+        ),
+      ),
+      
+      colorScheme: isDarkTheme
+          ? ColorScheme.dark(
+              primary: primaryColor,
+              secondary: secondaryColor,
+              surface: cardColor,
+              error: const Color(0XFFEF4444),
+            )
+          : ColorScheme.light(
+              primary: primaryColor,
+              secondary: secondaryColor,
+              surface: cardColor,
+              error: const Color(0XFFEF4444),
+            ),
+
       timePickerTheme: TimePickerThemeData(
-        backgroundColor: isDarkTheme ? AppThemeData.surface50Dark : AppThemeData.surface50,
+        backgroundColor: cardColor,
         dialTextStyle: TextStyle(
           fontWeight: FontWeight.bold,
-          color: isDarkTheme ? AppThemeData.grey900Dark : AppThemeData.grey900,
+          color: textColor,
         ),
-        dialTextColor: isDarkTheme ? AppThemeData.grey900Dark : AppThemeData.grey900,
-        hourMinuteTextColor: isDarkTheme ? AppThemeData.grey900Dark : AppThemeData.grey900,
-        dayPeriodTextColor: isDarkTheme ? AppThemeData.grey900Dark : AppThemeData.grey900,
+        dialTextColor: textColor,
+        hourMinuteTextColor: textColor,
+        dayPeriodTextColor: textColor,
       ),
     );
   }

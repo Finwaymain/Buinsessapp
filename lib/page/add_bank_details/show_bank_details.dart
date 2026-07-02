@@ -52,7 +52,7 @@ class ShowBankDetails extends StatelessWidget {
                               btnHeight: 44,
                               title: "Add Bank".tr,
                               btnColor: AppThemeData.primary200,
-                              txtColor: Colors.white,
+                              txtColor: themeChange.getThem() ? AppThemeData.grey50Dark : AppThemeData.grey50,
                               onPress: () {
                                 showModalBottomSheet(
                                     isDismissible: true,
@@ -315,7 +315,7 @@ class ShowBankDetails extends StatelessWidget {
                                     btnHeight: 50,
                                     title: "Edit bank".tr,
                                     btnColor: AppThemeData.primary200,
-                                    txtColor: Colors.black,
+                                    txtColor: themeChange.getThem() ? AppThemeData.grey50Dark : AppThemeData.grey50,
                                     onPress: () {
                                       showModalBottomSheet(
                                           isDismissible: true,

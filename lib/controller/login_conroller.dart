@@ -8,7 +8,7 @@ import 'package:cabme_driver/constant/logdata.dart';
 import 'package:cabme_driver/constant/show_toast_dialog.dart';
 import 'package:cabme_driver/model/user_model.dart';
 import 'package:cabme_driver/page/MainDashBoard/screen/main_dashboard.dart';
-import 'package:cabme_driver/page/auth_screens/signup_screen.dart';
+import 'package:cabme_driver/page/auth_screens/phone_entry_screen.dart';
 import 'package:cabme_driver/page/features/Taxi/taxi_dashboard/taxi_dashboard.dart';
 import 'package:cabme_driver/page/subscription_plan_screen/subscription_plan_screen.dart';
 import 'package:cabme_driver/service/api.dart';
@@ -204,7 +204,7 @@ class LoginController extends GetxController {
             });
           } else if (value == false) {
             ShowToastDialog.closeLoader();
-            Get.off(SignupScreen(), arguments: {
+            Get.off(PhoneEntryScreen(mode: 'signup'), arguments: {
               'email': googleUser.user!.email,
               'firstName': googleUser.user!.displayName,
               'login_type': "google",
@@ -280,7 +280,7 @@ class LoginController extends GetxController {
             });
           } else if (value == false) {
             ShowToastDialog.closeLoader();
-            Get.off(SignupScreen(), arguments: {
+            Get.off(PhoneEntryScreen(mode: 'signup'), arguments: {
               'email': userCredential.user!.email,
               'firstName': appleCredential.givenName,
               'lastname': appleCredential.familyName,

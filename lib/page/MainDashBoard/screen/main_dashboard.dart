@@ -17,6 +17,9 @@ import '../../home_screen/view/home_screen.dart';
 import '../../wallet/wallet_screen.dart';
 import '../../search_location_screen.dart';
 import '../../new_ride_screens/new_ride_screen.dart';
+import '../../../controller/dash_board_controller.dart';
+import '../../../utils/Preferences.dart';
+import '../../auth_screens/phone_entry_screen.dart';
 
 class MainDashboard extends StatefulWidget {
   const MainDashboard({super.key});
@@ -28,6 +31,12 @@ class MainDashboard extends StatefulWidget {
 class _MainDashboardState extends State<MainDashboard> {
   int currentIndex = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    Get.find<DashBoardController>().getUsrData();
+  }
+
   final List<Widget> _screens =  [
     MainHomeScreen(),
     const AddressSearchScreen(isTab: true),
@@ -37,6 +46,12 @@ class _MainDashboardState extends State<MainDashboard> {
   ];
 
   void _onTabSelected(int index) {
+    if (index != 0) {
+      if (!(Preferences.getBoolean(Preferences.isLogin) ?? false)) {
+        Get.to(() => PhoneEntryScreen(mode: 'signup'), transition: Transition.rightToLeftWithFade);
+        return;
+      }
+    }
     setState(() => currentIndex = index);
   }
 

@@ -10,7 +10,7 @@ import '../../../controller/subscription_controller.dart';
 import '../../../themes/constant_colors.dart';
 import '../../../utils/Preferences.dart';
 import '../../../utils/dark_theme_provider.dart';
-import '../../auth_screens/login_screen.dart';
+import '../../auth_screens/phone_entry_screen.dart';
 import '../../features/Taxi/taxi_dashboard/taxi_dashboard.dart';
 import '../../subscription_plan_screen/subscription_plan_screen.dart' as subs;
 
@@ -32,7 +32,7 @@ class CustomDrawer extends StatelessWidget {
       }
       drawerOptions.add(InkWell(
         onTap: () {
-          dashBoardController.onSelectItem(i, d.title != 'Log Out');
+          dashBoardController.onSelectItem(i, isLogin);
         },
         child: Container(
           child: Column(
@@ -334,7 +334,7 @@ class CustomDrawer extends StatelessWidget {
                       child: ElevatedButton(
                         onPressed: () {
                           if (!isLogin) {
-                            Get.to(() => const LoginScreen(),
+                            Get.to(() => PhoneEntryScreen(mode: 'signup'),
                                 transition: Transition.rightToLeftWithFade);
                           } else {}
                         },

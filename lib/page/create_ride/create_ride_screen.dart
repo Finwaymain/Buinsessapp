@@ -22,6 +22,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 import 'package:provider/provider.dart';
 import 'package:text_scroll/text_scroll.dart';
+import 'package:cabme_driver/page/auth_screens/phone_entry_screen.dart';
 
 class CreateRideScreen extends StatefulWidget {
   const CreateRideScreen({super.key});
@@ -205,6 +206,10 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
                                   Expanded(
                                     child: InkWell(
                                       onTap: () async {
+                                        if (!(Preferences.getBoolean(Preferences.isLogin) ?? false)) {
+                                          Get.to(() => PhoneEntryScreen(mode: 'signup'), transition: Transition.rightToLeftWithFade);
+                                          return;
+                                        }
                                         await controller.placeSelectAPI(context).then((value) {
                                           if (value != null) {
                                             departureController.text = value.result.formattedAddress.toString();
@@ -244,6 +249,10 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
                                     children: [
                                       InkWell(
                                           onTap: () async {
+                                            if (!(Preferences.getBoolean(Preferences.isLogin) ?? false)) {
+                                              Get.to(() => PhoneEntryScreen(mode: 'signup'), transition: Transition.rightToLeftWithFade);
+                                              return;
+                                            }
                                             await controller.placeSelectAPI(context).then((value) {
                                               if (value != null) {
                                                 controller.multiStopListNew[index].editingController.text = value.result.formattedAddress ?? '';
@@ -310,6 +319,10 @@ class _CreateRideScreenState extends State<CreateRideScreen> {
                               Expanded(
                                 child: InkWell(
                                   onTap: () async {
+                                    if (!(Preferences.getBoolean(Preferences.isLogin) ?? false)) {
+                                      Get.to(() => PhoneEntryScreen(mode: 'signup'), transition: Transition.rightToLeftWithFade);
+                                      return;
+                                    }
                                     await controller.placeSelectAPI(context).then((value) {
                                       if (value != null) {
                                         destinationController.text = value.result.formattedAddress.toString();

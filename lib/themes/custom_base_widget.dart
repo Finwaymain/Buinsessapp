@@ -66,7 +66,7 @@ class _CustomBaseWidgetState extends State<CustomBaseWidget> {
     Color textColor =widget.appBarColor ?? Theme.of(context).primaryColor;
 
     Widget scaffold = Scaffold(
-      backgroundColor: isDark ? Colors.grey[900] : Colors.grey[100],
+      backgroundColor: widget.backgroundColor ?? (isDark ? const Color(0xff0F172A) : const Color(0xffF8FAFC)),
       resizeToAvoidBottomInset: widget.resizeToAvoidBottomInset,
       // backgroundColor:
       // widget.backgroundColor ?? Theme.of(context).colorScheme.surface,

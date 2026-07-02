@@ -182,7 +182,7 @@ class LocalizationScreens extends StatelessWidget {
                   context,
                   title: intentType == "dashBoard" ? "Update".tr : 'Continue'.tr,
                   btnWidthRatio: 0.6,
-                  txtColor: themeChange.getThem() ? AppThemeData.grey50 : AppThemeData.grey50Dark,
+                  txtColor: themeChange.getThem() ? AppThemeData.grey50Dark : AppThemeData.grey50,
                   onPress: () async {
                     LocalizationService().changeLocale(controller.selectedLanguage.value);
                     Preferences.setString(Preferences.languageCodeKey, controller.selectedLanguage.toString());

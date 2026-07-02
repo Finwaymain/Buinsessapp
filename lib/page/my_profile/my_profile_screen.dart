@@ -8,7 +8,7 @@ import 'package:cabme_driver/constant/show_toast_dialog.dart';
 import 'package:cabme_driver/controller/dash_board_controller.dart';
 import 'package:cabme_driver/controller/my_profile_controller.dart';
 import 'package:cabme_driver/model/user_model.dart';
-import 'package:cabme_driver/page/auth_screens/login_screen.dart';
+import 'package:cabme_driver/page/auth_screens/phone_entry_screen.dart';
 import 'package:cabme_driver/page/my_profile/change_password_screen.dart';
 import 'package:cabme_driver/page/my_profile/edit_profile_screen.dart';
 import 'package:cabme_driver/themes/app_bar_custom.dart';
@@ -94,7 +94,7 @@ class MyProfileScreen extends StatelessWidget {
                                                 ShowToastDialog.showToast(value['message']);
                                                 Get.back();
                                                 Preferences.clearSharPreference();
-                                                Get.offAll(const LoginScreen());
+                                                Get.offAll(PhoneEntryScreen(mode: 'signup'));
                                               }
                                             }
                                           });

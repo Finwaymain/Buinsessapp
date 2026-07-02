@@ -16,12 +16,11 @@ import '../constant/show_toast_dialog.dart';
 import '../model/driver_location_update.dart';
 import '../model/user_model.dart';
 import '../page/add_bank_details/show_bank_details.dart';
-import '../page/auth_screens/login_screen.dart';
+import '../page/auth_screens/phone_entry_screen.dart';
 import '../page/auth_screens/vehicle_info_screen.dart';
 import '../page/car_service_history/car_service_history_screen.dart';
 import '../page/features/Taxi/taxi_dashboard/taxi_dashboard.dart';
 import '../page/document_status/document_status_screen.dart';
-import '../page/localization_screens/localization_screen.dart';
 import '../page/my_profile/change_password_screen.dart';
 import '../page/my_profile/my_profile_screen.dart';
 import '../page/parcel_service/all_parcel_screen.dart';
@@ -41,10 +40,13 @@ class DashBoardController extends GetxController {
   Location location = Location();
   StreamSubscription<LocationData>? locationSubscription;
 
-  @override
-  void onInit() {
-    getUsrData();
-    getPaymentSettingData();
+  bool _isLocationInitialized = false;
+
+  void initLocationTracking() {
+    final bool isLogin = Preferences.getBoolean(Preferences.isLogin) ?? false;
+    if (!isLogin) return;
+    if (_isLocationInitialized) return;
+    _isLocationInitialized = true;
 
     ever(isActive, (bool active) {
       if (active) {
@@ -61,7 +63,13 @@ class DashBoardController extends GetxController {
       getCurrentLocation();
       updateCurrentLocation();
     }
+  }
 
+  @override
+  void onInit() {
+    getUsrData();
+    getPaymentSettingData();
+    initLocationTracking();
     super.onInit();
   }
 
@@ -182,7 +190,7 @@ class DashBoardController extends GetxController {
   //       Preferences.clearKeyData(Preferences.isLogin);
   //       Preferences.clearKeyData(Preferences.user);
   //       Preferences.clearKeyData(Preferences.userId);
-  //       Get.offAll(const LoginScreen());
+  //       Get.offAll(PhoneEntryScreen(mode: 'signup'));
   //     }),
   //   ];
   // }
@@ -192,6 +200,11 @@ class DashBoardController extends GetxController {
   Future<void> getUsrData() async {
     userModel.value = Constant.getUserData();
     if (userModel.value.userData == null) return;
+    
+    // Initialize active status and location tracking based on cached data
+    isActive.value = userModel.value.userData!.online == "yes" ? true : false;
+    initLocationTracking();
+
     try {
       Map<String, String> bodyParams = {
         'phone': userModel.value.userData!.phone.toString(),
@@ -211,13 +224,14 @@ class DashBoardController extends GetxController {
         await Preferences.setString(Preferences.user, jsonEncode(value));
         userModel.value = value;
         isActive.value = userModel.value.userData!.online == "yes" ? true : false;
+        initLocationTracking();
       } else if (response.statusCode == 200 && responseBodyPhone['success'] != "success") {
         if (responseBodyPhone['error'] == 'Driver Not Found') {
           Preferences.clearKeyData(Preferences.isLogin);
           Preferences.clearKeyData(Preferences.user);
           Preferences.clearKeyData(Preferences.userId);
           ShowToastDialog.showToast('An admin has deleted your account. You no longer have access.'.tr);
-          Get.offAll(const LoginScreen());
+          Get.offAll(PhoneEntryScreen(mode: 'signup'));
         }
       }
     } catch (e) {
@@ -369,7 +383,7 @@ class DashBoardController extends GetxController {
         Preferences.clearKeyData(Preferences.user);
         Preferences.clearKeyData(Preferences.userId);
         ShowToastDialog.showToast('An admin has deleted your account. You no longer have access.'.tr);
-        Get.offAll(const LoginScreen());
+        Get.offAll(PhoneEntryScreen(mode: 'signup'));
       }
     } on TimeoutException catch (e) {
       ShowToastDialog.showToast(e.message.toString());
@@ -474,90 +488,44 @@ class DashBoardController extends GetxController {
 
   Future<void> onSelectItem(int index,bool isLogin) async {
     Get.back();
-    if( index == 1 || index == 2 || index == 3 || index == 4 ) {
-      if(!isLogin){
-        Get.to(LoginScreen());
+    if (index >= drawerItems.length) return;
+    var item = drawerItems[index];
+    if (item.title == 'Wallet'.tr || item.title == 'My Profile'.tr || item.title == 'Change Password'.tr || item.title == 'Refer a Friend'.tr) {
+      if (!isLogin) {
+        Get.to(PhoneEntryScreen(mode: 'signup'));
         return;
       }
     }
-    if (Constant.parcelActive.toString() == "yes") {
-
-      if (index == 1) {
-
-        Get.to(WalletScreen());
-      } else if (index == 2) {
-        Get.to(MyProfileScreen());
-      } else if (index == 3) {
-        Get.to(ChangePasswordScreen());
-      } else if (index == 4) {
-        Get.to( ReferralScreen());
-      } else if (index == 5) {
-        Get.to(const LocalizationScreens(intentType: "dashBoard",));
-      } else if (index == 6) {
-        Get.to(const TermsOfServiceScreen());
-      } else if (index == 7) {
-        Get.to(const PrivacyPolicyScreen());
-      } else if (index == 8) {
-      } else if (index == 9) {
-
-        try {
-          if (await inAppReview.isAvailable()) {
-            inAppReview.requestReview();
-          } else {
-            log(":::::::::InAppReview:::::::::::");
-            inAppReview.openStoreListing();
-          }
-        } catch (e) {
-          log("Error triggering in-app review: $e");
-        }
-      } else if (index == 10) {
-        Preferences.clearKeyData(Preferences.isLogin);
-        Preferences.clearKeyData(Preferences.user);
-        Preferences.clearKeyData(Preferences.userId);
-        Get.offAll(const LoginScreen());
-      } else {
-        selectedDrawerIndex.value = index;
-      }
-    }
-    else {
-      if (index == 1) {
-        Get.to(WalletScreen());
-      } else if (index == 2) {
-        Get.to(MyProfileScreen());
-      } else if (index == 3) {
-        Get.to(ChangePasswordScreen);
-      } else if (index == 4) {
-        Get.to( ReferralScreen());
-      } else if (index == 5) {
-        Get.to(const LocalizationScreens(
-          intentType: "dashBoard",
-        ));
-      } else if (index == 6) {
-        Get.to(const TermsOfServiceScreen());
-      } else if (index == 7) {
-        Get.to(const PrivacyPolicyScreen());
-      } else if (index == 8) {
-      } else if (index == 9) {
-        try {
-          if (await inAppReview.isAvailable()) {
-            inAppReview.requestReview();
-          } else {
-            log(":::::::::InAppReview:::::::::::");
-            inAppReview.openStoreListing();
-          }
-        } catch (e) {
-          log("Error triggering in-app review: $e");
-        }
-      } else {
-        if (index == 10) {
-          Preferences.clearKeyData(Preferences.isLogin);
-          Preferences.clearKeyData(Preferences.user);
-          Preferences.clearKeyData(Preferences.userId);
-          Get.offAll(const LoginScreen());
+    if (item.title == 'Wallet'.tr) {
+      Get.to(WalletScreen());
+    } else if (item.title == 'My Profile'.tr) {
+      Get.to(MyProfileScreen());
+    } else if (item.title == 'Change Password'.tr) {
+      Get.to(ChangePasswordScreen());
+    } else if (item.title == 'Refer a Friend'.tr) {
+      Get.to(ReferralScreen());
+    } else if (item.title == 'Terms & Conditions'.tr) {
+      Get.to(const TermsOfServiceScreen());
+    } else if (item.title == 'Privacy & Policy'.tr) {
+      Get.to(const PrivacyPolicyScreen());
+    } else if (item.title == 'Rate the App'.tr) {
+      try {
+        if (await inAppReview.isAvailable()) {
+          inAppReview.requestReview();
         } else {
-          selectedDrawerIndex.value = index;
+          log(":::::::::InAppReview:::::::::::");
+          inAppReview.openStoreListing();
         }
+      } catch (e) {
+        log("Error triggering in-app review: $e");
       }
+    } else if (item.title == 'Log Out'.tr) {
+      Preferences.clearKeyData(Preferences.isLogin);
+      Preferences.clearKeyData(Preferences.user);
+      Preferences.clearKeyData(Preferences.userId);
+      Get.offAll(PhoneEntryScreen(mode: 'signup'));
+    } else {
+      selectedDrawerIndex.value = index;
     }
   }
 
@@ -590,15 +558,10 @@ class DashBoardController extends GetxController {
         icon: 'assets/icons/ic_refer.svg',
       ),
       DrawerItem(
-        title: 'Change Language'.tr,
-        description: 'Switch between supported languages anytime easily',
-        icon: 'assets/icons/ic_language.svg',
-        section: 'App Settings'.tr,
-      ),
-      DrawerItem(
         title: 'Terms & Conditions'.tr,
         description: 'Read detailed user agreement and policies',
         icon: 'assets/icons/ic_terms.svg',
+        section: 'App Settings'.tr,
       ),
       DrawerItem(
         title: 'Privacy & Policy'.tr,

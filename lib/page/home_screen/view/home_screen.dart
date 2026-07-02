@@ -7,6 +7,9 @@ import 'package:share_plus/share_plus.dart';
 import '../../../constant/constant.dart';
 import '../../../constant/show_toast_dialog.dart';
 import '../../../controller/dash_board_controller.dart';
+import '../../../utils/Preferences.dart';
+import '../../auth_screens/phone_entry_screen.dart';
+import '../../auth_screens/driver_category_selection_screen.dart';
 import '../../../controller/new_ride_controller.dart';
 import '../../../controller/payStackURLModel.dart';
 import '../../../controller/wallet_controller.dart';
@@ -217,6 +220,10 @@ class MainHomeScreen extends StatelessWidget {
                                   ),
                                   GestureDetector(
                                     onTap: () {
+                                      if (!Preferences.getBoolean(Preferences.isLogin)) {
+                                        Get.to(() => PhoneEntryScreen(mode: 'signup'), transition: Transition.rightToLeftWithFade);
+                                        return;
+                                      }
                                       Get.to(() => WalletScreen(), transition: Transition.rightToLeftWithFade);
                                     },
                                     child: Container(
@@ -256,6 +263,39 @@ class MainHomeScreen extends StatelessWidget {
                                 ],
                               ),
                             ),
+                            if (controller.userModel.value.userData != null && 
+                                (controller.userModel.value.userData?.categoryId == null || controller.userModel.value.userData?.categoryId == 'null' || controller.userModel.value.userData?.categoryId == '' || controller.userModel.value.userData?.categoryId == '0'))
+                              Container(
+                                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: AppThemeData.warning200.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: AppThemeData.warning200),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.info_outline, color: AppThemeData.warning200),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        "Please complete your profile by selecting category.".tr,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontFamily: AppThemeData.medium,
+                                          color: isDark ? Colors.white : AppThemeData.grey900,
+                                        ),
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        Get.to(() => const DriverCategorySelectionScreen());
+                                      },
+                                      child: Text("Complete".tr, style: TextStyle(color: AppThemeData.warning200, fontFamily: AppThemeData.bold)),
+                                    )
+                                  ],
+                                ),
+                              ),
 
                             // Primary Hero Action CTA for receiving rides
                             Padding(
@@ -371,6 +411,7 @@ class MainHomeScreen extends StatelessWidget {
                                               onTap: () => homeController.onFeatureTap(originalIndex),
                                               borderRadius: BorderRadius.circular(16),
                                               child: Container(
+                                                height: 84,
                                                 padding: const EdgeInsets.all(16),
                                                 decoration: BoxDecoration(
                                                   color: isDark ? const Color(0xFF1A1917) : const Color(0xFFF9F7F2),
@@ -435,16 +476,18 @@ class MainHomeScreen extends StatelessWidget {
                                                 onTap: () => homeController.onServiceTap(originalIndex),
                                                 borderRadius: BorderRadius.circular(16),
                                                 child: Container(
-                                                  padding: const EdgeInsets.all(14),
+                                                  height: 84,
+                                                  padding: const EdgeInsets.all(16),
                                                   decoration: BoxDecoration(
-                                                    color: isDark ? const Color(0xFF1E1C18) : const Color(0xFFFAF9F5),
+                                                    color: isDark ? const Color(0xFF1A1917) : const Color(0xFFF9F7F2),
                                                     borderRadius: BorderRadius.circular(16),
                                                     border: Border.all(
-                                                      color: AppThemeData.primary200.withValues(alpha: 0.15),
+                                                      color: isDark ? const Color(0xFF2C2A26) : const Color(0xFFE5DFD5),
                                                       width: 1,
                                                     ),
                                                   ),
                                                   child: Column(
+                                                    mainAxisAlignment: MainAxisAlignment.center,
                                                     crossAxisAlignment: CrossAxisAlignment.start,
                                                     children: [
                                                       Text(
@@ -489,36 +532,41 @@ class MainHomeScreen extends StatelessWidget {
                                   icon: Icons.directions_car_outlined,
                                   text: 'Ride Booking',
                                   onTap: () {
+                                    if (!Preferences.getBoolean(Preferences.isLogin)) {
+                                      Get.to(() => PhoneEntryScreen(mode: 'signup'), transition: Transition.rightToLeftWithFade);
+                                      return;
+                                    }
                                     Get.to(() => TaxiDashBoard(),
                                         transition: Transition.rightToLeftWithFade);
                                   },
                                 ),
-                                VerticalIconWithText(
-                                  icon: Icons.car_rental_outlined,
-                                  text: 'Rental Vehicle',
-                                  onTap: () {
-                                    Get.to(() => const InProgressScreen(),
-                                        transition: Transition.rightToLeftWithFade);
-                                  },
-                                ),
-                                                                 Obx(() {
-                                   final rideController = Get.find<NewRideController>();
-                                   if (rideController.userModel.value.userData?.parcelDelivery == 'yes') {
-                                     return VerticalIconWithText(
-                                       icon: Icons.local_shipping_outlined,
-                                       text: 'Parcel Service',
-                                       onTap: () {
-                                         Get.to(() => const ParcelConsoleScreen(),
-                                             transition: Transition.rightToLeftWithFade);
-                                       },
-                                     );
-                                   }
-                                   return const SizedBox.shrink();
-                                 }),
+
+                                Obx(() {
+                                  final rideController = Get.find<NewRideController>();
+                                  if (rideController.userModel.value.userData?.parcelDelivery == 'yes') {
+                                    return VerticalIconWithText(
+                                      icon: Icons.local_shipping_outlined,
+                                      text: 'Parcel Service',
+                                      onTap: () {
+                                        if (!Preferences.getBoolean(Preferences.isLogin)) {
+                                          Get.to(() => PhoneEntryScreen(mode: 'signup'), transition: Transition.rightToLeftWithFade);
+                                          return;
+                                        }
+                                        Get.to(() => const ParcelConsoleScreen(),
+                                            transition: Transition.rightToLeftWithFade);
+                                      },
+                                    );
+                                  }
+                                  return const SizedBox.shrink();
+                                }),
                                 VerticalIconWithText(
                                   icon: Icons.groups_outlined,
                                   text: 'Shared Ride',
                                   onTap: () {
+                                    if (!Preferences.getBoolean(Preferences.isLogin)) {
+                                      Get.to(() => PhoneEntryScreen(mode: 'signup'), transition: Transition.rightToLeftWithFade);
+                                      return;
+                                    }
                                     Get.to(() => const InProgressScreen(),
                                         transition: Transition.rightToLeftWithFade);
                                   },
@@ -647,6 +695,7 @@ class AddFundScreen extends StatelessWidget {
     return CustomBaseWidget(
       showAppBar: true,
       appBarTitle: 'Add Fund',
+      appBarItemColor: isDark ? Colors.white : AppThemeData.primary200,
       body: Column(
         children: [
           // Main Content

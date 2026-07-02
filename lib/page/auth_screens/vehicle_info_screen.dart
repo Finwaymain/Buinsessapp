@@ -69,7 +69,7 @@ class VehicleInfoScreen extends StatelessWidget {
                           ),
                           Container(
                             decoration: BoxDecoration(
-                                border: Border.all(color: themeChange.getThem() ? AppThemeData.grey800 : AppThemeData.grey800Dark, width: 1),
+                                border: Border.all(color: themeChange.getThem() ? AppThemeData.grey800Dark : AppThemeData.grey800, width: 1),
                                 borderRadius: const BorderRadius.all(Radius.circular(10))),
                             child: Padding(
                               padding: const EdgeInsets.all(2.0),
@@ -129,7 +129,7 @@ class VehicleInfoScreen extends StatelessWidget {
                                                   child: Divider(
                                                     color: vehicleInfoController.selectedCategoryID.value == vehicleInfoController.vehicleCategoryList[index].id
                                                         ? AppThemeData.primary200
-                                                        : (themeChange.getThem() ? AppThemeData.grey800 : AppThemeData.grey800Dark),
+                                                        : (themeChange.getThem() ? AppThemeData.grey800Dark : AppThemeData.grey800),
                                                     thickness: vehicleInfoController.selectedCategoryID.value == vehicleInfoController.vehicleCategoryList[index].id ? 2 : 1,
                                                     height: 2,
                                                   ),
@@ -401,7 +401,7 @@ class VehicleInfoScreen extends StatelessWidget {
                               btnHeight: 50,
                               btnWidthRatio: 1,
                               btnColor: AppThemeData.primary200,
-                              txtColor: themeChange.getThem() ? AppThemeData.grey900Dark : AppThemeData.grey900,
+                              txtColor: themeChange.getThem() ? AppThemeData.grey900 : AppThemeData.grey900Dark,
                               onPress: () async {
                                 if (_formKey.currentState!.validate()) {
                                   if (vehicleInfoController.selectedCategoryID.value.isEmpty) {

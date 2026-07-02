@@ -262,7 +262,7 @@ class AddBankAccount extends StatelessWidget {
                           child: ButtonThem.buildButton(context,
                               title: "Save Bank Details".tr,
                               btnColor: AppThemeData.primary200,
-                              txtColor: themeChange.getThem() ? AppThemeData.grey900Dark : AppThemeData.grey900, onPress: () {
+                              txtColor: themeChange.getThem() ? AppThemeData.grey900 : AppThemeData.grey900Dark, onPress: () {
                             if (controller.formKey.currentState!.validate()) {
                               Map<String, String> bodyParams = {
                                 'driver_id': Preferences.getInt(Preferences.userId).toString(),

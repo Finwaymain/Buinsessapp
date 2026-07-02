@@ -186,7 +186,7 @@ class ButtonThem {
           label: Text(
             title,
             style: TextStyle(
-              color: txtColor ?? (themeChange.getThem() ? AppThemeData.grey50 : AppThemeData.grey50Dark),
+              color: txtColor ?? (themeChange.getThem() ? AppThemeData.grey50Dark : AppThemeData.grey50),
               fontFamily: AppThemeData.medium,
               fontSize: txtSize,
             ),

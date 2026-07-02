@@ -13,7 +13,6 @@ import 'package:cabme_driver/page/MainDashBoard/screen/main_dashboard.dart';
 import 'package:cabme_driver/page/chats_screen/conversation_screen.dart';
 import 'package:cabme_driver/page/features/SmartValue/AddPerson/controller/add_user_controller.dart';
 import 'package:cabme_driver/page/features/SmartValue/MPinChange/controller/mpin_change_controller.dart';
-import 'package:cabme_driver/page/localization_screens/localization_screen.dart';
 import 'package:cabme_driver/page/subscription_plan_screen/subscription_plan_screen.dart';
 import 'package:cabme_driver/service/api.dart';
 import 'package:cabme_driver/service/localization_service.dart';
@@ -327,7 +326,7 @@ class AppRoutes {
   static Widget getInitialScreen(SettingsController controller) {
     // Check if language is selected
     if (Preferences.getString(Preferences.languageCodeKey).toString().isEmpty) {
-      return const LocalizationScreens(intentType: "main");
+      Preferences.setString(Preferences.languageCodeKey, 'en');
     }
 
     // Check if onboarding is finished
@@ -454,7 +453,7 @@ class _MyAppState extends State<MyApp> {
 // import 'package:cabme_driver/firebase_options.dart';
 // import 'package:cabme_driver/on_boarding_screen.dart';
 // import 'package:cabme_driver/page/MainDashBoard/screen/main_dashboard.dart';
-// import 'package:cabme_driver/page/auth_screens/login_screen.dart';
+// import 'package:cabme_driver/page/auth_screens/phone_entry_screen.dart';
 // import 'package:cabme_driver/page/features/Taxi/taxi_dashboard/taxi_dashboard.dart';
 // import 'package:cabme_driver/service/api.dart';
 // import 'package:cabme_driver/themes/styles.dart';
@@ -670,7 +669,7 @@ class _MyAppState extends State<MyApp> {
 //                                                         isbackButton: false,
 //                                                         isSplashScreen: true
 //                                                     )
-//                                                 // : const LoginScreen()
+//                                                 // : PhoneEntryScreen(mode: 'signup')
 //                                                 : const MainDashboard()
 //                                             : const OnBoardingScreen();
 //                             }

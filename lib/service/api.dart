@@ -21,6 +21,25 @@ class API {
 
   static const userSignUP = "${baseUrl}user";
   static const userLogin = "${baseUrl}user-login";
+  
+  // MPIN Auth Endpoints
+  static const authSendOtp = "${baseUrl}auth/send-otp";
+  static const authVerifyOtp = "${baseUrl}auth/verify-otp";
+  static const authLoginMpin = "${baseUrl}auth/login-mpin";
+  static const authResetMpin = "${baseUrl}auth/reset-mpin";
+  static const authRegisterSimple = "${baseUrl}auth/register-simple";
+  static const authLoginByPhone = "${baseUrl}auth/login-phone";
+  static const authVerifyLoginEmailOtp = "${baseUrl}auth/verify-login-email-otp";
+  static const authCheckUser = "${baseUrl}auth/check-user";
+  static const authLoginByMpin = "${baseUrl}auth/login-mpin";
+  static const authSendPhoneOtp = "${baseUrl}auth/send-phone-otp";
+  static const authVerifyPhoneOtp = "${baseUrl}auth/verify-phone-otp";
+  static const authSendEmailOtp = "${baseUrl}auth/send-email-otp";
+  static const authVerifyEmailRegister = "${baseUrl}auth/verify-email-register";
+  static const authUpdateDriverCategory = "${baseUrl}auth/update-driver-category";
+
+
+
   static const getProfileByPhone = "${baseUrl}profilebyphone";
   static const getExistingUserOrNot = "${baseUrl}existing-user";
   static const sendResetPasswordOtp = "${baseUrl}reset-password-otp";

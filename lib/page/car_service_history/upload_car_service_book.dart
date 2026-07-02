@@ -161,7 +161,7 @@ class AddCarServiceBookHistory extends StatelessWidget {
                 title: 'Save Details'.tr,
                 btnWidthRatio: 0.7,
                 btnColor: AppThemeData.primary200,
-                txtColor: themeChange.getThem() ? AppThemeData.grey50 : AppThemeData.grey50Dark,
+                txtColor: themeChange.getThem() ? AppThemeData.grey50Dark : AppThemeData.grey50,
                 onPress: () {
                   if (controller.carServiceBook.isNotEmpty && _formKey.currentState!.validate()) {
                     controller.userCarServiceBook(kmDriven: controller.kmDrivenController.value.text).then((value) {

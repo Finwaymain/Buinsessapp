@@ -95,7 +95,7 @@ class ForgotPasswordScreen extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 24,
                           fontFamily: AppThemeData.semiBold,
-                          color: isDarkMode ? AppThemeData.grey50 : AppThemeData.grey50Dark,
+                          color: isDarkMode ? AppThemeData.grey50Dark : AppThemeData.grey50,
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -105,7 +105,7 @@ class ForgotPasswordScreen extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 14,
                           fontFamily: AppThemeData.regular,
-                          color: isDarkMode ? AppThemeData.grey50 : AppThemeData.grey50Dark,
+                          color: isDarkMode ? AppThemeData.grey50Dark : AppThemeData.grey50,
                         ),
                       ),
                       const SizedBox(height: 60),
@@ -163,7 +163,7 @@ class ForgotPasswordScreen extends StatelessWidget {
                           title: 'Send'.tr,
                           btnHeight: 50,
                           btnColor: AppThemeData.primary200,
-                          txtColor: isDarkMode ? AppThemeData.grey50 : AppThemeData.grey50Dark,
+                          txtColor: isDarkMode ? AppThemeData.grey50Dark : AppThemeData.grey50,
                           onPress: () async {
                             FocusScope.of(context).unfocus();
                             if (_formKey.currentState!.validate()) {

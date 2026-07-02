@@ -22,6 +22,7 @@ import 'package:cabme_driver/themes/custom_widget.dart';
 import 'package:cabme_driver/themes/responsive.dart';
 import 'package:cabme_driver/utils/Preferences.dart';
 import 'package:cabme_driver/utils/dark_theme_provider.dart';
+import 'package:cabme_driver/page/auth_screens/phone_entry_screen.dart';
 import 'package:cabme_driver/widget/StarRating.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -145,6 +146,10 @@ class NewRideScreen extends StatelessWidget {
                 backgroundColor: AppThemeData.primary200,
                 foregroundColor: Colors.black,
                 onPressed: () {
+                  if (!(Preferences.getBoolean(Preferences.isLogin) ?? false)) {
+                    Get.to(() => PhoneEntryScreen(mode: 'signup'), transition: Transition.rightToLeftWithFade);
+                    return;
+                  }
                   if (controller.userModel.value.userData?.isVerified == "yes") {
                     if (Constant.selectedMapType == 'osm') {
                       Get.to(() => const CreateOsmRideScreen())?.then((v) {

@@ -2,7 +2,7 @@
 
 import 'package:cabme_driver/constant/show_toast_dialog.dart';
 import 'package:cabme_driver/controller/forgot_password_controller.dart';
-import 'package:cabme_driver/page/auth_screens/login_screen.dart';
+import 'package:cabme_driver/page/auth_screens/phone_entry_screen.dart';
 import 'package:cabme_driver/themes/button_them.dart';
 import 'package:cabme_driver/themes/constant_colors.dart';
 import 'package:cabme_driver/themes/text_field_them.dart';
@@ -155,7 +155,7 @@ class ForgotPasswordOtpScreen extends StatelessWidget {
                                   controller.resetPassword(bodyParams).then((value) {
                                     if (value != null) {
                                       if (value == true) {
-                                        Get.offAll(const LoginScreen(),
+                                        Get.offAll(PhoneEntryScreen(mode: 'signup'),
                                             duration: const Duration(milliseconds: 400), //duration of transitions, default 1 sec
                                             transition: Transition.rightToLeft);
                                         ShowToastDialog.showToast("Password change successfully!");

@@ -47,7 +47,7 @@ class MobileNumberScreen extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 24,
                             fontFamily: AppThemeData.semiBold,
-                            color: themeChange.getThem() ? AppThemeData.grey50 : AppThemeData.grey50Dark,
+                            color: themeChange.getThem() ? AppThemeData.grey50Dark : AppThemeData.grey50,
                           ),
                         ),
                         const SizedBox(height: 10),
@@ -59,7 +59,7 @@ class MobileNumberScreen extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 14,
                             fontFamily: AppThemeData.regular,
-                            color: themeChange.getThem() ? AppThemeData.grey50 : AppThemeData.grey50Dark,
+                            color: themeChange.getThem() ? AppThemeData.grey50Dark : AppThemeData.grey50,
                           ),
                         ),
                         const SizedBox(height: 60),
@@ -151,7 +151,7 @@ class MobileNumberScreen extends StatelessWidget {
                               title: 'Send OTP'.tr,
                               btnHeight: 50,
                               btnColor: AppThemeData.primary200,
-                              txtColor: themeChange.getThem() ? AppThemeData.grey50 : AppThemeData.grey50Dark,
+                              txtColor: themeChange.getThem() ? AppThemeData.grey50Dark : AppThemeData.grey50,
                               onPress: () async {
                                 FocusScope.of(context).unfocus();
                                 if (controller.phoneNumber.value.isNotEmpty) {
@@ -169,7 +169,7 @@ class MobileNumberScreen extends StatelessWidget {
                                 "or continue with".tr,
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: themeChange.getThem() ? AppThemeData.grey400Dark : AppThemeData.grey400,
+                                  color: themeChange.getThem() ? AppThemeData.grey400 : AppThemeData.grey400Dark,
                                   fontFamily: AppThemeData.regular,
                                 ),
                               ),
