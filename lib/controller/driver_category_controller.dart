@@ -69,8 +69,9 @@ class DriverCategoryController extends GetxController {
 
     String categoryId = (selectedSubCategory.value?.id ?? selectedParentCategory.value?.id ?? "").toString();
     
-    // Call AuthOtpController to update
-    final authController = Get.find<AuthOtpController>();
+    final authController = Get.isRegistered<AuthOtpController>()
+        ? Get.find<AuthOtpController>()
+        : Get.put(AuthOtpController());
     final updatedUser = await authController.updateDriverCategory(categoryId);
     
     if (updatedUser != null) {
