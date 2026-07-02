@@ -9,11 +9,11 @@ class API {
   static const baseUrl = "https://api.fiinway.com/api/v1/"; // live
   static const apiKey = "base64:nTfofcBByTDenJQYlsRbH0JjeVFW5lWsIIyXtq8/9sU=";
 
-  static Map<String, String> authheader = {
+  static Map<String, String> get authheader => {
     HttpHeaders.contentTypeHeader: 'application/json; charset=UTF-8',
     'apikey': apiKey,
   };
-  static Map<String, String> header = {
+  static Map<String, String> get header => {
     HttpHeaders.contentTypeHeader: 'application/json; charset=UTF-8',
     'apikey': apiKey,
     'accesstoken': Preferences.getString(Preferences.accesstoken)
@@ -25,17 +25,17 @@ class API {
   // MPIN Auth Endpoints
   static const authSendOtp = "${baseUrl}auth/send-otp";
   static const authVerifyOtp = "${baseUrl}auth/verify-otp";
-  static const authLoginMpin = "${baseUrl}auth/login-mpin";
+  static const authLoginMpin = "${baseUrl}auth/login-by-mpin";
   static const authResetMpin = "${baseUrl}auth/reset-mpin";
   static const authRegisterSimple = "${baseUrl}auth/register-simple";
-  static const authLoginByPhone = "${baseUrl}auth/login-phone";
+  static const authLoginByPhone = "${baseUrl}auth/login-by-phone";
   static const authVerifyLoginEmailOtp = "${baseUrl}auth/verify-login-email-otp";
   static const authCheckUser = "${baseUrl}auth/check-user";
-  static const authLoginByMpin = "${baseUrl}auth/login-mpin";
+  static const authLoginByMpin = "${baseUrl}auth/login-by-mpin";
   static const authSendPhoneOtp = "${baseUrl}auth/send-phone-otp";
   static const authVerifyPhoneOtp = "${baseUrl}auth/verify-phone-otp";
   static const authSendEmailOtp = "${baseUrl}auth/send-email-otp";
-  static const authVerifyEmailRegister = "${baseUrl}auth/verify-email-register";
+  static const authVerifyEmailRegister = "${baseUrl}auth/verify-email-otp-register";
   static const authUpdateDriverCategory = "${baseUrl}auth/update-driver-category";
 
 

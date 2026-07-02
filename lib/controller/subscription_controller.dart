@@ -178,13 +178,25 @@ class SubscriptionController extends GetxController {
 
   Future<dynamic> getSubscription() async {
     try {
+      print("getSubscription: URL = ${API.getSubscriptionPlans}");
+      print("getSubscription: Headers = ${API.header}");
       final response = await http.get(Uri.parse(API.getSubscriptionPlans), headers: API.header);
+      print("getSubscription: Status Code = ${response.statusCode}");
+      print("getSubscription: Response Body = ${response.body}");
       Map<String, dynamic> responseBody = json.decode(response.body);
       if (response.statusCode == 200 && responseBody['success'] == "success") {
         isLoading.value = false;
         SubscriptionPlanModel model = SubscriptionPlanModel.fromJson(responseBody);
         if (model.data?.isNotEmpty == true) {
-          List<SubscriptionPlanData> subscriptionPlanData = model.data!..sort((a, b) => a.place!.compareTo(b.place!));
+          List<SubscriptionPlanData> subscriptionPlanData = model.data!;
+          subscriptionPlanData.sort((a, b) {
+            final aPlace = int.tryParse(a.place ?? '') ?? 0;
+            final bPlace = int.tryParse(b.place ?? '') ?? 0;
+            return aPlace.compareTo(bPlace);
+          });
+          
+          subscriptionPlanList.clear();
+
           if (Constant.subscriptionModel == true && Constant.adminCommission?.statut == 'no') {
             for (var subscriptionPlan in subscriptionPlanData) {
               if (subscriptionPlan.name != 'Commission Base Plan') {
@@ -213,22 +225,27 @@ class SubscriptionController extends GetxController {
         }
         ShowToastDialog.closeLoader();
       } else {
+        print("getSubscription: failed on status or success field. success = ${responseBody['success']}");
         ShowToastDialog.closeLoader();
         isLoading.value = false;
       }
     } on TimeoutException catch (e) {
+      print("getSubscription TimeoutException: $e");
       isLoading.value = false;
       ShowToastDialog.closeLoader();
       ShowToastDialog.showToast(e.message.toString());
     } on SocketException catch (e) {
+      print("getSubscription SocketException: $e");
       isLoading.value = false;
       ShowToastDialog.closeLoader();
       ShowToastDialog.showToast(e.message.toString());
     } on Error catch (e) {
+      print("getSubscription Error: $e");
       isLoading.value = false;
       ShowToastDialog.closeLoader();
       ShowToastDialog.showToast(e.toString());
     } catch (e) {
+      print("getSubscription Exception: $e");
       isLoading.value = false;
       ShowToastDialog.closeLoader();
       ShowToastDialog.showToast(e.toString());

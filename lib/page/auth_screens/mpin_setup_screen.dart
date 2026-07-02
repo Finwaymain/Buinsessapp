@@ -2,6 +2,7 @@ import 'package:cabme_driver/constant/show_toast_dialog.dart';
 import 'package:cabme_driver/controller/auth_otp_controller.dart';
 import 'package:cabme_driver/page/MainDashBoard/screen/main_dashboard.dart';
 import 'package:cabme_driver/page/auth_screens/profile_setup_screen.dart';
+import 'package:cabme_driver/page/auth_screens/mpin_login_screen.dart';
 import 'package:cabme_driver/themes/button_them.dart';
 import 'package:cabme_driver/themes/constant_colors.dart';
 import 'package:cabme_driver/utils/dark_theme_provider.dart';
@@ -184,7 +185,9 @@ class _MpinSetupScreenState extends State<MpinSetupScreen> {
                                   userCat: 'driver',
                                 );
                                 if (user != null) {
-                                  Get.offAll(() => MainDashboard());
+                                  Get.offAll(() => const MainDashboard());
+                                } else {
+                                  Get.offAll(() => MpinLoginScreen(phone: controller.phone.value));
                                 }
                               }
                             }

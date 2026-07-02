@@ -69,7 +69,11 @@ class SubscriptionPlanData {
     isEnable = json['isEnable'];
     name = json['name'];
     place = json['place'];
-    planPoints = json['plan_points'].cast<String>();
+    if (json['plan_points'] != null) {
+      planPoints = List<String>.from(json['plan_points']);
+    } else {
+      planPoints = [];
+    }
     price = json['price'];
     type = json['type'];
     createdAt = json['created_at'];

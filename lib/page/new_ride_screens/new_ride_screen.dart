@@ -150,18 +150,14 @@ class NewRideScreen extends StatelessWidget {
                     Get.to(() => PhoneEntryScreen(mode: 'signup'), transition: Transition.rightToLeftWithFade);
                     return;
                   }
-                  if (controller.userModel.value.userData?.isVerified == "yes") {
-                    if (Constant.selectedMapType == 'osm') {
-                      Get.to(() => const CreateOsmRideScreen())?.then((v) {
-                        controller.getNewRide();
-                      });
-                    } else {
-                      Get.to(() => const CreateRideScreen())?.then((v) {
-                        controller.getNewRide();
-                      });
-                    }
+                  if (Constant.selectedMapType == 'osm') {
+                    Get.to(() => const CreateOsmRideScreen())?.then((v) {
+                      controller.getNewRide();
+                    });
                   } else {
-                    ShowToastDialog.showToast('Your document is not verified by admin');
+                    Get.to(() => const CreateRideScreen())?.then((v) {
+                      controller.getNewRide();
+                    });
                   }
                 },
                 icon: const Icon(Icons.add),
