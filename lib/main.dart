@@ -336,15 +336,7 @@ class AppRoutes {
 
     // Check if user is logged in
     if (Preferences.getBoolean(Preferences.isLogin)) {
-      // Check subscription status
-      if (controller.checkStatus()) {
-        return MainDashboard();
-      } else {
-        return SubscriptionPlanScreen(
-          isbackButton: false,
-          isSplashScreen: true,
-        );
-      }
+      return MainDashboard();
     }
 
     // Default to MainDashboard

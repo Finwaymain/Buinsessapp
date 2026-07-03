@@ -33,18 +33,21 @@ class Model {
 class ModelData {
   String? name;
   String? id;
+  String? vehicleTypeId;
 
-  ModelData({this.name, this.id});
+  ModelData({this.name, this.id, this.vehicleTypeId});
 
   ModelData.fromJson(Map<String, dynamic> json) {
     name = json['name'].toString();
     id = json['id'].toString();
+    vehicleTypeId = json['vehicle_type_id']?.toString();
   }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['name'] = name;
     data['id'] = id;
+    data['vehicle_type_id'] = vehicleTypeId;
     return data;
   }
 }

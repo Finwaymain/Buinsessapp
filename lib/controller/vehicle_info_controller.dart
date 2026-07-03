@@ -67,7 +67,7 @@ class VehicleInfoController extends GetxController {
         await getBrand();
         Map<String, String> bodyParams = {
           'brand': brandController.value.text,
-          'vehicle_type': selectedCategoryID.value,
+          'vehicle_type': validCategoryIds.value,
         };
         ShowToastDialog.closeLoader();
         getModel(bodyParams);
@@ -122,6 +122,7 @@ class VehicleInfoController extends GetxController {
   RxString selectedCategoryID = "".obs;
   RxString selectedBrandID = "".obs;
   RxString selectedModelID = "".obs;
+  RxString validCategoryIds = "".obs;
 
   List<VehicleData> vehicleCategoryList = [];
 
@@ -178,6 +179,29 @@ class VehicleInfoController extends GetxController {
 
         vehicleCategoryList = getVehicleCategory.vehicleData!;
 
+        final userModel = Constant.getUserData();
+        String role = Preferences.getString("selected_role");
+        String? catId = userModel.userData?.categoryId;
+
+        if (catId != null && catId != 'null' && catId.isNotEmpty && catId != '0') {
+          // Note: catId here is the driver's role ID (tj_categorie_user), not the vehicle type ID!
+          // So we should NOT filter by element.id == catId directly unless we map it.
+          // Instead, we will rely on 'role' text matching.
+        }
+        
+        if (role.isNotEmpty) {
+          if (role.contains("Bike")) {
+            vehicleCategoryList = vehicleCategoryList.where((element) => element.libelle == "Bike").toList();
+          } else if (role.contains("Auto") || role.contains("Rickshaw")) {
+            vehicleCategoryList = vehicleCategoryList.where((element) => element.libelle == "Auto").toList();
+          } else {
+            List<String> cabCategories = ["Mini", "Sedan", "SUV", "XL (6–7 Seater)", "Luxury", "Premium XL (Luxury MPV/SUV)"];
+            vehicleCategoryList = vehicleCategoryList.where((element) => cabCategories.contains(element.libelle)).toList();
+          }
+        }
+        
+        validCategoryIds.value = vehicleCategoryList.map((e) => e.id).join(",");
+
         update();
         ShowToastDialog.closeLoader();
         return VehicleData.fromJson(responseBody);
@@ -203,8 +227,12 @@ class VehicleInfoController extends GetxController {
   Future<List<BrandData>?> getBrand() async {
     try {
       ShowToastDialog.showLoader("Please wait");
-      final response = await http.get(Uri.parse(API.brand), headers: API.header);
-      showLog("API :: URL :: ${API.brand} ");
+      String url = API.brand;
+      if (validCategoryIds.value.isNotEmpty) {
+        url = "$url?vehicle_type_id=${validCategoryIds.value}";
+      }
+      final response = await http.get(Uri.parse(url), headers: API.header);
+      showLog("API :: URL :: $url ");
       showLog("API :: Request Header :: ${API.header.toString()} ");
       showLog("API :: responseStatus :: ${response.statusCode} ");
       showLog("API :: responseBody :: ${response.body} ");

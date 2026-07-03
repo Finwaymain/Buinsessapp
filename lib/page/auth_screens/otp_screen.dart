@@ -217,15 +217,7 @@ class OtpScreen extends StatelessWidget {
                                             isPlanExpire = true;
                                           }
                                           if (value.userData!.subscriptionPlanId == null || isPlanExpire == true) {
-                                            if (Constant.adminCommission!.statut == "no" && Constant.subscriptionModel == false) {
-                                              Get.offAll(MainDashboard(), duration: const Duration(milliseconds: 400), transition: Transition.rightToLeft);
-                                            } else {
-                                              Get.to(
-                                                  SubscriptionPlanScreen(
-                                                    isbackButton: false,
-                                                  ),
-                                                  arguments: {'islogin': true});
-                                            }
+                                            Get.offAll(MainDashboard(), duration: const Duration(milliseconds: 400), transition: Transition.rightToLeft);
                                           } else {
                                             Get.offAll(MainDashboard(), duration: const Duration(milliseconds: 400), transition: Transition.rightToLeft);
                                           }

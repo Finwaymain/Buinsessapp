@@ -10,10 +10,12 @@ import 'package:cabme_driver/page/auth_screens/vehicle_info_screen.dart';
 
 class DriverCategoryController extends GetxController {
   RxList<UserCategoryData> parentCategories = <UserCategoryData>[].obs;
-  RxList<UserCategoryData> subCategories = <UserCategoryData>[].obs;
   
-  Rx<UserCategoryData?> selectedParentCategory = Rx<UserCategoryData?>(null);
-  Rx<UserCategoryData?> selectedSubCategory = Rx<UserCategoryData?>(null);
+  // Selected multiple parent categories
+  RxList<UserCategoryData> selectedParentCategories = <UserCategoryData>[].obs;
+  
+  // Map of parent_id -> selected subcategory
+  RxMap<String, UserCategoryData> selectedSubCategories = <String, UserCategoryData>{}.obs;
   
   RxBool isLoading = false.obs;
 
@@ -23,18 +25,27 @@ class DriverCategoryController extends GetxController {
     fetchUserCategories();
   }
 
-  void selectParentCategory(UserCategoryData? parent) {
-    selectedParentCategory.value = parent;
-    selectedSubCategory.value = null;
-    if (parent != null && parent.subcategories != null) {
-      subCategories.assignAll(parent.subcategories!);
+  bool isActiveCategory(String? title) {
+    if (title == null) return false;
+    return title.contains('Transport & Mobility') || title.contains('Delivery & Logistics');
+  }
+
+  void toggleParentCategory(UserCategoryData parent) {
+    if (!isActiveCategory(parent.title)) {
+      ShowToastDialog.showToast("This category is coming soon!");
+      return;
+    }
+
+    if (selectedParentCategories.contains(parent)) {
+      selectedParentCategories.remove(parent);
+      selectedSubCategories.remove(parent.id.toString());
     } else {
-      subCategories.clear();
+      selectedParentCategories.add(parent);
     }
   }
 
-  void selectSubCategory(UserCategoryData? sub) {
-    selectedSubCategory.value = sub;
+  void selectSubCategory(String parentId, UserCategoryData sub) {
+    selectedSubCategories[parentId] = sub;
   }
 
   Future<void> fetchUserCategories() async {
@@ -58,26 +69,47 @@ class DriverCategoryController extends GetxController {
   }
 
   Future<void> saveCategory() async {
-    if (selectedParentCategory.value == null) {
-      ShowToastDialog.showToast("Please select a Category");
-      return;
-    }
-    if (subCategories.isNotEmpty && selectedSubCategory.value == null) {
-      ShowToastDialog.showToast("Please select a Subcategory");
+    if (selectedParentCategories.isEmpty) {
+      ShowToastDialog.showToast("Please select at least one Category");
       return;
     }
 
-    String categoryId = (selectedSubCategory.value?.id ?? selectedParentCategory.value?.id ?? "").toString();
+    // Verify each selected parent has a subcategory selected
+    for (var parent in selectedParentCategories) {
+      if (parent.subcategories != null && parent.subcategories!.isNotEmpty) {
+        if (!selectedSubCategories.containsKey(parent.id.toString())) {
+          ShowToastDialog.showToast("Please select a subcategory for ${parent.title}");
+          return;
+        }
+      }
+    }
+
+    // Prepare JSON array of categories
+    List<Map<String, dynamic>> finalSelection = [];
+    for (var parent in selectedParentCategories) {
+      final sub = selectedSubCategories[parent.id.toString()];
+      finalSelection.add({
+        "category_id": parent.id,
+        "subcategory_id": sub?.id,
+      });
+    }
+
+    // Currently API takes single categoryId. 
+    // We will serialize as JSON for now, assuming backend will be updated to accept a list or we send the primary one.
+    // For now we will send the first selected subcategory/category as fallback, but also a custom field if we modify API
+    String primaryCategoryId = finalSelection.first["subcategory_id"]?.toString() ?? finalSelection.first["category_id"].toString();
     
     final authController = Get.isRegistered<AuthOtpController>()
         ? Get.find<AuthOtpController>()
         : Get.put(AuthOtpController());
-    final updatedUser = await authController.updateDriverCategory(categoryId);
+    
+    // In actual implementation, backend updateDriverCategory should take finalSelection
+    final updatedUser = await authController.updateDriverCategory(primaryCategoryId);
     
     if (updatedUser != null) {
-      ShowToastDialog.showToast("Category updated successfully!");
-      // Proceed to Vehicle Info Screen to finish profile
-      Get.offAll(() => const VehicleInfoScreen());
+      // ShowToastDialog.showToast("Category updated successfully!");
+      // Don't navigate to vehicle info immediately, we'll navigate to Document Selection UI next.
+      // We will create the Document UI in step 2.
     }
   }
 }

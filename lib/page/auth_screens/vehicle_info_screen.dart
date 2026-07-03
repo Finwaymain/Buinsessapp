@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:cabme_driver/constant/constant.dart';
 import 'package:cabme_driver/constant/show_toast_dialog.dart';
 import 'package:cabme_driver/controller/vehicle_info_controller.dart';
+import 'package:cabme_driver/page/auth_screens/document_upload_step.dart' as cabme_doc;
 import 'package:cabme_driver/model/brand_model.dart';
 import 'package:cabme_driver/model/model.dart';
 import 'package:cabme_driver/themes/app_bar_custom.dart';
@@ -14,6 +15,7 @@ import 'package:cabme_driver/themes/text_field_them.dart';
 import 'package:cabme_driver/utils/dark_theme_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
@@ -90,131 +92,7 @@ class VehicleInfoScreen extends StatelessWidget {
                                   const SizedBox(
                                     height: 10,
                                   ),
-                                  SizedBox(
-                                    height: Responsive.height(14, context),
-                                    child: ListView.builder(
-                                      itemCount: vehicleInfoController
-                                          .vehicleCategoryList.length,
-                                      scrollDirection: Axis.horizontal,
-                                      shrinkWrap: true,
-                                      padding: EdgeInsets.zero,
-                                      itemBuilder: (context, index) {
-                                        return Obx(
-                                          () => GestureDetector(
-                                            onTap: () {
-                                              vehicleInfoController
-                                                      .selectedCategoryID
-                                                      .value =
-                                                  vehicleInfoController
-                                                      .vehicleCategoryList[
-                                                          index]
-                                                      .id
-                                                      .toString();
-                                            },
-                                            child: Column(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.spaceEvenly,
-                                              children: [
-                                                ClipRRect(
-                                                  borderRadius:
-                                                      BorderRadius.circular(10),
-                                                  child: Opacity(
-                                                    opacity: vehicleInfoController
-                                                                .selectedCategoryID
-                                                                .value ==
-                                                            vehicleInfoController
-                                                                .vehicleCategoryList[
-                                                                    index]
-                                                                .id
-                                                        ? 1
-                                                        : 0.4,
-                                                    child: CachedNetworkImage(
-                                                      imageUrl:
-                                                          vehicleInfoController
-                                                              .vehicleCategoryList[
-                                                                  index]
-                                                              .image
-                                                              .toString(),
-                                                      fit: BoxFit.fill,
-                                                      width: 80,
-                                                      height: 80,
-                                                      placeholder: (context,
-                                                              url) =>
-                                                          Constant.loader(
-                                                              context,
-                                                              isDarkMode:
-                                                                  themeChange
-                                                                      .getThem()),
-                                                      errorWidget: (context,
-                                                              url, error) =>
-                                                          Image.asset(
-                                                        "assets/images/appIcon.png",
-                                                        width: 80,
-                                                        height: 80,
-                                                        fit: BoxFit.fill,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                                Padding(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(vertical: 4),
-                                                  child: Text(
-                                                    vehicleInfoController
-                                                        .vehicleCategoryList[
-                                                            index]
-                                                        .libelle
-                                                        .toString(),
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                    style: TextStyle(
-                                                      color:
-                                                          themeChange.getThem()
-                                                              ? AppThemeData
-                                                                  .grey900Dark
-                                                              : AppThemeData
-                                                                  .grey900,
-                                                      fontFamily:
-                                                          AppThemeData.regular,
-                                                    ),
-                                                  ),
-                                                ),
-                                                SizedBox(
-                                                  width: 100,
-                                                  child: Divider(
-                                                    color: vehicleInfoController
-                                                                .selectedCategoryID
-                                                                .value ==
-                                                            vehicleInfoController
-                                                                .vehicleCategoryList[
-                                                                    index]
-                                                                .id
-                                                        ? AppThemeData
-                                                            .primary200
-                                                        : (themeChange.getThem()
-                                                            ? AppThemeData
-                                                                .grey800Dark
-                                                            : AppThemeData
-                                                                .grey800),
-                                                    thickness: vehicleInfoController
-                                                                .selectedCategoryID
-                                                                .value ==
-                                                            vehicleInfoController
-                                                                .vehicleCategoryList[
-                                                                    index]
-                                                                .id
-                                                        ? 2
-                                                        : 1,
-                                                    height: 2,
-                                                  ),
-                                                )
-                                              ],
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
+
                                   Form(
                                     key: _formKey,
                                     autovalidateMode: AutovalidateMode.disabled,
@@ -267,7 +145,7 @@ class VehicleInfoScreen extends StatelessWidget {
                                               child: InkWell(
                                                 onTap: () {
                                                   if (vehicleInfoController
-                                                      .selectedCategoryID
+                                                      .validCategoryIds
                                                       .value
                                                       .isNotEmpty) {
                                                     if (vehicleInfoController
@@ -284,7 +162,7 @@ class VehicleInfoScreen extends StatelessWidget {
                                                                 .text,
                                                         'vehicle_type':
                                                             vehicleInfoController
-                                                                .selectedCategoryID
+                                                                .validCategoryIds
                                                                 .value,
                                                       };
                                                       vehicleInfoController
@@ -446,7 +324,7 @@ class VehicleInfoScreen extends StatelessWidget {
                                                 child: TextFieldWidget(
                                                   isBorderEnable: false,
                                                   hintText:
-                                                      'Car Registration year'
+                                                      'Vehicle Registration year'
                                                           .tr,
                                                   controller:
                                                       vehicleInfoController
@@ -484,18 +362,15 @@ class VehicleInfoScreen extends StatelessWidget {
                                                         .value,
                                                 textInputType:
                                                     TextInputType.text,
-                                                maxLength: 40,
+                                                maxLength: 15,
+                                                inputFormatters: [
+                                                  FilteringTextInputFormatter.allow(
+                                                      RegExp(r'[a-zA-Z0-9-]')),
+                                                ],
                                                 contentPadding:
                                                     const EdgeInsets.symmetric(
                                                         vertical: 16,
                                                         horizontal: 16),
-                                                // validators: (String? value) {
-                                                //   if (value!.isNotEmpty) {
-                                                //     return null;
-                                                //   } else {
-                                                //     return 'required'.tr;
-                                                //   }
-                                                // },
                                               ),
                                             )
                                           ],
@@ -514,18 +389,15 @@ class VehicleInfoScreen extends StatelessWidget {
                                                         .value,
                                                 textInputType:
                                                     TextInputType.number,
-                                                maxLength: 40,
+                                                maxLength: 5,
+                                                inputFormatters: [
+                                                  FilteringTextInputFormatter.allow(
+                                                      RegExp(r'[0-9.]')),
+                                                ],
                                                 contentPadding:
                                                     const EdgeInsets.symmetric(
                                                         vertical: 16,
                                                         horizontal: 16),
-                                                // validators: (String? value) {
-                                                //   if (value!.isNotEmpty) {
-                                                //     return null;
-                                                //   } else {
-                                                //     return 'required'.tr;
-                                                //   }
-                                                // },
                                               ),
                                             ),
                                             dividerCustHeight(
@@ -541,18 +413,14 @@ class VehicleInfoScreen extends StatelessWidget {
                                                         .value,
                                                 textInputType:
                                                     TextInputType.number,
-                                                maxLength: 40,
+                                                maxLength: 7,
+                                                inputFormatters: [
+                                                  FilteringTextInputFormatter.digitsOnly,
+                                                ],
                                                 contentPadding:
                                                     const EdgeInsets.symmetric(
                                                         vertical: 16,
                                                         horizontal: 16),
-                                                // validators: (String? value) {
-                                                //   if (value!.isNotEmpty) {
-                                                //     return null;
-                                                //   } else {
-                                                //     return 'required'.tr;
-                                                //   }
-                                                // },
                                               ),
                                             )
                                           ],
@@ -565,18 +433,14 @@ class VehicleInfoScreen extends StatelessWidget {
                                           controller: vehicleInfoController
                                               .numberOfPassengersController
                                               .value,
-                                          textInputType: TextInputType.text,
-                                          maxLength: 40,
+                                          textInputType: TextInputType.number,
+                                          maxLength: 2,
+                                          inputFormatters: [
+                                            FilteringTextInputFormatter.digitsOnly,
+                                          ],
                                           contentPadding:
                                               const EdgeInsets.symmetric(
                                                   vertical: 16, horizontal: 16),
-                                          // validators: (String? value) {
-                                          //   if (value!.isNotEmpty) {
-                                          //     return null;
-                                          //   } else {
-                                          //     return 'required'.tr;
-                                          //   }
-                                          // },
                                         ),
                                       ],
                                     ),
@@ -678,8 +542,7 @@ class VehicleInfoScreen extends StatelessWidget {
                                         if (value.success == "Success" ||
                                             value.success == "success") {
                                           ShowToastDialog.closeLoader();
-                                          ShowToastDialog.showToast(
-                                              "Vehicle Information save successfully");
+                                          Get.to(() => const cabme_doc.DocumentUploadStep(), transition: Transition.rightToLeft);
                                         } else {
                                           ShowToastDialog.closeLoader();
                                           ShowToastDialog.showToast(
@@ -723,6 +586,8 @@ class VehicleInfoScreen extends StatelessWidget {
                                     .text = brandList[index].name.toString();
                                 vehicleInfoController.selectedBrandID.value =
                                     brandList[index].id.toString();
+                                vehicleInfoController.modelController.value.clear();
+                                vehicleInfoController.selectedModelID.value = "";
                                 Get.back();
                               },
                               child: Text(brandList[index].name.toString())),
@@ -755,8 +620,10 @@ class VehicleInfoScreen extends StatelessWidget {
                               onTap: () {
                                 vehicleInfoController.modelController.value
                                     .text = brandList[index].name.toString();
+                                vehicleInfoController.selectedCategoryID.value =
+                                    brandList[index].vehicleTypeId ?? vehicleInfoController.validCategoryIds.value.split(',').first ?? "";
                                 vehicleInfoController.selectedModelID.value =
-                                    brandList[index].id.toString();
+                                    brandList[index].id ?? "";
 
                                 Get.back();
                               },

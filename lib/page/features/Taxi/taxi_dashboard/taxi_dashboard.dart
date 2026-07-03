@@ -5,6 +5,7 @@ import 'package:cabme_driver/controller/dash_board_controller.dart';
 import 'package:cabme_driver/controller/subscription_controller.dart';
 import 'package:cabme_driver/model/user_model.dart';
 import 'package:cabme_driver/page/auth_screens/vehicle_info_screen.dart';
+import 'package:cabme_driver/page/auth_screens/driver_category_selection_screen.dart' as cabme_cat;
 import 'package:cabme_driver/page/document_status/document_status_screen.dart';
 import 'package:cabme_driver/page/new_ride_screens/new_ride_screen.dart';
 import 'package:cabme_driver/page/subscription_plan_screen/subscription_plan_screen.dart';
@@ -412,7 +413,7 @@ Future<void> showAlertDialog(BuildContext context, String type) async {
         content: SingleChildScrollView(
           child: ListBody(
             children: <Widget>[
-              Text('To start earning with CabMe you need to fill in your information'.tr),
+              Text('To start earning with Fiinway you need to fill in your information'.tr),
             ],
           ),
         ),
@@ -442,10 +443,18 @@ Future<void> showAlertDialog(BuildContext context, String type) async {
             onPressed: () {
               if (type == "document") {
                 Get.back();
-                Get.to(DocumentStatusScreen());
+                Get.to(() => DocumentStatusScreen());
               } else {
                 Get.back();
-                Get.to(const VehicleInfoScreen());
+                final userModel = Constant.getUserData();
+                if (userModel.userData?.categoryId == null || 
+                    userModel.userData?.categoryId == 'null' || 
+                    userModel.userData?.categoryId == '' || 
+                    userModel.userData?.categoryId == '0') {
+                  Get.to(() => const cabme_cat.DriverCategorySelectionScreen());
+                } else {
+                  Get.to(() => const VehicleInfoScreen());
+                }
               }
             },
           ),
