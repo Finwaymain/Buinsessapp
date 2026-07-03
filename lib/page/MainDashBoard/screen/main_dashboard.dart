@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:location/location.dart';
 import 'package:provider/provider.dart';
-import '../../../constant/show_toast_dialog.dart';
 import '../../../controller/login_conroller.dart';
 import '../../../utils/dark_theme_provider.dart';
 import '../../../widget/permission_dialog.dart';

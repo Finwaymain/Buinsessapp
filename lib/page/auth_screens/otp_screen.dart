@@ -2,13 +2,11 @@
 
 import 'dart:convert';
 
-import 'package:cabme_driver/constant/constant.dart';
 import 'package:cabme_driver/constant/show_toast_dialog.dart';
 import 'package:cabme_driver/controller/phone_number_controller.dart';
 import 'package:cabme_driver/model/user_model.dart';
 import 'package:cabme_driver/page/MainDashBoard/screen/main_dashboard.dart';
 import 'package:cabme_driver/page/auth_screens/phone_entry_screen.dart';
-import 'package:cabme_driver/page/subscription_plan_screen/subscription_plan_screen.dart';
 import 'package:cabme_driver/service/api.dart';
 import 'package:cabme_driver/themes/button_them.dart';
 import 'package:cabme_driver/themes/responsive.dart';
@@ -22,7 +20,6 @@ import 'package:pinput/pinput.dart';
 import 'package:provider/provider.dart';
 
 import '../../themes/constant_colors.dart';
-import 'phone_entry_screen.dart';
 
 class OtpScreen extends StatelessWidget {
   String? phoneNumber;

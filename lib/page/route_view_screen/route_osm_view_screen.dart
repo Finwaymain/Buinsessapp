@@ -6,7 +6,6 @@ import 'package:cabme_driver/constant/constant.dart';
 import 'package:cabme_driver/constant/show_toast_dialog.dart';
 import 'package:cabme_driver/controller/dash_board_controller.dart';
 import 'package:cabme_driver/controller/ride_details_controller.dart';
-import 'package:cabme_driver/model/driver_location_update.dart';
 import 'package:cabme_driver/model/ride_model.dart';
 import 'package:cabme_driver/model/ride_details_model.dart';
 import 'package:cabme_driver/page/chats_screen/conversation_screen.dart';

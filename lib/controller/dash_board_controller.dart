@@ -13,28 +13,19 @@ import 'package:location/location.dart';
 import '../constant/constant.dart';
 import '../constant/logdata.dart';
 import '../constant/show_toast_dialog.dart';
-import '../model/driver_location_update.dart';
 import '../model/user_model.dart';
-import '../page/add_bank_details/show_bank_details.dart';
+import '../page/auth_screens/driver_category_selection_screen.dart';
 import '../page/auth_screens/phone_entry_screen.dart';
-import '../page/auth_screens/vehicle_info_screen.dart';
-import '../page/car_service_history/car_service_history_screen.dart';
 import '../page/features/Taxi/taxi_dashboard/taxi_dashboard.dart';
-import '../page/document_status/document_status_screen.dart';
 import '../page/my_profile/change_password_screen.dart';
 import '../page/my_profile/my_profile_screen.dart';
-import '../page/parcel_service/all_parcel_screen.dart';
-import '../page/parcel_service/search_parcel_screen.dart';
 import '../page/privacy_policy/privacy_policy_screen.dart';
 import '../page/referral_screen/referral_screen.dart';
-import '../page/subscription_plan_screen/subscription_history_screen.dart';
-import '../page/subscription_plan_screen/subscription_plan_screen.dart';
 import '../page/terms_of_service/terms_of_service_screen.dart';
 import '../page/wallet/wallet_screen.dart';
 import '../service/api.dart';
 import '../utils/Preferences.dart';
 import '../widget/permission_dialog.dart';
-import 'subscription_controller.dart';
 
 class DashBoardController extends GetxController {
   Location location = Location();
@@ -490,7 +481,7 @@ class DashBoardController extends GetxController {
     Get.back();
     if (index >= drawerItems.length) return;
     var item = drawerItems[index];
-    if (item.title == 'Wallet'.tr || item.title == 'My Profile'.tr || item.title == 'Change Password'.tr || item.title == 'Refer a Friend'.tr) {
+    if (item.title == 'Wallet'.tr || item.title == 'My Profile'.tr || item.title == 'Change Password'.tr || item.title == 'Refer a Friend'.tr || item.title == 'Onboarding Profile'.tr) {
       if (!isLogin) {
         Get.to(PhoneEntryScreen(mode: 'signup'));
         return;
@@ -500,6 +491,8 @@ class DashBoardController extends GetxController {
       Get.to(WalletScreen());
     } else if (item.title == 'My Profile'.tr) {
       Get.to(MyProfileScreen());
+    } else if (item.title == 'Onboarding Profile'.tr) {
+      Get.to(() => const DriverCategorySelectionScreen());
     } else if (item.title == 'Change Password'.tr) {
       Get.to(ChangePasswordScreen());
     } else if (item.title == 'Refer a Friend'.tr) {
@@ -545,6 +538,11 @@ class DashBoardController extends GetxController {
       DrawerItem(
         title: 'My Profile'.tr,
         description: 'View and update your personal profile details',
+        icon: 'assets/icons/ic_profile.svg',
+      ),
+      DrawerItem(
+        title: 'Onboarding Profile'.tr,
+        description: 'Update your roles, vehicle info and onboarding documents',
         icon: 'assets/icons/ic_profile.svg',
       ),
       DrawerItem(

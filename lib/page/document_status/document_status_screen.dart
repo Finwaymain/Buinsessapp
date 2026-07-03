@@ -187,7 +187,7 @@ class DocumentStatusScreen extends StatelessWidget {
                                         child: Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                                           decoration: BoxDecoration(
-                                            color: Colors.amber.withOpacity(0.15),
+                                            color: Colors.amber.withValues(alpha: 0.15),
                                             borderRadius: BorderRadius.circular(8),
                                             border: Border.all(color: Colors.amber.shade700, width: 1),
                                           ),

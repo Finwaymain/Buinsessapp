@@ -80,7 +80,7 @@ class VehicleInfoController extends GetxController {
       } else {
         isLoading.value = false;
         ShowToastDialog.closeLoader();
-        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
+        ShowToastDialog.showToast('Something want wrong. Please try again later');
         throw Exception('Failed to load album');
       }
     } on TimeoutException catch (e) {
@@ -142,7 +142,7 @@ class VehicleInfoController extends GetxController {
         return VehicleRegisterModel.fromJson(responseBody);
       } else {
         ShowToastDialog.closeLoader();
-        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
+        ShowToastDialog.showToast('Something want wrong. Please try again later');
         throw Exception('Failed to load album');
       }
     } on TimeoutException catch (e) {
@@ -201,16 +201,13 @@ class VehicleInfoController extends GetxController {
         }
         
         validCategoryIds.value = vehicleCategoryList.map((e) => e.id).join(",");
-        if (vehicleCategoryList.isNotEmpty) {
-          selectedCategoryID.value = vehicleCategoryList.first.id.toString();
-        }
 
         update();
         ShowToastDialog.closeLoader();
         return VehicleData.fromJson(responseBody);
       } else {
         ShowToastDialog.closeLoader();
-        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
+        ShowToastDialog.showToast('Something want wrong. Please try again later');
       }
     } on TimeoutException catch (e) {
       ShowToastDialog.closeLoader();
@@ -253,7 +250,7 @@ class VehicleInfoController extends GetxController {
         ShowToastDialog.closeLoader();
       } else {
         ShowToastDialog.closeLoader();
-        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
+        ShowToastDialog.showToast('Something want wrong. Please try again later');
       }
     } on TimeoutException catch (e) {
       ShowToastDialog.closeLoader();
@@ -294,7 +291,7 @@ class VehicleInfoController extends GetxController {
         ShowToastDialog.closeLoader();
       } else {
         ShowToastDialog.closeLoader();
-        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
+        ShowToastDialog.showToast('Something want wrong. Please try again later');
         throw Exception('Failed to load album');
       }
     } on TimeoutException catch (e) {
@@ -337,7 +334,7 @@ class VehicleInfoController extends GetxController {
         ShowToastDialog.closeLoader();
       } else {
         ShowToastDialog.closeLoader();
-        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
+        ShowToastDialog.showToast('Something want wrong. Please try again later');
         throw Exception('Failed to load album');
       }
     } on TimeoutException catch (e) {

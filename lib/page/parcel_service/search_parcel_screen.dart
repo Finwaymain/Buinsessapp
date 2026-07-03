@@ -4,7 +4,6 @@ import 'package:cabme_driver/constant/show_toast_dialog.dart';
 import 'package:cabme_driver/controller/dash_board_controller.dart';
 import 'package:cabme_driver/controller/parcel_service_controller.dart';
 import 'package:cabme_driver/model/parcel_model.dart';
-import 'package:cabme_driver/page/parcel_service/all_parcel_screen.dart';
 import 'package:cabme_driver/page/parcel_service/parcel_console_screen.dart';
 import 'package:cabme_driver/page/parcel_service/parcel_osm_route_view_screen.dart';
 import 'package:cabme_driver/page/parcel_service/parcel_route_view_screen.dart';

@@ -13,7 +13,6 @@ import 'package:cabme_driver/page/MainDashBoard/screen/main_dashboard.dart';
 import 'package:cabme_driver/page/chats_screen/conversation_screen.dart';
 import 'package:cabme_driver/page/features/SmartValue/AddPerson/controller/add_user_controller.dart';
 import 'package:cabme_driver/page/features/SmartValue/MPinChange/controller/mpin_change_controller.dart';
-import 'package:cabme_driver/page/subscription_plan_screen/subscription_plan_screen.dart';
 import 'package:cabme_driver/service/api.dart';
 import 'package:cabme_driver/service/localization_service.dart';
 import 'package:cabme_driver/themes/styles.dart';

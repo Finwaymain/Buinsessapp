@@ -6,7 +6,6 @@ import 'package:cabme_driver/service/api.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:cabme_driver/controller/auth_otp_controller.dart';
-import 'package:cabme_driver/page/auth_screens/vehicle_info_screen.dart';
 
 class DriverCategoryController extends GetxController {
   RxList<UserCategoryData> parentCategories = <UserCategoryData>[].obs;
@@ -68,10 +67,10 @@ class DriverCategoryController extends GetxController {
     }
   }
 
-  Future<void> saveCategory() async {
+  Future<bool> saveCategory() async {
     if (selectedParentCategories.isEmpty) {
       ShowToastDialog.showToast("Please select at least one Category");
-      return;
+      return false;
     }
 
     // Verify each selected parent has a subcategory selected
@@ -79,7 +78,7 @@ class DriverCategoryController extends GetxController {
       if (parent.subcategories != null && parent.subcategories!.isNotEmpty) {
         if (!selectedSubCategories.containsKey(parent.id.toString())) {
           ShowToastDialog.showToast("Please select a subcategory for ${parent.title}");
-          return;
+          return false;
         }
       }
     }
@@ -103,13 +102,7 @@ class DriverCategoryController extends GetxController {
         ? Get.find<AuthOtpController>()
         : Get.put(AuthOtpController());
     
-    // In actual implementation, backend updateDriverCategory should take finalSelection
-    final updatedUser = await authController.updateDriverCategory(primaryCategoryId);
-    
-    if (updatedUser != null) {
-      // ShowToastDialog.showToast("Category updated successfully!");
-      // Don't navigate to vehicle info immediately, we'll navigate to Document Selection UI next.
-      // We will create the Document UI in step 2.
-    }
+    final updatedUser = await authController.updateDriverCategory(primaryCategoryId, categories: finalSelection);
+    return updatedUser != null;
   }
 }

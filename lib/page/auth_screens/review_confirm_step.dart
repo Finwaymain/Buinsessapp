@@ -1,3 +1,4 @@
+import 'package:cabme_driver/constant/show_toast_dialog.dart';
 import 'package:cabme_driver/controller/driver_category_controller.dart';
 import 'package:cabme_driver/page/auth_screens/vehicle_info_screen.dart';
 import 'package:cabme_driver/page/MainDashBoard/screen/main_dashboard.dart' as cabme;
@@ -9,7 +10,7 @@ import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
 class ReviewConfirmStep extends StatelessWidget {
-  const ReviewConfirmStep({Key? key}) : super(key: key);
+  const ReviewConfirmStep({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +75,7 @@ class ReviewConfirmStep extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: isDark ? AppThemeData.grey100Dark : AppThemeData.primary50,
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: AppThemeData.primary200.withOpacity(0.3)),
+                            border: Border.all(color: AppThemeData.primary200.withValues(alpha: 0.3)),
                           ),
                           child: Row(
                             children: [
@@ -117,10 +118,13 @@ class ReviewConfirmStep extends StatelessWidget {
                     btnColor: AppThemeData.primary200,
                     txtColor: Colors.white,
                     onPress: () async {
-                       // 1. Submit categories to backend using the controller
-                       await controller.saveCategory();
-                       // 2. Navigate to dashboard
-                       Get.offAll(() => cabme.MainDashboard());
+                       ShowToastDialog.showLoader("Saving registration details...".tr);
+                       bool success = await controller.saveCategory();
+                       ShowToastDialog.closeLoader();
+                       if (success) {
+                         ShowToastDialog.showToast("Registration completed successfully! Awaiting administrator approval.".tr);
+                         Get.offAll(() => const cabme.MainDashboard());
+                       }
                     },
                   ),
                   const SizedBox(height: 24),

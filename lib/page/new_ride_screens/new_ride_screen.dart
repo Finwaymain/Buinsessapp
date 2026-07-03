@@ -1,11 +1,9 @@
-import 'dart:convert';
 
 import 'package:cabme_driver/constant/constant.dart';
 import 'package:cabme_driver/constant/show_toast_dialog.dart';
 import 'package:cabme_driver/controller/dash_board_controller.dart';
 import 'package:cabme_driver/controller/new_ride_controller.dart';
 import 'package:cabme_driver/model/ride_model.dart';
-import 'package:cabme_driver/model/user_model.dart';
 import 'package:cabme_driver/page/complaint/add_complaint_screen.dart';
 import 'package:cabme_driver/page/completed/trip_history_screen.dart';
 import 'package:cabme_driver/page/create_ride/create_osm_ride_screen.dart';

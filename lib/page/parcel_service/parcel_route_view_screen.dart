@@ -3,7 +3,6 @@ import 'package:cabme_driver/constant/constant.dart';
 import 'package:cabme_driver/constant/show_toast_dialog.dart';
 import 'package:cabme_driver/controller/dash_board_controller.dart';
 import 'package:cabme_driver/controller/parcel_details_controller.dart';
-import 'package:cabme_driver/model/driver_location_update.dart';
 import 'package:cabme_driver/model/parcel_model.dart';
 import 'package:cabme_driver/model/parcel_details_model.dart';
 import 'package:cabme_driver/themes/button_them.dart';

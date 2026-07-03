@@ -268,13 +268,13 @@ class _ParcelConsoleScreenState extends State<ParcelConsoleScreen> with SingleTi
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 10,
             offset: const Offset(0, 4),
           )
         ],
         border: Border.all(
-          color: isDark ? AppThemeData.grey200Dark.withOpacity(0.5) : AppThemeData.grey200,
+          color: isDark ? AppThemeData.grey200Dark.withValues(alpha: 0.5) : AppThemeData.grey200,
           width: 1,
         ),
       ),
@@ -285,7 +285,7 @@ class _ParcelConsoleScreenState extends State<ParcelConsoleScreen> with SingleTi
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppThemeData.primary200.withOpacity(0.1),
+              color: AppThemeData.primary200.withValues(alpha: 0.1),
               borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
             ),
             child: Row(
@@ -574,13 +574,13 @@ class _ParcelConsoleScreenState extends State<ParcelConsoleScreen> with SingleTi
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 6,
               offset: const Offset(0, 2),
             )
           ],
           border: Border.all(
-            color: isDarkMode ? AppThemeData.grey200Dark.withOpacity(0.3) : AppThemeData.grey200,
+            color: isDarkMode ? AppThemeData.grey200Dark.withValues(alpha: 0.3) : AppThemeData.grey200,
             width: 1,
           ),
         ),
@@ -768,7 +768,7 @@ class _ScanningRadarState extends State<ScanningRadar> with SingleTickerProvider
   Widget build(BuildContext context) {
     final themeChange = Provider.of<DarkThemeProvider>(context);
     final isDark = themeChange.getThem();
-    final baseColor = AppThemeData.primary200.withOpacity(0.12);
+    final baseColor = AppThemeData.primary200.withValues(alpha: 0.12);
 
     return Center(
       child: Stack(
@@ -786,9 +786,9 @@ class _ScanningRadarState extends State<ScanningRadar> with SingleTickerProvider
                   height: size,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: baseColor.withOpacity(opacity),
+                    color: baseColor.withValues(alpha: opacity),
                     border: Border.all(
-                      color: AppThemeData.primary200.withOpacity(opacity * 0.4),
+                      color: AppThemeData.primary200.withValues(alpha: opacity * 0.4),
                       width: 1.5,
                     ),
                   ),
@@ -804,7 +804,7 @@ class _ScanningRadarState extends State<ScanningRadar> with SingleTickerProvider
               color: AppThemeData.primary200,
               boxShadow: [
                 BoxShadow(
-                  color: AppThemeData.primary200.withOpacity(0.3),
+                  color: AppThemeData.primary200.withValues(alpha: 0.3),
                   blurRadius: 12,
                   spreadRadius: 2,
                 )

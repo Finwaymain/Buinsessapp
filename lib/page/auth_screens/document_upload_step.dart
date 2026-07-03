@@ -15,7 +15,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 class DocumentUploadStep extends StatelessWidget {
-  const DocumentUploadStep({Key? key}) : super(key: key);
+  const DocumentUploadStep({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -84,11 +84,16 @@ class DocumentUploadStep extends StatelessWidget {
                             bool allUploaded = controller.documentList.every((d) => 
                               d.documentPath != null && d.documentPath!.isNotEmpty
                             );
+                            bool anyDisapproved = controller.documentList.any((d) => 
+                              d.documentStatus == "Disapprove" || d.documentStatus == "Disapproved"
+                            );
                             
-                            if (allUploaded) {
-                               Get.to(() => const ReviewConfirmStep(), transition: Transition.rightToLeft);
+                            if (!allUploaded) {
+                               ShowToastDialog.showToast("Please upload all required documents to proceed.".tr);
+                            } else if (anyDisapproved) {
+                               ShowToastDialog.showToast("Please re-upload disapproved documents to proceed.".tr);
                             } else {
-                               ShowToastDialog.showToast("Please upload all required documents to proceed.");
+                               Get.to(() => const ReviewConfirmStep(), transition: Transition.rightToLeft);
                             }
                           },
                         ),
@@ -105,6 +110,8 @@ class DocumentUploadStep extends StatelessWidget {
   Widget _buildDocCard(BuildContext context, DocumentStatusController controller, UploadedDocumentData doc, bool isDark, Color labelColor, Color hintColor) {
     bool isUploaded = doc.documentPath != null && doc.documentPath!.isNotEmpty;
     bool isPending = doc.documentStatus == "Pending";
+    bool isApproved = doc.documentStatus == "Approved";
+    bool isDisapproved = doc.documentStatus == "Disapprove" || doc.documentStatus == "Disapproved";
     
     return Container(
       padding: const EdgeInsets.all(16),
@@ -129,26 +136,52 @@ class DocumentUploadStep extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      isUploaded ? (isPending ? "Pending Verification" : "Verified") : "Required",
+                      !isUploaded 
+                          ? "Required".tr 
+                          : (isPending 
+                              ? "Pending Verification".tr 
+                              : (isApproved ? "Verified".tr : "Disapproved".tr)),
                       style: TextStyle(
                         fontSize: 12, 
                         fontFamily: AppThemeData.medium,
-                        color: isUploaded ? (isPending ? Colors.amber.shade700 : Colors.green) : Colors.red,
+                        color: !isUploaded 
+                            ? Colors.red 
+                            : (isPending 
+                                ? Colors.amber.shade700 
+                                : (isApproved ? Colors.green : Colors.red.shade700)),
                       ),
                     ),
+                    if (isDisapproved && doc.comment != null && doc.comment!.isNotEmpty && doc.comment != "null") ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        "${"Reason:".tr} ${doc.comment}",
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontFamily: AppThemeData.medium,
+                          color: Colors.red.shade700,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
-              if (!isUploaded)
+              if (!isUploaded || isDisapproved)
                 InkWell(
                   onTap: () => _showPicker(context, controller, doc),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
-                      color: AppThemeData.primary50,
+                      color: isDisapproved ? Colors.red.shade50 : AppThemeData.primary50,
                       borderRadius: BorderRadius.circular(30),
                     ),
-                    child: Text('Upload', style: TextStyle(color: AppThemeData.primary200, fontFamily: AppThemeData.semiBold, fontSize: 13)),
+                    child: Text(
+                      isDisapproved ? 'Re-upload'.tr : 'Upload'.tr, 
+                      style: TextStyle(
+                        color: isDisapproved ? Colors.red.shade700 : AppThemeData.primary200, 
+                        fontFamily: AppThemeData.semiBold, 
+                        fontSize: 13
+                      ),
+                    ),
                   ),
                 ),
             ],
@@ -176,7 +209,7 @@ class DocumentUploadStep extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.6),
+                        color: Colors.black.withValues(alpha: 0.6),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.edit, color: Colors.white, size: 16),

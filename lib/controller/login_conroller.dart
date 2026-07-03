@@ -290,11 +290,6 @@ class LoginController extends GetxController {
           return null;
         });
 
-        // Return null if user cancelled the sign-in
-        if (googleUser == null) {
-          return null;
-        }
-
         // Request authorization for the scopes needed for Firebase
         final GoogleSignInClientAuthorization authorization =
         await googleUser.authorizationClient.authorizeScopes([
@@ -302,11 +297,6 @@ class LoginController extends GetxController {
           'email',
           'profile'
         ]);
-
-        if (authorization == null) {
-          ShowToastDialog.showToast("Failed to get authorization");
-          return null;
-        }
 
         // For Firebase, we might need to get the ID token differently
         // Let's try using server authorization which should provide both tokens

@@ -1,6 +1,5 @@
 import 'dart:developer';
 
-import 'package:cabme_driver/constant/constant.dart';
 import 'package:cabme_driver/constant/show_toast_dialog.dart';
 import 'package:cabme_driver/controller/vehicle_info_controller.dart';
 import 'package:cabme_driver/page/auth_screens/document_upload_step.dart' as cabme_doc;
@@ -13,7 +12,6 @@ import 'package:cabme_driver/themes/custom_widget.dart';
 import 'package:cabme_driver/themes/responsive.dart';
 import 'package:cabme_driver/themes/text_field_them.dart';
 import 'package:cabme_driver/utils/dark_theme_provider.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';

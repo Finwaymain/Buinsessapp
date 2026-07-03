@@ -99,7 +99,7 @@ class DriverCategorySelectionScreen extends StatelessWidget {
                                             border: Border.all(
                                               color: isSelected
                                                   ? AppThemeData.primary200
-                                                  : (isActive ? (isDark ? AppThemeData.grey200Dark : AppThemeData.grey200) : AppThemeData.grey400.withOpacity(0.3)),
+                                                  : (isActive ? (isDark ? AppThemeData.grey200Dark : AppThemeData.grey200) : AppThemeData.grey400.withValues(alpha: 0.3)),
                                             ),
                                             borderRadius: BorderRadius.circular(30),
                                           ),
@@ -111,7 +111,7 @@ class DriverCategorySelectionScreen extends StatelessWidget {
                                                 style: TextStyle(
                                                   color: isSelected
                                                       ? Colors.white
-                                                      : (isActive ? labelColor : hintColor.withOpacity(0.5)),
+                                                      : (isActive ? labelColor : hintColor.withValues(alpha: 0.5)),
                                                   fontFamily: isSelected ? AppThemeData.semiBold : AppThemeData.medium,
                                                 ),
                                               ),
@@ -184,7 +184,7 @@ class DriverCategorySelectionScreen extends StatelessWidget {
                                         const SizedBox(height: 24),
                                       ],
                                     );
-                                  }).toList(),
+                                  }),
                                 ],
                               ),
                             ),
@@ -220,7 +220,12 @@ class DriverCategorySelectionScreen extends StatelessWidget {
                               if (role.isNotEmpty) {
                                 await Preferences.setString("selected_role", role);
                               }
-                              Get.to(() => const VehicleInfoScreen(), transition: Transition.rightToLeft);
+                              ShowToastDialog.showLoader("Saving categories...".tr);
+                              bool success = await controller.saveCategory();
+                              ShowToastDialog.closeLoader();
+                              if (success) {
+                                Get.to(() => const VehicleInfoScreen(), transition: Transition.rightToLeft);
+                              }
                             },
                           ),
                           const SizedBox(height: 24),
