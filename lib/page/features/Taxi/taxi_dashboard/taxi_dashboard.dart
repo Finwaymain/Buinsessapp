@@ -383,8 +383,8 @@ class SubscriptionPlanWidget extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(top: 10),
                     child: Text(
-                      userModel.userData!.adminCommission != null
-                          ? "${userModel.userData!.adminCommission!.type == 'Percentage' ? "${userModel.userData!.adminCommission!.value} %" : "${Constant().amountShow(amount: userModel.userData!.adminCommission!.value)} Flat"} ${"admin commission will be charged from your account after the ride/parcel booking is completed".tr}"
+                      userModel.userData?.adminCommission != null
+                          ? "${userModel.userData?.adminCommission?.type == 'Percentage' ? "${userModel.userData?.adminCommission?.value} %" : "${Constant().amountShow(amount: userModel.userData?.adminCommission?.value)} Flat"} ${"admin commission will be charged from your account after the ride/parcel booking is completed".tr}"
                           : "${Constant.adminCommission?.type == 'Percentage' ? "${Constant.adminCommission?.value} %" : "${Constant().amountShow(amount: Constant.adminCommission?.value)} Flat"} ${"admin commission will be charged from your account after the ride/parcel booking is completed".tr}", //${"admin commission will be charged from customer billing booking and the admin charge will be earned after the order is accepted by the restaurant.".tr}",
                       style: TextStyle(
                         fontFamily: AppThemeData.medium,
