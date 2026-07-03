@@ -13,26 +13,26 @@ class VehicleRegisterModel {
     required this.success,
     this.error,
     required this.message,
-    required this.data,
+    this.data,
   });
 
   String success;
   dynamic error;
   String message;
-  Data data;
+  Data? data;
 
   factory VehicleRegisterModel.fromJson(Map<String, dynamic> json) => VehicleRegisterModel(
         success: json["success"].toString(),
         error: json["error"].toString(),
-        message: json["message"].toString(),
-        data: Data.fromJson(json["data"]),
+        message: json["message"]?.toString() ?? "",
+        data: json["data"] != null ? Data.fromJson(json["data"]) : null,
       );
 
   Map<String, dynamic> toJson() => {
         "success": success,
         "error": error,
         "message": message,
-        "data": data.toJson(),
+        "data": data?.toJson(),
       };
 }
 

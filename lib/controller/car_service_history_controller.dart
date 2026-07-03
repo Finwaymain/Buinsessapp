@@ -61,7 +61,7 @@ class CarServiceHistoryController extends GetxController {
         return response;
       } else {
         ShowToastDialog.closeLoader();
-        ShowToastDialog.showToast('Something want wrong. Please try again later');
+        ShowToastDialog.showToast(response['error'] ?? 'Something went wrong. Please try again later');
         throw Exception('Failed to load album');
       }
     } on TimeoutException catch (e) {
@@ -99,7 +99,7 @@ class CarServiceHistoryController extends GetxController {
       } else {
         isLoading.value = false;
         ShowToastDialog.closeLoader();
-        ShowToastDialog.showToast('Something want wrong. Please try again later');
+        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
         throw Exception('Failed to load album');
       }
     } on TimeoutException catch (e) {

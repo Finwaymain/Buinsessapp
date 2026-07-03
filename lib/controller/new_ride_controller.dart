@@ -164,7 +164,7 @@ class NewRideController extends GetxController with WidgetsBindingObserver {
         return responseBody;
       } else {
         ShowToastDialog.closeLoader();
-        ShowToastDialog.showToast('Something want wrong. Please try again later');
+        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
         throw Exception('Failed to load album');
       }
     } on TimeoutException catch (e) {
@@ -202,7 +202,7 @@ class NewRideController extends GetxController with WidgetsBindingObserver {
         ShowToastDialog.showToast(responseBody['error']);
       } else {
         ShowToastDialog.closeLoader();
-        ShowToastDialog.showToast('Something want wrong. Please try again later');
+        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
         throw Exception('Failed to load album');
       }
     } on TimeoutException catch (e) {
@@ -238,7 +238,7 @@ class NewRideController extends GetxController with WidgetsBindingObserver {
         ShowToastDialog.showToast(responseBody['error']);
       } else {
         ShowToastDialog.closeLoader();
-        ShowToastDialog.showToast('Something want wrong. Please try again later');
+        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
         throw Exception('Failed to load album');
       }
     } on TimeoutException catch (e) {
@@ -275,7 +275,7 @@ class NewRideController extends GetxController with WidgetsBindingObserver {
         }
       } else {
         ShowToastDialog.closeLoader();
-        ShowToastDialog.showToast('Something want wrong. Please try again later');
+        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
         throw Exception('Failed to load album');
       }
     } on TimeoutException catch (e) {
@@ -314,7 +314,7 @@ class NewRideController extends GetxController with WidgetsBindingObserver {
         ShowToastDialog.showToast(responseBody['error']);
       } else {
         ShowToastDialog.closeLoader();
-        ShowToastDialog.showToast('Something want wrong. Please try again later');
+        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
         throw Exception('Failed to load album');
       }
     } on TimeoutException catch (e) {
@@ -351,7 +351,7 @@ class NewRideController extends GetxController with WidgetsBindingObserver {
         ShowToastDialog.showToast(responseBody['error'].toString());
       } else {
         ShowToastDialog.closeLoader();
-        ShowToastDialog.showToast('Something want wrong. Please try again later');
+        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
         throw Exception('Failed to load album');
       }
     } on TimeoutException catch (e) {
@@ -412,7 +412,7 @@ class NewRideController extends GetxController with WidgetsBindingObserver {
         ShowToastDialog.showToast(responseBody['error']);
       } else {
         // ShowToastDialog.closeLoader();
-        ShowToastDialog.showToast('Something want wrong. Please try again later');
+        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
         throw Exception('Failed to load album');
       }
     } on TimeoutException catch (e) {

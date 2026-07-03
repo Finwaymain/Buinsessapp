@@ -1,13 +1,8 @@
-import 'dart:convert';
-import 'lib/model/model.dart';
-
 void main() {
-  var jsonResponse = {
-    "success": "success",
-    "data": [
-      {"id": "1", "name": "Splendor Plus", "vehicle_type_id": "1"}
-    ]
-  };
-  var model = Model.fromJson(jsonResponse);
-  print('vehicleTypeId: ${model.data![0].vehicleTypeId}');
+  try {
+    DateTime.parse("2025-05-29 08:11:13");
+    print("Success");
+  } catch (e) {
+    print("Failed: $e");
+  }
 }

@@ -115,7 +115,7 @@ class SettingsController extends GetxController {
         isLoading.value = false;
       } else {
         ShowToastDialog.closeLoader();
-        ShowToastDialog.showToast('Something want wrong. Please try again later');
+        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
         isLoading.value = false;
         throw Exception('Failed to load album');
       }

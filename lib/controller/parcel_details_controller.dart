@@ -48,7 +48,7 @@ class ParcelDetailsController extends GetxController {
         ShowToastDialog.showToast(responseBody['error']);
       } else {
         ShowToastDialog.closeLoader();
-        ShowToastDialog.showToast('Something want wrong. Please try again later');
+        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
         throw Exception('Failed to load album');
       }
     } on TimeoutException catch (e) {
@@ -85,7 +85,7 @@ class ParcelDetailsController extends GetxController {
         }
       } else {
         ShowToastDialog.closeLoader();
-        ShowToastDialog.showToast('Something want wrong. Please try again later');
+        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
         throw Exception('Failed to load album');
       }
     } on TimeoutException catch (e) {
@@ -122,7 +122,7 @@ class ParcelDetailsController extends GetxController {
         ShowToastDialog.showToast(responseBody['error']);
       } else {
         ShowToastDialog.closeLoader();
-        ShowToastDialog.showToast('Something want wrong. Please try again later');
+        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
         throw Exception('Failed to load album');
       }
     } on TimeoutException catch (e) {
@@ -160,7 +160,7 @@ class ParcelDetailsController extends GetxController {
         ShowToastDialog.showToast(responseBody['error'].toString());
       } else {
         ShowToastDialog.closeLoader();
-        ShowToastDialog.showToast('Something want wrong. Please try again later');
+        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
         throw Exception('Failed to load album');
       }
     } on TimeoutException catch (e) {
@@ -220,7 +220,7 @@ class ParcelDetailsController extends GetxController {
         ShowToastDialog.showToast(responseBody['error']);
       } else {
         // ShowToastDialog.closeLoader();
-        ShowToastDialog.showToast('Something want wrong. Please try again later');
+        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
         throw Exception('Failed to load album');
       }
     } on TimeoutException catch (e) {

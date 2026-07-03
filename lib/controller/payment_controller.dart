@@ -84,7 +84,7 @@ class PaymentController extends GetxController {
         }
       } else if (response.statusCode == 200 && responseBody['success'] == "Failed") {
       } else {
-        ShowToastDialog.showToast('Something want wrong. Please try again later');
+        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
         throw Exception('Failed to load album');
       }
     } on TimeoutException catch (e) {

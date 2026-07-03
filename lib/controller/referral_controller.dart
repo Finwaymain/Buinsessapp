@@ -40,7 +40,7 @@ class ReferralController extends GetxController {
         isLoading.value = false;
       } else {
         isLoading.value = false;
-        ShowToastDialog.showToast('Something want wrong. Please try again later');
+        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
         throw Exception('Failed to load album');
       }
     } on TimeoutException catch (e) {

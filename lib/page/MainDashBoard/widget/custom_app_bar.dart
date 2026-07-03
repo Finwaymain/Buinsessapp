@@ -95,6 +95,10 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                                 .userModel.value.userData!.statutVehicule ==
                             "no") {
                           showAlertDialog(context, "vehicleInformation");
+                        } else if (controllerDashBoard.userModel.value.userData!.isVerified == "0") {
+                          showAlertDialog(context, "document");
+                        } else if (controllerDashBoard.userModel.value.userData!.statut == 'no') {
+                          ShowToastDialog.showToast("Your account is not activated, please contact to administartor");
                         } else {
                           ShowToastDialog.showLoader("Please wait");
 

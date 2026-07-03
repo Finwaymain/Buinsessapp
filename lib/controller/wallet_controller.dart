@@ -146,7 +146,7 @@ class WalletController extends GetxController with GetSingleTickerProviderStateM
         ShowToastDialog.showToast(responseBody['error'].toString());
       } else {
         ShowToastDialog.closeLoader();
-        ShowToastDialog.showToast('Something want wrong. Please try again later');
+        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
         throw Exception('Failed to load album');
       }
     } on TimeoutException catch (e) {
@@ -192,7 +192,7 @@ class WalletController extends GetxController with GetSingleTickerProviderStateM
         isLoading.value = false;
       } else {
         isLoading.value = false;
-        ShowToastDialog.showToast('Something want wrong. Please try again later');
+        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
         throw Exception('Failed to load album');
       }
     } on TimeoutException catch (e) {
@@ -230,7 +230,7 @@ class WalletController extends GetxController with GetSingleTickerProviderStateM
         return null;
       } else {
         ShowToastDialog.closeLoader();
-        ShowToastDialog.showToast('Something want wrong. Please try again later');
+        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
         throw Exception('Failed to load album');
       }
     } on TimeoutException catch (e) {
@@ -275,7 +275,7 @@ class WalletController extends GetxController with GetSingleTickerProviderStateM
         ShowToastDialog.closeLoader();
       } else {
         ShowToastDialog.closeLoader();
-        ShowToastDialog.showToast('Something want wrong. Please try again later');
+        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
         throw Exception('Failed to load album');
       }
     } on TimeoutException catch (e) {
@@ -371,7 +371,7 @@ class WalletController extends GetxController with GetSingleTickerProviderStateM
         isLoading.value = false;
       } else {
         isLoading.value = false;
-        ShowToastDialog.showToast('Something want wrong. Please try again later');
+        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
         throw Exception('Failed to load album');
       }
     } on TimeoutException catch (e) {
@@ -423,7 +423,7 @@ class WalletController extends GetxController with GetSingleTickerProviderStateM
         isLoading.value = false;
       } else {
         isLoading.value = false;
-        ShowToastDialog.showToast('Something want wrong. Please try again later');
+        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
         throw Exception('Failed to load album');
       }
     } on TimeoutException catch (e) {
@@ -511,7 +511,7 @@ class WalletController extends GetxController with GetSingleTickerProviderStateM
         walletAmount.value = responseBody['data']['amount'] != null ? double.parse(responseBody['data']['amount'].toString()) : 0;
       } else if (response.statusCode == 200 && responseBody['success'] == "failed") {
       } else {
-        ShowToastDialog.showToast('Something want wrong. Please try again later');
+        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
         throw Exception('Failed to load album');
       }
     } on TimeoutException catch (e) {

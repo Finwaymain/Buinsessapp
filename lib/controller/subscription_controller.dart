@@ -157,7 +157,7 @@ class SubscriptionController extends GetxController {
         ShowToastDialog.showToast(responseBody['error']);
       } else {
         ShowToastDialog.closeLoader();
-        ShowToastDialog.showToast('Something want wrong. Please try again later');
+        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
         throw Exception('Failed to load album');
       }
     } on TimeoutException catch (e) {
@@ -270,9 +270,9 @@ class SubscriptionController extends GetxController {
       if (response.statusCode == 200 && responseBody['status'] == true) {
         return PayStackUrlModel.fromJson(responseBody);
       } else if (response.statusCode == 200 && responseBody['status'] == null) {
-        ShowToastDialog.showToast('Something want wrong. Please try again later');
+        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
       } else {
-        ShowToastDialog.showToast('Something want wrong. Please try again later');
+        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
       }
     } on TimeoutException catch (e) {
       ShowToastDialog.showToast(e.message.toString());
@@ -358,9 +358,9 @@ class SubscriptionController extends GetxController {
       if (response.statusCode == 200 && responseBody['id'] != null) {
         return CreateRazorPayOrderModel.fromJson(responseBody);
       } else if (response.statusCode == 200 && responseBody['id'] == null) {
-        ShowToastDialog.showToast('Something want wrong. Please try again later');
+        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
       } else {
-        ShowToastDialog.showToast('Something want wrong. Please try again later');
+        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
         throw Exception('Failed to load album');
       }
     } on TimeoutException catch (e) {
