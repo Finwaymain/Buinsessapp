@@ -91,14 +91,11 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                       inactiveTrackColor: AppThemeData.warning200,
                       onChanged: (value) async {
                         await controllerDashBoard.getUsrData();
-                        if (controllerDashBoard
-                                .userModel.value.userData!.statutVehicule ==
-                            "no") {
+                        final userData = controllerDashBoard.userModel.value.userData!;
+                        if (userData.statutVehicule == "no") {
                           showAlertDialog(context, "vehicleInformation");
-                        } else if (controllerDashBoard.userModel.value.userData!.isVerified == "0") {
-                          showAlertDialog(context, "document");
-                        } else if (controllerDashBoard.userModel.value.userData!.statut == 'no') {
-                          ShowToastDialog.showToast("Your account is not activated, please contact to administartor");
+                        } else if (userData.isVerified == "0" || userData.isVerified == "false" || userData.isVerified == false || userData.isVerified == null) {
+                          showAlertDialog(context, "pendingApproval");
                         } else {
                           ShowToastDialog.showLoader("Please wait");
 

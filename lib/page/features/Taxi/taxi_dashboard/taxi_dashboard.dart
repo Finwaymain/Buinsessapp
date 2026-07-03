@@ -413,51 +413,69 @@ Future<void> showAlertDialog(BuildContext context, String type) async {
         content: SingleChildScrollView(
           child: ListBody(
             children: <Widget>[
-              Text('To start earning with Fiinway you need to fill in your information'.tr),
+              Text(type == "pendingApproval" 
+                  ? 'Your account is pending approval from the admin.'.tr 
+                  : 'To start earning with Fiinway you need to fill in your information'.tr),
             ],
           ),
         ),
         actions: <Widget>[
-          TextButton(
-            child: Text(
-              'No'.tr,
-              style: TextStyle(
-                fontSize: 16,
-                fontFamily: AppThemeData.regular,
-                color: AppThemeData.primary200,
+          if (type == "pendingApproval")
+            TextButton(
+              child: Text(
+                'OK'.tr,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontFamily: AppThemeData.regular,
+                  color: AppThemeData.primary200,
+                ),
               ),
-            ),
-            onPressed: () {
-              Get.back();
-            },
-          ),
-          TextButton(
-            child: Text(
-              'Yes'.tr,
-              style: TextStyle(
-                fontSize: 16,
-                fontFamily: AppThemeData.regular,
-                color: AppThemeData.primary200,
+              onPressed: () {
+                Get.back();
+              },
+            )
+          else ...[
+            TextButton(
+              child: Text(
+                'No'.tr,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontFamily: AppThemeData.regular,
+                  color: AppThemeData.primary200,
+                ),
               ),
+              onPressed: () {
+                Get.back();
+              },
             ),
-            onPressed: () {
-              if (type == "document") {
-                Get.back();
-                Get.to(() => DocumentStatusScreen());
-              } else {
-                Get.back();
-                final userModel = Constant.getUserData();
-                if (userModel.userData?.categoryId == null || 
-                    userModel.userData?.categoryId == 'null' || 
-                    userModel.userData?.categoryId == '' || 
-                    userModel.userData?.categoryId == '0') {
-                  Get.to(() => const cabme_cat.DriverCategorySelectionScreen());
+            TextButton(
+              child: Text(
+                'Yes'.tr,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontFamily: AppThemeData.regular,
+                  color: AppThemeData.primary200,
+                ),
+              ),
+              onPressed: () {
+                if (type == "document") {
+                  Get.back();
+                  Get.to(() => DocumentStatusScreen());
                 } else {
-                  Get.to(() => const VehicleInfoScreen());
+                  Get.back();
+                  final userModel = Constant.getUserData();
+                  if (userModel.userData?.categoryId == null || 
+                      userModel.userData?.categoryId == 'null' || 
+                      userModel.userData?.categoryId == '' || 
+                      userModel.userData?.categoryId == '0') {
+                    Get.to(() => const cabme_cat.DriverCategorySelectionScreen());
+                  } else {
+                    Get.to(() => const VehicleInfoScreen());
+                  }
                 }
-              }
-            },
-          ),
+              },
+            ),
+          ]
         ],
       );
     },
