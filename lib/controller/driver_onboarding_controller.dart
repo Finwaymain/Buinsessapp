@@ -331,14 +331,14 @@ class DriverOnboardingController extends GetxController {
         if (role.isNotEmpty) {
           final roleLower = role.toLowerCase();
           if (roleLower.contains("bike")) {
-            vehicleCategoryList = vehicleCategoryList.where((element) => element.libelle.toLowerCase() == "bike").toList();
+            vehicleCategoryList = vehicleCategoryList.where((element) => element.libelle?.toLowerCase() == "bike").toList();
           } else if (roleLower.contains("auto") || roleLower.contains("rickshaw")) {
-            vehicleCategoryList = vehicleCategoryList.where((element) => element.libelle.toLowerCase() == "auto").toList();
+            vehicleCategoryList = vehicleCategoryList.where((element) => element.libelle?.toLowerCase() == "auto").toList();
           } else if (roleLower.contains("pickup") || roleLower.contains("truck")) {
-            vehicleCategoryList = vehicleCategoryList.where((element) => element.libelle.toLowerCase() == "pickup").toList();
+            vehicleCategoryList = vehicleCategoryList.where((element) => element.libelle?.toLowerCase() == "pickup").toList();
           } else {
             List<String> cabCategories = ["mini", "sedan", "suv", "xl (6–7 seater)", "luxury", "premium xl (luxury mpv/suv)"];
-            vehicleCategoryList = vehicleCategoryList.where((element) => cabCategories.contains(element.libelle.toLowerCase())).toList();
+            vehicleCategoryList = vehicleCategoryList.where((element) => cabCategories.contains(element.libelle?.toLowerCase())).toList();
           }
         }
         validCategoryIds.value = vehicleCategoryList.map((e) => e.id).join(",");
