@@ -493,7 +493,10 @@ class DashBoardController extends GetxController {
     } else if (item.title == 'My Profile'.tr) {
       Get.to(MyProfileScreen());
     } else if (item.title == 'Update Categories'.tr) {
-      Get.to(() => const WebViewScreen(url: 'https://api.fiinway.com/onboarding/', title: 'Update Categories'));
+      String token = Preferences.getString(Preferences.accesstoken);
+      String driverId = Preferences.getInt(Preferences.userId).toString();
+      String finalUrl = 'https://api.fiinway.com/onboarding?accesstoken=$token&driver_id=$driverId';
+      Get.to(() => WebViewScreen(url: finalUrl, title: 'Update Categories'));
     } else if (item.title == 'Change Password'.tr) {
       Get.to(ChangePasswordScreen());
     } else if (item.title == 'Refer a Friend'.tr) {

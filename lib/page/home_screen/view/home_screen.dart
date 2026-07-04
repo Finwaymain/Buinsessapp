@@ -296,7 +296,10 @@ class MainHomeScreen extends StatelessWidget {
                                     ),
                                     TextButton(
                                       onPressed: () {
-                                        Get.to(() => const WebViewScreen(url: 'https://api.fiinway.com/onboarding/', title: 'Documents'));
+                                        String token = controller.userModel.value.userData?.accesstoken ?? "";
+                                        String driverId = controller.userModel.value.userData?.id ?? "";
+                                        String finalUrl = 'https://api.fiinway.com/onboarding?accesstoken=$token&driver_id=$driverId';
+                                        Get.to(() => WebViewScreen(url: finalUrl, title: 'Documents'));
                                       },
                                       child: Text("Documents".tr, style: TextStyle(color: AppThemeData.warning200, fontFamily: AppThemeData.bold)),
                                     )

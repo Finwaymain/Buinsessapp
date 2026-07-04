@@ -9,6 +9,7 @@ import 'package:cabme_driver/model/user_model.dart';
 import 'package:cabme_driver/page/new_ride_screens/new_ride_screen.dart';
 import 'package:cabme_driver/page/subscription_plan_screen/subscription_plan_screen.dart';
 import 'package:cabme_driver/page/web_view_screen/web_view_screen.dart';
+import 'package:cabme_driver/utils/Preferences.dart';
 import 'package:cabme_driver/themes/constant_colors.dart';
 import 'package:cabme_driver/themes/responsive.dart';
 import 'package:cabme_driver/utils/dark_theme_provider.dart';
@@ -459,7 +460,10 @@ Future<void> showAlertDialog(BuildContext context, String type) async {
               ),
               onPressed: () {
                 Get.back();
-                Get.to(() => const WebViewScreen(url: 'https://api.fiinway.com/onboarding/', title: 'Onboarding'));
+                String token = Preferences.getString(Preferences.accesstoken);
+                String driverId = Preferences.getInt(Preferences.userId).toString();
+                String finalUrl = 'https://api.fiinway.com/onboarding?accesstoken=$token&driver_id=$driverId';
+                Get.to(() => WebViewScreen(url: finalUrl, title: 'Onboarding'));
               },
             ),
           ]
