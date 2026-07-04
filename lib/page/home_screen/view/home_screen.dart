@@ -203,27 +203,7 @@ class MainHomeScreen extends StatelessWidget {
                                       ],
                                     ),
                                   ),
-                                  // Dummy status switch (always on)
-                                  Column(
-                                    children: [
-                                      Text(
-                                        "Online",
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          fontFamily: AppThemeData.medium,
-                                          color: AppThemeData.success300,
-                                        ),
-                                      ),
-                                      Switch(
-                                        value: true,
-                                        onChanged: (bool value) {
-                                          // Dummy logic, kept ON by default
-                                        },
-                                        activeColor: AppThemeData.success300,
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(width: 8),
+
                                   GestureDetector(
                                     onTap: () {
                                       if (!Preferences.getBoolean(Preferences.isLogin)) {
