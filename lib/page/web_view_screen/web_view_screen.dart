@@ -4,6 +4,8 @@ import 'package:get/get.dart';
 import 'package:cabme_driver/themes/constant_colors.dart';
 import 'package:provider/provider.dart';
 import 'package:cabme_driver/utils/dark_theme_provider.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
+import 'package:file_picker/file_picker.dart';
 
 class WebViewScreen extends StatefulWidget {
   final String url;
@@ -23,7 +25,31 @@ class _WebViewScreenState extends State<WebViewScreen> {
   @override
   void initState() {
     super.initState();
-    controller = WebViewController()
+    
+    late final PlatformWebViewControllerCreationParams params;
+    if (WebViewPlatform.instance is AndroidWebViewPlatform) {
+      params = AndroidWebViewControllerCreationParams();
+    } else {
+      params = const PlatformWebViewControllerCreationParams();
+    }
+
+    controller = WebViewController.fromPlatformCreationParams(params);
+
+    if (controller.platform is AndroidWebViewController) {
+      AndroidWebViewController androidController = controller.platform as AndroidWebViewController;
+      androidController.setOnShowFileSelector((FileSelectorParams params) async {
+        FilePickerResult? result = await FilePicker.platform.pickFiles(
+          allowMultiple: params.mode == FileSelectorMode.openMultiple,
+          type: FileType.any,
+        );
+        if (result != null && result.files.isNotEmpty) {
+          return result.paths.where((path) => path != null).cast<String>().toList();
+        }
+        return [];
+      });
+    }
+
+    controller
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0x00000000))
       ..setNavigationDelegate(
