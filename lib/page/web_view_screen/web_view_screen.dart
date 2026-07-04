@@ -5,7 +5,7 @@ import 'package:cabme_driver/themes/constant_colors.dart';
 import 'package:provider/provider.dart';
 import 'package:cabme_driver/utils/dark_theme_provider.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
 
 class WebViewScreen extends StatefulWidget {
   final String url;
@@ -38,14 +38,51 @@ class _WebViewScreenState extends State<WebViewScreen> {
     if (controller.platform is AndroidWebViewController) {
       AndroidWebViewController androidController = controller.platform as AndroidWebViewController;
       androidController.setOnShowFileSelector((FileSelectorParams params) async {
-        FilePickerResult? result = await FilePicker.platform.pickFiles(
-          allowMultiple: params.mode == FileSelectorMode.openMultiple,
-          type: FileType.any,
+        final themeChange = Provider.of<DarkThemeProvider>(context, listen: false);
+        final isDark = themeChange.getThem();
+        
+        final List<String>? result = await showModalBottomSheet<List<String>>(
+          context: context,
+          backgroundColor: isDark ? AppThemeData.surface50Dark : AppThemeData.surface50,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          builder: (BuildContext bc) {
+            return SafeArea(
+              child: Wrap(
+                children: <Widget>[
+                  ListTile(
+                    leading: Icon(Icons.photo_library, color: isDark ? Colors.white : AppThemeData.grey900),
+                    title: Text('Photo Library', style: TextStyle(color: isDark ? Colors.white : AppThemeData.grey900, fontFamily: AppThemeData.medium)),
+                    onTap: () async {
+                      final ImagePicker picker = ImagePicker();
+                      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+                      if (image != null) {
+                        Navigator.of(context).pop([image.path]);
+                      } else {
+                        Navigator.of(context).pop(<String>[]);
+                      }
+                    }
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.photo_camera, color: isDark ? Colors.white : AppThemeData.grey900),
+                    title: Text('Camera', style: TextStyle(color: isDark ? Colors.white : AppThemeData.grey900, fontFamily: AppThemeData.medium)),
+                    onTap: () async {
+                      final ImagePicker picker = ImagePicker();
+                      final XFile? photo = await picker.pickImage(source: ImageSource.camera, imageQuality: 80);
+                      if (photo != null) {
+                        Navigator.of(context).pop([photo.path]);
+                      } else {
+                        Navigator.of(context).pop(<String>[]);
+                      }
+                    },
+                  ),
+                ],
+              ),
+            );
+          },
         );
-        if (result != null && result.files.isNotEmpty) {
-          return result.paths.where((path) => path != null).cast<String>().toList();
-        }
-        return [];
+        return result ?? [];
       });
     }
 
