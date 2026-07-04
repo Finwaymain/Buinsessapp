@@ -389,6 +389,9 @@ class AuthOtpController extends GetxController {
       await Preferences.setString(Preferences.user, jsonEncode(responseBody));
       await Preferences.setString(Preferences.accesstoken, model.userData!.accesstoken.toString());
       await Preferences.setString(Preferences.admincommission, (model.userData!.adminCommission ?? '0').toString());
+      if (model.userData!.categoryId != null && model.userData!.categoryId!.isNotEmpty) {
+        await Preferences.setString(Preferences.driverCategoryId, model.userData!.categoryId!);
+      }
       API.header['accesstoken'] = model.userData!.accesstoken.toString();
       await Preferences.setBoolean(Preferences.isLogin, true);
     }

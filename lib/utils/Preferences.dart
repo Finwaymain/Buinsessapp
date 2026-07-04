@@ -17,6 +17,7 @@ class Preferences {
   static const admincommissiontype = "admincommissiontype";
   static const paymentSetting = "paymentSetting";
   static const walletBalance = "walletBalance";
+  static const driverCategoryId = "driverCategoryId";
 
   static late SharedPreferences pref;
 

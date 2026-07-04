@@ -4,8 +4,7 @@ import 'package:cabme_driver/constant/constant.dart';
 import 'package:cabme_driver/controller/dash_board_controller.dart';
 import 'package:cabme_driver/controller/subscription_controller.dart';
 import 'package:cabme_driver/model/user_model.dart';
-import 'package:cabme_driver/page/auth_screens/vehicle_info_screen.dart';
-import 'package:cabme_driver/page/auth_screens/driver_category_selection_screen.dart' as cabme_cat;
+
 import 'package:cabme_driver/page/document_status/document_status_screen.dart';
 import 'package:cabme_driver/page/new_ride_screens/new_ride_screen.dart';
 import 'package:cabme_driver/page/subscription_plan_screen/subscription_plan_screen.dart';
@@ -463,15 +462,8 @@ Future<void> showAlertDialog(BuildContext context, String type) async {
                   Get.to(() => DocumentStatusScreen());
                 } else {
                   Get.back();
-                  final userModel = Constant.getUserData();
-                  if (userModel.userData?.categoryId == null || 
-                      userModel.userData?.categoryId == 'null' || 
-                      userModel.userData?.categoryId == '' || 
-                      userModel.userData?.categoryId == '0') {
-                    Get.to(() => const cabme_cat.DriverCategorySelectionScreen());
-                  } else {
-                    Get.to(() => const VehicleInfoScreen());
-                  }
+                  // Driver onboarding has been moved to the web dashboard.
+                  Get.snackbar("Information".tr, "Please complete your onboarding on the web panel.".tr);
                 }
               },
             ),

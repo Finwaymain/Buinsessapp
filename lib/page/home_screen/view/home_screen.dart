@@ -7,7 +7,6 @@ import '../../../constant/show_toast_dialog.dart';
 import '../../../controller/dash_board_controller.dart';
 import '../../../utils/Preferences.dart';
 import '../../auth_screens/phone_entry_screen.dart';
-import '../../auth_screens/driver_category_selection_screen.dart';
 import '../../../controller/new_ride_controller.dart';
 import '../../../controller/payStackURLModel.dart';
 import '../../../controller/wallet_controller.dart';
@@ -248,39 +247,7 @@ class MainHomeScreen extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            if (controller.userModel.value.userData != null && 
-                                (controller.userModel.value.userData?.categoryId == null || controller.userModel.value.userData?.categoryId == 'null' || controller.userModel.value.userData?.categoryId == '' || controller.userModel.value.userData?.categoryId == '0'))
-                              Container(
-                                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: AppThemeData.warning200.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: AppThemeData.warning200),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.info_outline, color: AppThemeData.warning200),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Text(
-                                        "Please complete your profile by selecting category.".tr,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontFamily: AppThemeData.medium,
-                                          color: isDark ? Colors.white : AppThemeData.grey900,
-                                        ),
-                                      ),
-                                    ),
-                                    TextButton(
-                                      onPressed: () {
-                                        Get.to(() => const DriverCategorySelectionScreen());
-                                      },
-                                      child: Text("Complete".tr, style: TextStyle(color: AppThemeData.warning200, fontFamily: AppThemeData.bold)),
-                                    )
-                                  ],
-                                ),
-                              ),
+
                             if (controller.userModel.value.userData != null && 
                                 (controller.userModel.value.userData?.categoryId != null && controller.userModel.value.userData?.categoryId != 'null' && controller.userModel.value.userData?.categoryId != '' && controller.userModel.value.userData?.categoryId != '0') &&
                                 (controller.userModel.value.userData!.isVerified != "yes"))

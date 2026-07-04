@@ -163,10 +163,14 @@ class VehicleInfoController extends GetxController {
   Future<VehicleData?> getVehicleCategory() async {
     try {
       ShowToastDialog.showLoader("Please wait");
-      String categoryId = "";
-      final userModel = Constant.getUserData();
-      if (userModel?.userData?.categoryId != null) {
-        categoryId = userModel!.userData!.categoryId!.toString();
+      // Read category ID from Preferences first (most reliable cross-screen),
+      // then fall back to saved user data.
+      String categoryId = Preferences.getString(Preferences.driverCategoryId);
+      if (categoryId.isEmpty || categoryId == 'null' || categoryId == '0') {
+        final userModel = Constant.getUserData();
+        if (userModel?.userData?.categoryId != null) {
+          categoryId = userModel!.userData!.categoryId!.toString();
+        }
       }
 
       String url = API.vehicleCategory;

@@ -540,11 +540,7 @@ class DashBoardController extends GetxController {
         description: 'View and update your personal profile details',
         icon: 'assets/icons/ic_profile.svg',
       ),
-      DrawerItem(
-        title: 'Update Categories'.tr,
-        description: 'Manage and update your service roles and categories',
-        icon: 'assets/icons/ic_car.svg',
-      ),
+
       DrawerItem(
         title: 'Change Password'.tr,
         description: 'Update your password for better account security',
