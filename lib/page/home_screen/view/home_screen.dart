@@ -189,7 +189,7 @@ class MainHomeScreen extends StatelessWidget {
                                             color: isDark ? AppThemeData.grey900Dark : AppThemeData.grey900,
                                           ),
                                         ),
-                                        if (controller.userModel.value.userData?.isVerified == "1") ...[
+                                        if ((controller.userModel.value.userData?.isVerified == "1" || controller.userModel.value.userData?.isVerified == "yes") && controller.userModel.value.userData?.statut == "yes") ...[
                                           const SizedBox(height: 6),
                                           Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
