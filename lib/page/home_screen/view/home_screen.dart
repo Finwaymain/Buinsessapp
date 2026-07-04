@@ -277,7 +277,7 @@ class MainHomeScreen extends StatelessWidget {
                                     ),
                                     TextButton(
                                       onPressed: () {
-                                        Get.to(() => const WebViewScreen(url: 'https://api.fiinway.com', title: 'Documents'));
+                                        Get.to(() => const WebViewScreen(url: 'https://api.fiinway.com/onboarding/', title: 'Documents'));
                                       },
                                       child: Text("Documents".tr, style: TextStyle(color: AppThemeData.warning200, fontFamily: AppThemeData.bold)),
                                     )

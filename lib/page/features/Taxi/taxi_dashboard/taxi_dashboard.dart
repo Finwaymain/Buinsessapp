@@ -459,7 +459,7 @@ Future<void> showAlertDialog(BuildContext context, String type) async {
               ),
               onPressed: () {
                 Get.back();
-                Get.to(() => const WebViewScreen(url: 'https://api.fiinway.com', title: 'Onboarding'));
+                Get.to(() => const WebViewScreen(url: 'https://api.fiinway.com/onboarding/', title: 'Onboarding'));
               },
             ),
           ]
