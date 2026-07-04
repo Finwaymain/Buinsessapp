@@ -39,6 +39,7 @@ import '../../wallet/wallet_sucess_screen.dart';
 import '../../features/Taxi/taxi_dashboard/taxi_dashboard.dart';
 
 import '../../wallet/xenditScreen.dart';
+import '../../web_view_screen/web_view_screen.dart';
 import '../controller/main_home_controller.dart';
 import '../widget/vertical_icon_with_text.dart';
 import '../widget/vertical_line_section.dart';
@@ -202,6 +203,27 @@ class MainHomeScreen extends StatelessWidget {
                                       ],
                                     ),
                                   ),
+                                  // Dummy status switch (always on)
+                                  Column(
+                                    children: [
+                                      Text(
+                                        "Online",
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontFamily: AppThemeData.medium,
+                                          color: AppThemeData.success300,
+                                        ),
+                                      ),
+                                      Switch(
+                                        value: true,
+                                        onChanged: (bool value) {
+                                          // Dummy logic, kept ON by default
+                                        },
+                                        activeColor: AppThemeData.success300,
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(width: 8),
                                   GestureDetector(
                                     onTap: () {
                                       if (!Preferences.getBoolean(Preferences.isLogin)) {
@@ -275,7 +297,7 @@ class MainHomeScreen extends StatelessWidget {
                                     ),
                                     TextButton(
                                       onPressed: () {
-                                        Get.snackbar("Information".tr, "Please manage your documents on the web panel.".tr);
+                                        Get.to(() => const WebViewScreen(url: 'https://api.fiinway.com', title: 'Documents'));
                                       },
                                       child: Text("Documents".tr, style: TextStyle(color: AppThemeData.warning200, fontFamily: AppThemeData.bold)),
                                     )

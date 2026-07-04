@@ -18,6 +18,7 @@ import '../page/auth_screens/phone_entry_screen.dart';
 import '../page/features/Taxi/taxi_dashboard/taxi_dashboard.dart';
 import '../page/my_profile/change_password_screen.dart';
 import '../page/my_profile/my_profile_screen.dart';
+import '../page/web_view_screen/web_view_screen.dart';
 
 import '../page/privacy_policy/privacy_policy_screen.dart';
 import '../page/referral_screen/referral_screen.dart';
@@ -492,7 +493,7 @@ class DashBoardController extends GetxController {
     } else if (item.title == 'My Profile'.tr) {
       Get.to(MyProfileScreen());
     } else if (item.title == 'Update Categories'.tr) {
-      Get.snackbar("Information".tr, "Please update your categories on the web panel.".tr);
+      Get.to(() => const WebViewScreen(url: 'https://api.fiinway.com', title: 'Update Categories'));
     } else if (item.title == 'Change Password'.tr) {
       Get.to(ChangePasswordScreen());
     } else if (item.title == 'Refer a Friend'.tr) {

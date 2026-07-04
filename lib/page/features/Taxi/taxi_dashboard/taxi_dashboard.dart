@@ -8,6 +8,7 @@ import 'package:cabme_driver/model/user_model.dart';
 
 import 'package:cabme_driver/page/new_ride_screens/new_ride_screen.dart';
 import 'package:cabme_driver/page/subscription_plan_screen/subscription_plan_screen.dart';
+import 'package:cabme_driver/page/web_view_screen/web_view_screen.dart';
 import 'package:cabme_driver/themes/constant_colors.dart';
 import 'package:cabme_driver/themes/responsive.dart';
 import 'package:cabme_driver/utils/dark_theme_provider.dart';
@@ -458,7 +459,7 @@ Future<void> showAlertDialog(BuildContext context, String type) async {
               ),
               onPressed: () {
                 Get.back();
-                Get.snackbar("Information".tr, "Please complete your onboarding and manage your documents on the web panel.".tr);
+                Get.to(() => const WebViewScreen(url: 'https://api.fiinway.com', title: 'Onboarding'));
               },
             ),
           ]
