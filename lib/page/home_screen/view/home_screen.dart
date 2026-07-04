@@ -189,7 +189,56 @@ class MainHomeScreen extends StatelessWidget {
                                             color: isDark ? AppThemeData.grey900Dark : AppThemeData.grey900,
                                           ),
                                         ),
-                                        if (controller.userModel.value.userData?.isVerified == "0") ...[
+                                        if (controller.userModel.value.userData?.isVerified == "1") ...[
+                                          const SizedBox(height: 6),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: Colors.green.withOpacity(0.2),
+                                              borderRadius: BorderRadius.circular(4),
+                                              border: Border.all(color: Colors.green),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                const Icon(Icons.check_circle, size: 12, color: Colors.green),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  "Verified".tr,
+                                                  style: const TextStyle(fontSize: 10, fontFamily: AppThemeData.medium, color: Colors.green),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ] else if (controller.userModel.value.userData?.brand == null || controller.userModel.value.userData!.brand!.isEmpty) ...[
+                                          const SizedBox(height: 6),
+                                          GestureDetector(
+                                            onTap: () {
+                                              String token = controller.userModel.value.userData?.accesstoken ?? "";
+                                              String driverId = controller.userModel.value.userData?.id ?? "";
+                                              String finalUrl = 'https://api.fiinway.com/onboarding?accesstoken=$token&driver_id=$driverId';
+                                              Get.to(() => WebViewScreen(url: finalUrl, title: 'Complete Onboarding'));
+                                            },
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                              decoration: BoxDecoration(
+                                                color: AppThemeData.primary200,
+                                                borderRadius: BorderRadius.circular(6),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: AppThemeData.primary200.withOpacity(0.3),
+                                                    blurRadius: 4,
+                                                    offset: const Offset(0, 2),
+                                                  ),
+                                                ],
+                                              ),
+                                              child: Text(
+                                                "Complete Onboarding".tr,
+                                                style: const TextStyle(fontSize: 11, fontFamily: AppThemeData.bold, color: Colors.white),
+                                              ),
+                                            ),
+                                          ),
+                                        ] else ...[
                                           const SizedBox(height: 6),
                                           Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -199,16 +248,12 @@ class MainHomeScreen extends StatelessWidget {
                                               border: Border.all(color: AppThemeData.warning200),
                                             ),
                                             child: Text(
-                                              "Pending Verification".tr,
-                                              style: TextStyle(
-                                                fontSize: 10,
-                                                fontFamily: AppThemeData.medium,
-                                                color: AppThemeData.warning200,
-                                              ),
+                                              "Profile will be verified in 24-48 hrs".tr,
+                                              style: TextStyle(fontSize: 10, fontFamily: AppThemeData.medium, color: AppThemeData.warning200),
                                             ),
                                           ),
                                         ],
-                                        if (controller.userModel.value.userData?.brand != null) ...[
+                                        if (controller.userModel.value.userData?.brand != null && controller.userModel.value.userData!.brand!.isNotEmpty) ...[
                                           const SizedBox(height: 6),
                                           Text(
                                             "${controller.userModel.value.userData!.brand} ${controller.userModel.value.userData!.model ?? ''} • ${controller.userModel.value.userData!.numberplate ?? ''}",
