@@ -163,11 +163,22 @@ class VehicleInfoController extends GetxController {
   Future<VehicleData?> getVehicleCategory() async {
     try {
       ShowToastDialog.showLoader("Please wait");
+      String categoryId = "";
+      final userModel = Constant.getUserData();
+      if (userModel?.userData?.categoryId != null) {
+        categoryId = userModel!.userData!.categoryId!.toString();
+      }
+
+      String url = API.vehicleCategory;
+      if (categoryId.isNotEmpty && categoryId != 'null' && categoryId != '0') {
+        url = "$url?category_id=$categoryId";
+      }
+
       final response = await http.get(
-        Uri.parse(API.vehicleCategory),
+        Uri.parse(url),
         headers: API.header,
       );
-      showLog("API :: URL :: ${API.vehicleRegister} ");
+      showLog("API :: URL :: $url ");
       showLog("API :: Request Header :: ${API.header.toString()} ");
       showLog("API :: responseStatus :: ${response.statusCode} ");
       showLog("API :: responseBody :: ${response.body} ");
@@ -179,27 +190,6 @@ class VehicleInfoController extends GetxController {
 
         vehicleCategoryList = getVehicleCategory.vehicleData!;
 
-        final userModel = Constant.getUserData();
-        String role = Preferences.getString("selected_role");
-        String? catId = userModel.userData?.categoryId;
-
-        if (catId != null && catId != 'null' && catId.isNotEmpty && catId != '0') {
-          // Note: catId here is the driver's role ID (tj_categorie_user), not the vehicle type ID!
-          // So we should NOT filter by element.id == catId directly unless we map it.
-          // Instead, we will rely on 'role' text matching.
-        }
-        
-        if (role.isNotEmpty) {
-          if (role.contains("Bike")) {
-            vehicleCategoryList = vehicleCategoryList.where((element) => element.libelle == "Bike").toList();
-          } else if (role.contains("Auto") || role.contains("Rickshaw")) {
-            vehicleCategoryList = vehicleCategoryList.where((element) => element.libelle == "Auto").toList();
-          } else {
-            List<String> cabCategories = ["Mini", "Sedan", "SUV", "XL (6–7 Seater)", "Luxury", "Premium XL (Luxury MPV/SUV)"];
-            vehicleCategoryList = vehicleCategoryList.where((element) => cabCategories.contains(element.libelle)).toList();
-          }
-        }
-        
         validCategoryIds.value = vehicleCategoryList.map((e) => e.id).join(",");
 
         update();
