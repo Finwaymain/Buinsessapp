@@ -34,6 +34,7 @@ class DriverOnboardingController extends GetxController {
   RxList<UserCategoryData> parentCategories = <UserCategoryData>[].obs;
   Rxn<UserCategoryData> selectedPrimaryRole = Rxn<UserCategoryData>();
   RxList<UserCategoryData> selectedDeliveryServices = <UserCategoryData>[].obs;
+  RxList<UserCategoryData> selectedMarketplaceServices = <UserCategoryData>[].obs;
 
   // ── VEHICLE INFO STATE ────────────────────────────────────────────────────
   Rx<TextEditingController> brandController = TextEditingController().obs;
@@ -87,6 +88,20 @@ class DriverOnboardingController extends GetxController {
 
   // ── CATEGORY METHODS ──────────────────────────────────────────────────────
   void loadExistingSelections() {
+    // Initialize default marketplace service first so it's always set
+    selectedMarketplaceServices.clear();
+    final marketplaceParent = parentCategories.firstWhereOrNull(
+      (p) => p.title?.contains('Marketplace & Sellers') ?? false
+    );
+    if (marketplaceParent != null && marketplaceParent.subcategories != null) {
+      final onlineSeller = marketplaceParent.subcategories!.firstWhereOrNull(
+        (sub) => sub.title?.toLowerCase().contains('online seller') ?? false
+      );
+      if (onlineSeller != null) {
+        selectedMarketplaceServices.add(onlineSeller);
+      }
+    }
+
     if (userModel?.userData == null) return;
     final uData = userModel!.userData!;
     
@@ -121,6 +136,25 @@ class DriverOnboardingController extends GetxController {
           if (found != null) {
             selectedDeliveryServices.add(found);
           }
+        }
+      }
+    }
+
+    // Find and set marketplace services from saved data
+    if (uData.selectedCategories != null && uData.selectedCategories!.isNotEmpty) {
+      if (marketplaceParent != null && marketplaceParent.subcategories != null) {
+        final loadedMarketplace = <UserCategoryData>[];
+        for (var subId in uData.selectedCategories!) {
+          if (subId == uData.categoryId) continue; // Skip primary
+          final found = marketplaceParent.subcategories!.firstWhereOrNull(
+            (sub) => sub.id.toString() == subId
+          );
+          if (found != null) {
+            loadedMarketplace.add(found);
+          }
+        }
+        if (loadedMarketplace.isNotEmpty) {
+          selectedMarketplaceServices.assignAll(loadedMarketplace);
         }
       }
     }
@@ -170,6 +204,14 @@ class DriverOnboardingController extends GetxController {
     }
   }
 
+  void toggleMarketplaceService(UserCategoryData sub) {
+    if (selectedMarketplaceServices.any((s) => s.id == sub.id)) {
+      selectedMarketplaceServices.removeWhere((s) => s.id == sub.id);
+    } else {
+      selectedMarketplaceServices.add(sub);
+    }
+  }
+
   Future<void> fetchUserCategories() async {
     try {
       final response = await http.get(Uri.parse(API.userCategories), headers: API.authheader);
@@ -199,18 +241,9 @@ class DriverOnboardingController extends GetxController {
       final primaryCategoryId = selectedPrimaryRole.value!.id.toString();
       final subcategoryIds = selectedDeliveryServices.map((sub) => sub.id.toString()).toList();
 
-      // Automatically append Marketplace & Sellers subcategory IDs
-      final marketplaceParent = parentCategories.firstWhereOrNull(
-        (p) => p.title?.contains('Marketplace & Sellers') ?? false
-      );
-      if (marketplaceParent != null && marketplaceParent.subcategories != null) {
-        for (var sub in marketplaceParent.subcategories!) {
-          final idStr = sub.id.toString();
-          if (!subcategoryIds.contains(idStr)) {
-            subcategoryIds.add(idStr);
-          }
-        }
-      }
+      // Append only the selected marketplace services
+      final marketplaceIds = selectedMarketplaceServices.map((sub) => sub.id.toString()).toList();
+      subcategoryIds.addAll(marketplaceIds);
 
       final authController = Get.isRegistered<AuthOtpController>()
           ? Get.find<AuthOtpController>()
@@ -222,6 +255,14 @@ class DriverOnboardingController extends GetxController {
         log("Driver category updated successfully to category ID: $primaryCategoryId");
         userModel = updatedUser;
         
+        // Dynamically update vehicle category constraints based on the new role ID
+        await getVehicleCategory();
+        // Clear selected brand and model text field inputs if category changed
+        brandController.value.clear();
+        modelController.value.clear();
+        selectedBrandID.value = "";
+        selectedModelID.value = "";
+
         // Synchronize state across other active controllers to reflect new categories immediately
         if (Get.isRegistered<DashBoardController>()) {
           Get.find<DashBoardController>().userModel.value = updatedUser;

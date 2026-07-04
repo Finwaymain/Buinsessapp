@@ -153,7 +153,7 @@ class DriverCategorySelectionScreen extends StatelessWidget {
                                   if (marketplaceServices.isNotEmpty) ...[
                                     const SizedBox(height: 32),
                                     Text(
-                                      'Marketplace & Sellers (Included by Default)'.tr,
+                                      'Marketplace & Sellers'.tr,
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontFamily: AppThemeData.semiBold,
@@ -165,34 +165,44 @@ class DriverCategorySelectionScreen extends StatelessWidget {
                                       spacing: 10,
                                       runSpacing: 10,
                                       children: marketplaceServices.map((sub) {
-                                        return Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                          decoration: BoxDecoration(
-                                            color: AppThemeData.primary200.withValues(alpha: 0.1),
-                                            border: Border.all(
-                                              color: AppThemeData.primary200,
-                                              width: 1.0,
+                                        final isSelected = controller.selectedMarketplaceServices.any((s) => s.id == sub.id);
+                                        return InkWell(
+                                          borderRadius: BorderRadius.circular(12),
+                                          onTap: () => controller.toggleMarketplaceService(sub),
+                                          child: AnimatedContainer(
+                                            duration: const Duration(milliseconds: 200),
+                                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                            decoration: BoxDecoration(
+                                              color: isSelected
+                                                  ? AppThemeData.primary200.withValues(alpha: 0.1)
+                                                  : (isDark ? AppThemeData.grey100Dark : Colors.white),
+                                              border: Border.all(
+                                                color: isSelected
+                                                    ? AppThemeData.primary200
+                                                    : (isDark ? AppThemeData.grey200Dark : AppThemeData.grey200),
+                                                width: isSelected ? 2.0 : 1.0,
+                                              ),
+                                              borderRadius: BorderRadius.circular(12),
                                             ),
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(
-                                                Icons.check_circle,
-                                                color: AppThemeData.primary200,
-                                                size: 18,
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                sub.title ?? '',
-                                                style: TextStyle(
-                                                  color: labelColor,
-                                                  fontSize: 14,
-                                                  fontFamily: AppThemeData.semiBold,
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  isSelected ? Icons.check_box : Icons.check_box_outline_blank,
+                                                  color: isSelected ? AppThemeData.primary200 : hintColor,
+                                                  size: 18,
                                                 ),
-                                              ),
-                                            ],
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  sub.title ?? '',
+                                                  style: TextStyle(
+                                                    color: labelColor,
+                                                    fontSize: 14,
+                                                    fontFamily: isSelected ? AppThemeData.semiBold : AppThemeData.medium,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
                                         );
                                       }).toList(),
