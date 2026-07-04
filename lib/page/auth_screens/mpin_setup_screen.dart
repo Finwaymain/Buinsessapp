@@ -1,7 +1,7 @@
 import 'package:cabme_driver/constant/show_toast_dialog.dart';
 import 'package:cabme_driver/controller/auth_otp_controller.dart';
 import 'package:cabme_driver/page/MainDashBoard/screen/main_dashboard.dart';
-
+import 'package:cabme_driver/page/auth_screens/profile_setup_screen.dart';
 import 'package:cabme_driver/page/auth_screens/mpin_login_screen.dart';
 import 'package:cabme_driver/themes/button_them.dart';
 import 'package:cabme_driver/themes/constant_colors.dart';
@@ -166,7 +166,10 @@ class _MpinSetupScreenState extends State<MpinSetupScreen> {
                               return;
                             }
 
-                              Get.snackbar('Registration Restricted'.tr, 'Driver Registration must be completed on our web portal.'.tr);
+                            if (widget.mode == 'signup') {
+                              // Proceed to name setup screen
+                              Get.off(() => ProfileSetupScreen(otp: widget.otp, mpin: pin));
+                            } else {
                               // Reset MPIN
                               final success = await controller.resetMpin(
                                 controller.phone.value,
@@ -187,7 +190,7 @@ class _MpinSetupScreenState extends State<MpinSetupScreen> {
                                   Get.offAll(() => MpinLoginScreen(phone: controller.phone.value));
                                 }
                               }
-                            
+                            }
                           },
                   )),
             ],

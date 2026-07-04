@@ -148,8 +148,11 @@ class PhoneEntryScreen extends StatelessWidget {
                               controller.phone.value = fullPhone;
                               Get.to(() => MpinLoginScreen(phone: fullPhone));
                             } else {
-                              // New user: App signup disabled
-                              Get.snackbar('Registration Restricted'.tr, 'Driver Registration must be completed on our web portal.'.tr);
+                              // New user: send phone OTP & navigate to Otp screen
+                              final sent = await controller.sendPhoneOtp(fullPhone, mode: 'signup');
+                              if (sent) {
+                                Get.to(() => const PhoneOtpScreen(mode: 'signup'));
+                              }
                             }
                           },
                   )),
