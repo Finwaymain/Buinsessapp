@@ -58,7 +58,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
                       final ImagePicker picker = ImagePicker();
                       final XFile? image = await picker.pickImage(source: ImageSource.gallery);
                       if (image != null) {
-                        Navigator.of(context).pop([image.path]);
+                        Navigator.of(context).pop([Uri.file(image.path).toString()]);
                       } else {
                         Navigator.of(context).pop(<String>[]);
                       }
@@ -71,7 +71,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
                       final ImagePicker picker = ImagePicker();
                       final XFile? photo = await picker.pickImage(source: ImageSource.camera, imageQuality: 80);
                       if (photo != null) {
-                        Navigator.of(context).pop([photo.path]);
+                        Navigator.of(context).pop([Uri.file(photo.path).toString()]);
                       } else {
                         Navigator.of(context).pop(<String>[]);
                       }
