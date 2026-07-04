@@ -189,6 +189,25 @@ class MainHomeScreen extends StatelessWidget {
                                             color: isDark ? AppThemeData.grey900Dark : AppThemeData.grey900,
                                           ),
                                         ),
+                                        if (controller.userModel.value.userData?.isVerified == "0") ...[
+                                          const SizedBox(height: 6),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: AppThemeData.warning200.withOpacity(0.2),
+                                              borderRadius: BorderRadius.circular(4),
+                                              border: Border.all(color: AppThemeData.warning200),
+                                            ),
+                                            child: Text(
+                                              "Pending Verification".tr,
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                fontFamily: AppThemeData.medium,
+                                                color: AppThemeData.warning200,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                         if (controller.userModel.value.userData?.brand != null) ...[
                                           const SizedBox(height: 6),
                                           Text(
