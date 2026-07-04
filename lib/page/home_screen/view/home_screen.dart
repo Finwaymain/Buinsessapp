@@ -37,7 +37,7 @@ import '../../wallet/payfast_screen.dart';
 import '../../wallet/paystack_url_generator.dart';
 import '../../wallet/wallet_sucess_screen.dart';
 import '../../features/Taxi/taxi_dashboard/taxi_dashboard.dart';
-import '../../document_status/document_status_screen.dart';
+
 import '../../wallet/xenditScreen.dart';
 import '../controller/main_home_controller.dart';
 import '../widget/vertical_icon_with_text.dart';
@@ -275,7 +275,7 @@ class MainHomeScreen extends StatelessWidget {
                                     ),
                                     TextButton(
                                       onPressed: () {
-                                        Get.to(() => DocumentStatusScreen());
+                                        Get.snackbar("Information".tr, "Please manage your documents on the web panel.".tr);
                                       },
                                       child: Text("Documents".tr, style: TextStyle(color: AppThemeData.warning200, fontFamily: AppThemeData.bold)),
                                     )
