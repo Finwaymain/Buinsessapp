@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class SubscriptionPlanModel {
   String? success;
   String? error;
@@ -61,23 +63,39 @@ class SubscriptionPlanData {
         this.updatedAt});
 
   SubscriptionPlanData.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
-    bookingLimit = json['bookingLimit'];
-    description = json['description'];
-    expiryDay = json['expiryDay'];
-    image = json['image'];
-    isEnable = json['isEnable'];
-    name = json['name'];
-    place = json['place'];
+    id = json['id']?.toString();
+    bookingLimit = json['bookingLimit']?.toString();
+    description = json['description']?.toString();
+    expiryDay = json['expiryDay']?.toString();
+    image = json['image']?.toString();
+    isEnable = json['isEnable']?.toString();
+    name = json['name']?.toString();
+    place = json['place']?.toString();
     if (json['plan_points'] != null) {
-      planPoints = List<String>.from(json['plan_points']);
+      var points = json['plan_points'];
+      if (points is String) {
+        try {
+          var decoded = jsonDecode(points);
+          if (decoded is List) {
+            planPoints = List<String>.from(decoded.map((e) => e.toString()));
+          } else {
+            planPoints = [decoded.toString()];
+          }
+        } catch (e) {
+          planPoints = [points.toString()];
+        }
+      } else if (points is List) {
+        planPoints = List<String>.from(points.map((e) => e.toString()));
+      } else {
+        planPoints = [points.toString()];
+      }
     } else {
       planPoints = [];
     }
-    price = json['price'];
-    type = json['type'];
-    createdAt = json['created_at'];
-    updatedAt = json['updated_at'];
+    price = json['price']?.toString();
+    type = json['type']?.toString();
+    createdAt = json['created_at']?.toString();
+    updatedAt = json['updated_at']?.toString();
   }
 
   Map<String, dynamic> toJson() {

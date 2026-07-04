@@ -1,5 +1,5 @@
 import 'package:cabme_driver/controller/driver_onboarding_controller.dart';
-import 'package:cabme_driver/page/auth_screens/vehicle_info_screen.dart';
+import 'package:cabme_driver/constant/show_toast_dialog.dart';
 import 'package:cabme_driver/themes/button_them.dart';
 import 'package:cabme_driver/themes/constant_colors.dart';
 import 'package:cabme_driver/utils/dark_theme_provider.dart';
@@ -9,8 +9,8 @@ import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 import 'package:cabme_driver/model/user_category_model.dart';
 
-class DriverCategorySelectionScreen extends StatelessWidget {
-  const DriverCategorySelectionScreen({super.key});
+class UpdateCategoryScreen extends StatelessWidget {
+  const UpdateCategoryScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +47,7 @@ class DriverCategorySelectionScreen extends StatelessWidget {
                 onPressed: () => Get.back(),
               ),
               title: Text(
-                'Registration'.tr,
+                'Update Categories'.tr,
                 style: TextStyle(color: labelColor, fontSize: 18, fontFamily: AppThemeData.semiBold),
               ),
               centerTitle: true,
@@ -64,16 +64,16 @@ class DriverCategorySelectionScreen extends StatelessWidget {
                         children: [
                           const SizedBox(height: 16),
                           Text(
-                            'Choose Your Services'.tr,
+                            'Manage Your Services'.tr,
                             style: TextStyle(
-                              fontSize: 26,
+                              fontSize: 24,
                               fontFamily: AppThemeData.bold,
                               color: labelColor,
                             ),
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Select your primary role and add any compatible delivery services you want to provide.'.tr,
+                            'Modify your primary transport role and active delivery services.'.tr,
                             style: TextStyle(fontSize: 14, color: hintColor, fontFamily: AppThemeData.regular),
                           ),
                           const SizedBox(height: 24),
@@ -86,7 +86,7 @@ class DriverCategorySelectionScreen extends StatelessWidget {
                                 children: [
                                   // STEP 1: Transport & Mobility (Primary Role)
                                   Text(
-                                    '1. Primary Transport Role (Select One)'.tr,
+                                    'Primary Transport Role (Select One)'.tr,
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontFamily: AppThemeData.semiBold,
@@ -203,7 +203,7 @@ class DriverCategorySelectionScreen extends StatelessWidget {
 
                                   // STEP 2: Delivery & Logistics (Compatible Subcategories)
                                   Text(
-                                    '2. Compatible Delivery Services (Optional)'.tr,
+                                    'Compatible Delivery Services (Optional)'.tr,
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontFamily: AppThemeData.semiBold,
@@ -291,7 +291,7 @@ class DriverCategorySelectionScreen extends StatelessWidget {
 
                           ButtonThem.buildButton(
                             context,
-                            title: 'Continue'.tr,
+                            title: 'Save Changes'.tr,
                             btnHeight: 50,
                             btnColor: AppThemeData.primary200,
                             txtColor: Colors.white,
@@ -302,7 +302,8 @@ class DriverCategorySelectionScreen extends StatelessWidget {
                                 if (role.isNotEmpty) {
                                   await Preferences.setString("selected_role", role);
                                 }
-                                Get.to(() => const VehicleInfoScreen(), transition: Transition.rightToLeft);
+                                ShowToastDialog.showToast("Categories updated successfully!".tr);
+                                Get.back();
                               }
                             },
                           ),

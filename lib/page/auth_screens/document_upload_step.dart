@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:cabme_driver/constant/constant.dart';
 import 'package:cabme_driver/constant/show_toast_dialog.dart';
-import 'package:cabme_driver/controller/document_status_contoller.dart';
+import 'package:cabme_driver/controller/driver_onboarding_controller.dart';
 import 'package:cabme_driver/model/uploaded_document_model.dart';
 import 'package:cabme_driver/page/auth_screens/review_confirm_step.dart';
 import 'package:cabme_driver/themes/button_them.dart';
@@ -25,8 +25,8 @@ class DocumentUploadStep extends StatelessWidget {
     final labelColor = isDark ? AppThemeData.grey50 : AppThemeData.grey50Dark;
     final hintColor = isDark ? AppThemeData.grey400 : AppThemeData.grey400Dark;
 
-    return GetX<DocumentStatusController>(
-      init: DocumentStatusController(),
+    return GetX<DriverOnboardingController>(
+      init: DriverOnboardingController(),
       builder: (controller) {
         return Scaffold(
           backgroundColor: bgColor,
@@ -84,16 +84,11 @@ class DocumentUploadStep extends StatelessWidget {
                             bool allUploaded = controller.documentList.every((d) => 
                               d.documentPath != null && d.documentPath!.isNotEmpty
                             );
-                            bool anyDisapproved = controller.documentList.any((d) => 
-                              d.documentStatus == "Disapprove" || d.documentStatus == "Disapproved"
-                            );
                             
-                            if (!allUploaded) {
-                               ShowToastDialog.showToast("Please upload all required documents to proceed.".tr);
-                            } else if (anyDisapproved) {
-                               ShowToastDialog.showToast("Please re-upload disapproved documents to proceed.".tr);
-                            } else {
+                            if (allUploaded) {
                                Get.to(() => const ReviewConfirmStep(), transition: Transition.rightToLeft);
+                            } else {
+                               ShowToastDialog.showToast("Please upload all required documents to proceed.");
                             }
                           },
                         ),
@@ -107,11 +102,9 @@ class DocumentUploadStep extends StatelessWidget {
     );
   }
 
-  Widget _buildDocCard(BuildContext context, DocumentStatusController controller, UploadedDocumentData doc, bool isDark, Color labelColor, Color hintColor) {
+  Widget _buildDocCard(BuildContext context, DriverOnboardingController controller, UploadedDocumentData doc, bool isDark, Color labelColor, Color hintColor) {
     bool isUploaded = doc.documentPath != null && doc.documentPath!.isNotEmpty;
     bool isPending = doc.documentStatus == "Pending";
-    bool isApproved = doc.documentStatus == "Approved";
-    bool isDisapproved = doc.documentStatus == "Disapprove" || doc.documentStatus == "Disapproved";
     
     return Container(
       padding: const EdgeInsets.all(16),
@@ -136,52 +129,26 @@ class DocumentUploadStep extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      !isUploaded 
-                          ? "Required".tr 
-                          : (isPending 
-                              ? "Pending Verification".tr 
-                              : (isApproved ? "Verified".tr : "Disapproved".tr)),
+                      isUploaded ? (isPending ? "Pending Verification" : "Verified") : "Required",
                       style: TextStyle(
                         fontSize: 12, 
                         fontFamily: AppThemeData.medium,
-                        color: !isUploaded 
-                            ? Colors.red 
-                            : (isPending 
-                                ? Colors.amber.shade700 
-                                : (isApproved ? Colors.green : Colors.red.shade700)),
+                        color: isUploaded ? (isPending ? Colors.amber.shade700 : Colors.green) : Colors.red,
                       ),
                     ),
-                    if (isDisapproved && doc.comment != null && doc.comment!.isNotEmpty && doc.comment != "null") ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        "${"Reason:".tr} ${doc.comment}",
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontFamily: AppThemeData.medium,
-                          color: Colors.red.shade700,
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),
-              if (!isUploaded || isDisapproved)
+              if (!isUploaded)
                 InkWell(
                   onTap: () => _showPicker(context, controller, doc),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
-                      color: isDisapproved ? Colors.red.shade50 : AppThemeData.primary50,
+                      color: AppThemeData.primary50,
                       borderRadius: BorderRadius.circular(30),
                     ),
-                    child: Text(
-                      isDisapproved ? 'Re-upload'.tr : 'Upload'.tr, 
-                      style: TextStyle(
-                        color: isDisapproved ? Colors.red.shade700 : AppThemeData.primary200, 
-                        fontFamily: AppThemeData.semiBold, 
-                        fontSize: 13
-                      ),
-                    ),
+                    child: Text('Upload', style: TextStyle(color: AppThemeData.primary200, fontFamily: AppThemeData.semiBold, fontSize: 13)),
                   ),
                 ),
             ],
@@ -224,7 +191,7 @@ class DocumentUploadStep extends StatelessWidget {
     );
   }
 
-  void _showPicker(BuildContext context, DocumentStatusController controller, UploadedDocumentData doc) {
+  void _showPicker(BuildContext context, DriverOnboardingController controller, UploadedDocumentData doc) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,

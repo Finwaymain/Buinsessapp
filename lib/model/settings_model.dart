@@ -253,13 +253,13 @@ class AdminCommission {
 
   AdminCommission.fromJson(Map<String, dynamic> json) {
     id = json['id'];
-    libelle = json['libelle'];
-    value = json['value'];
-    type = json['type'];
-    statut = json['statut'];
-    creer = json['creer'];
-    modifier = json['modifier'];
-    updatedAt = json['updated_at'];
+    libelle = json['libelle']?.toString();
+    value = json['value']?.toString();
+    type = json['type']?.toString();
+    statut = json['statut']?.toString();
+    creer = json['creer']?.toString();
+    modifier = json['modifier']?.toString();
+    updatedAt = json['updated_at']?.toString();
   }
 
   Map<String, dynamic> toJson() {

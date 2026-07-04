@@ -1,7 +1,8 @@
 import 'dart:developer';
 
 import 'package:cabme_driver/constant/show_toast_dialog.dart';
-import 'package:cabme_driver/controller/vehicle_info_controller.dart';
+import 'package:cabme_driver/controller/driver_onboarding_controller.dart';
+import 'package:cabme_driver/controller/dash_board_controller.dart';
 import 'package:cabme_driver/page/auth_screens/document_upload_step.dart' as cabme_doc;
 import 'package:cabme_driver/model/brand_model.dart';
 import 'package:cabme_driver/model/model.dart';
@@ -26,8 +27,8 @@ class VehicleInfoScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeChange = Provider.of<DarkThemeProvider>(context);
-    return GetX(
-        init: VehicleInfoController(),
+    return GetX<DriverOnboardingController>(
+        init: DriverOnboardingController(),
         builder: (vehicleInfoController) {
           return Scaffold(
             appBar: const AppbarCustom(
@@ -500,6 +501,10 @@ class VehicleInfoScreen extends StatelessWidget {
                                       .isEmpty) {
                                     ShowToastDialog.showToast(
                                         "Please enter number of passenger");
+                                  } else if (vehicleInfoController.userModel?.userData?.id == null ||
+                                      vehicleInfoController.userModel!.userData!.id.toString().isEmpty) {
+                                    ShowToastDialog.showToast(
+                                        "Driver session not found. Please log in again.");
                                   } else {
                                     ShowToastDialog.showLoader("Please wait");
                                     Map<String, String> bodyParams1 = {
@@ -509,7 +514,7 @@ class VehicleInfoScreen extends StatelessWidget {
                                           .selectedModelID.value,
                                       "color": vehicleInfoController
                                           .colorController.value.text,
-                                      "carregistration": vehicleInfoController
+                                      "numberplate": vehicleInfoController
                                           .numberPlateController.value.text
                                           .toUpperCase(),
                                       "passenger": vehicleInfoController
@@ -533,21 +538,24 @@ class VehicleInfoScreen extends StatelessWidget {
                                           .join(",")
                                     };
                                     log(bodyParams1.toString());
-                                    await vehicleInfoController
-                                        .vehicleRegister(bodyParams1)
-                                        .then((value) {
-                                      if (value != null) {
-                                        if (value.success == "Success" ||
-                                            value.success == "success") {
-                                          ShowToastDialog.closeLoader();
-                                          Get.to(() => const cabme_doc.DocumentUploadStep(), transition: Transition.rightToLeft);
-                                        } else {
-                                          ShowToastDialog.closeLoader();
-                                          ShowToastDialog.showToast(
-                                              value.error);
-                                        }
-                                      }
-                                    });
+                                     await vehicleInfoController
+                                         .vehicleRegister(bodyParams1)
+                                         .then((value) async {
+                                       if (value != null) {
+                                         if (value.success == "Success" ||
+                                             value.success == "success") {
+                                           ShowToastDialog.closeLoader();
+                                           if (Get.isRegistered<DashBoardController>()) {
+                                             await Get.find<DashBoardController>().getUsrData();
+                                           }
+                                           Get.to(() => const cabme_doc.DocumentUploadStep(), transition: Transition.rightToLeft);
+                                         } else {
+                                           ShowToastDialog.closeLoader();
+                                           ShowToastDialog.showToast(
+                                               value.error);
+                                         }
+                                       }
+                                     });
                                   }
                                 }
                               },
@@ -562,7 +570,7 @@ class VehicleInfoScreen extends StatelessWidget {
   }
 
   void brandDialog(BuildContext context, List<BrandData>? brandList,
-      VehicleInfoController vehicleInfoController) {
+      DriverOnboardingController vehicleInfoController) {
     showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -598,7 +606,7 @@ class VehicleInfoScreen extends StatelessWidget {
   }
 
   void modelDialog(BuildContext context, List<ModelData>? brandList,
-      VehicleInfoController vehicleInfoController) {
+      DriverOnboardingController vehicleInfoController) {
     showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -635,7 +643,7 @@ class VehicleInfoScreen extends StatelessWidget {
   }
 
   void zoneDialog(
-      BuildContext context, VehicleInfoController vehicleInfoController) {
+      BuildContext context, DriverOnboardingController vehicleInfoController) {
     Widget cancelButton = TextButton(
       child: Text(
         "Cancel".tr,

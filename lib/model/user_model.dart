@@ -115,6 +115,7 @@ class UserData {
   String? categoryId;
   SubscriptionPlanData? subscriptionPlan;
   AdminCommission? adminCommission;
+  List<String>? selectedCategories;
 
   UserData({
     this.id,
@@ -203,6 +204,7 @@ class UserData {
     this.categoryId,
     this.subscriptionPlan,
     this.adminCommission,
+    this.selectedCategories,
   });
 
   UserData.fromJson(Map<String, dynamic> json) {
@@ -296,6 +298,9 @@ class UserData {
     adminCommission = json['adminCommission'] != null
         ? AdminCommission.fromJson(json['adminCommission'])
         : null;
+    if (json['selected_categories'] != null) {
+      selectedCategories = List<String>.from(json['selected_categories'].map((x) => x.toString()));
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -389,6 +394,9 @@ class UserData {
     }
     if (adminCommission != null) {
       data['adminCommission'] = adminCommission!.toJson();
+    }
+    if (selectedCategories != null) {
+      data['selected_categories'] = selectedCategories;
     }
     return data;
   }

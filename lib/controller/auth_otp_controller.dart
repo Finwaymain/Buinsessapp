@@ -395,13 +395,13 @@ class AuthOtpController extends GetxController {
     return model;
   }
 
-  Future<UserModel?> updateDriverCategory(String categoryId, {List<Map<String, dynamic>>? categories}) async {
+  Future<UserModel?> updateDriverCategory(String categoryId, List<String> subcategoryIds) async {
     try {
       isLoading.value = true;
       final body = jsonEncode({
         'id_conducteur': Preferences.getInt(Preferences.userId).toString(),
         'category_id': categoryId,
-        if (categories != null) 'categories': categories,
+        'subcategory_ids': subcategoryIds,
       });
       final res = await http.post(Uri.parse(API.authUpdateDriverCategory), headers: API.header, body: body);
       final data = json.decode(res.body);

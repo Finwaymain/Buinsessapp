@@ -14,11 +14,11 @@ import '../constant/constant.dart';
 import '../constant/logdata.dart';
 import '../constant/show_toast_dialog.dart';
 import '../model/user_model.dart';
-import '../page/auth_screens/driver_category_selection_screen.dart';
 import '../page/auth_screens/phone_entry_screen.dart';
 import '../page/features/Taxi/taxi_dashboard/taxi_dashboard.dart';
 import '../page/my_profile/change_password_screen.dart';
 import '../page/my_profile/my_profile_screen.dart';
+import '../page/my_profile/update_category_screen.dart';
 import '../page/privacy_policy/privacy_policy_screen.dart';
 import '../page/referral_screen/referral_screen.dart';
 import '../page/terms_of_service/terms_of_service_screen.dart';
@@ -481,7 +481,7 @@ class DashBoardController extends GetxController {
     Get.back();
     if (index >= drawerItems.length) return;
     var item = drawerItems[index];
-    if (item.title == 'Wallet'.tr || item.title == 'My Profile'.tr || item.title == 'Change Password'.tr || item.title == 'Refer a Friend'.tr || item.title == 'Onboarding Profile'.tr) {
+    if (item.title == 'Wallet'.tr || item.title == 'My Profile'.tr || item.title == 'Update Categories'.tr || item.title == 'Change Password'.tr || item.title == 'Refer a Friend'.tr) {
       if (!isLogin) {
         Get.to(PhoneEntryScreen(mode: 'signup'));
         return;
@@ -491,8 +491,8 @@ class DashBoardController extends GetxController {
       Get.to(WalletScreen());
     } else if (item.title == 'My Profile'.tr) {
       Get.to(MyProfileScreen());
-    } else if (item.title == 'Onboarding Profile'.tr) {
-      Get.to(() => const DriverCategorySelectionScreen());
+    } else if (item.title == 'Update Categories'.tr) {
+      Get.to(const UpdateCategoryScreen());
     } else if (item.title == 'Change Password'.tr) {
       Get.to(ChangePasswordScreen());
     } else if (item.title == 'Refer a Friend'.tr) {
@@ -541,9 +541,9 @@ class DashBoardController extends GetxController {
         icon: 'assets/icons/ic_profile.svg',
       ),
       DrawerItem(
-        title: 'Onboarding Profile'.tr,
-        description: 'Update your roles, vehicle info and onboarding documents',
-        icon: 'assets/icons/ic_profile.svg',
+        title: 'Update Categories'.tr,
+        description: 'Manage and update your service roles and categories',
+        icon: 'assets/icons/ic_car.svg',
       ),
       DrawerItem(
         title: 'Change Password'.tr,

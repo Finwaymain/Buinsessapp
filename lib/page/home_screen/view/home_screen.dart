@@ -38,6 +38,7 @@ import '../../wallet/payfast_screen.dart';
 import '../../wallet/paystack_url_generator.dart';
 import '../../wallet/wallet_sucess_screen.dart';
 import '../../features/Taxi/taxi_dashboard/taxi_dashboard.dart';
+import '../../document_status/document_status_screen.dart';
 import '../../wallet/xenditScreen.dart';
 import '../controller/main_home_controller.dart';
 import '../widget/vertical_icon_with_text.dart';
@@ -280,6 +281,40 @@ class MainHomeScreen extends StatelessWidget {
                                   ],
                                 ),
                               ),
+                            if (controller.userModel.value.userData != null && 
+                                (controller.userModel.value.userData?.categoryId != null && controller.userModel.value.userData?.categoryId != 'null' && controller.userModel.value.userData?.categoryId != '' && controller.userModel.value.userData?.categoryId != '0') &&
+                                (controller.userModel.value.userData!.isVerified != "yes"))
+                              Container(
+                                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: AppThemeData.warning200.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: AppThemeData.warning200),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.lock_clock_outlined, color: AppThemeData.warning200),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        "Your account is pending verification approval. Your account will be verified within 24-48 hrs. Please ensure all documents are uploaded.".tr,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontFamily: AppThemeData.medium,
+                                          color: isDark ? Colors.white : AppThemeData.grey900,
+                                        ),
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        Get.to(() => DocumentStatusScreen());
+                                      },
+                                      child: Text("Documents".tr, style: TextStyle(color: AppThemeData.warning200, fontFamily: AppThemeData.bold)),
+                                    )
+                                  ],
+                                ),
+                              ),
 
                             // Primary Hero Action CTA for receiving rides
                             Padding(
@@ -508,27 +543,30 @@ class MainHomeScreen extends StatelessWidget {
                             ),
 
                             // Quick Access Section
-                            VerticalLineSection(
-                              text: "Quick Access",
-                              margin: const EdgeInsets.only(top: 20),
-                              cardChildren: [
-                                VerticalIconWithText(
-                                  icon: Icons.directions_car_outlined,
-                                  text: 'Ride Booking',
-                                  onTap: () {
-                                    if (!Preferences.getBoolean(Preferences.isLogin)) {
-                                      Get.to(() => PhoneEntryScreen(mode: 'signup'), transition: Transition.rightToLeftWithFade);
-                                      return;
-                                    }
-                                    Get.to(() => TaxiDashBoard(),
-                                        transition: Transition.rightToLeftWithFade);
-                                  },
-                                ),
+                            Obx(() {
+                              final rideController = Get.isRegistered<NewRideController>()
+                                  ? Get.find<NewRideController>()
+                                  : Get.put(NewRideController());
+                              final showParcel = rideController.userModel.value.userData?.parcelDelivery == 'yes';
 
-                                Obx(() {
-                                  final rideController = Get.find<NewRideController>();
-                                  if (rideController.userModel.value.userData?.parcelDelivery == 'yes') {
-                                    return VerticalIconWithText(
+                              return VerticalLineSection(
+                                text: "Quick Access",
+                                margin: const EdgeInsets.only(top: 20),
+                                cardChildren: [
+                                  VerticalIconWithText(
+                                    icon: Icons.directions_car_outlined,
+                                    text: 'Ride Booking',
+                                    onTap: () {
+                                      if (!Preferences.getBoolean(Preferences.isLogin)) {
+                                        Get.to(() => PhoneEntryScreen(mode: 'signup'), transition: Transition.rightToLeftWithFade);
+                                        return;
+                                      }
+                                      Get.to(() => TaxiDashBoard(),
+                                          transition: Transition.rightToLeftWithFade);
+                                    },
+                                  ),
+                                  if (showParcel)
+                                    VerticalIconWithText(
                                       icon: Icons.local_shipping_outlined,
                                       text: 'Parcel Service',
                                       onTap: () {
@@ -539,24 +577,22 @@ class MainHomeScreen extends StatelessWidget {
                                         Get.to(() => const ParcelConsoleScreen(),
                                             transition: Transition.rightToLeftWithFade);
                                       },
-                                    );
-                                  }
-                                  return const SizedBox.shrink();
-                                }),
-                                VerticalIconWithText(
-                                  icon: Icons.groups_outlined,
-                                  text: 'Shared Ride',
-                                  onTap: () {
-                                    if (!Preferences.getBoolean(Preferences.isLogin)) {
-                                      Get.to(() => PhoneEntryScreen(mode: 'signup'), transition: Transition.rightToLeftWithFade);
-                                      return;
-                                    }
-                                    Get.to(() => const InProgressScreen(),
-                                        transition: Transition.rightToLeftWithFade);
-                                  },
-                                ),
-                              ],
-                            ),
+                                    ),
+                                  VerticalIconWithText(
+                                    icon: Icons.groups_outlined,
+                                    text: 'Shared Ride',
+                                    onTap: () {
+                                      if (!Preferences.getBoolean(Preferences.isLogin)) {
+                                        Get.to(() => PhoneEntryScreen(mode: 'signup'), transition: Transition.rightToLeftWithFade);
+                                        return;
+                                      }
+                                      Get.to(() => const InProgressScreen(),
+                                          transition: Transition.rightToLeftWithFade);
+                                    },
+                                  ),
+                                ],
+                              );
+                            }),
 
                             // Smart Value Section
                             VerticalLineSection(

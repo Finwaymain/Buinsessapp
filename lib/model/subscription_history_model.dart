@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class SubscriptionHistoryModel {
   String? success;
   String? error;
@@ -121,7 +123,27 @@ class SubscriptionPlan {
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
     description = json['description'];
-    planPoints = json['plan_points'].cast<String>();
+    if (json['plan_points'] != null) {
+      var points = json['plan_points'];
+      if (points is String) {
+        try {
+          var decoded = jsonDecode(points);
+          if (decoded is List) {
+            planPoints = List<String>.from(decoded.map((e) => e.toString()));
+          } else {
+            planPoints = [decoded.toString()];
+          }
+        } catch (e) {
+          planPoints = [points.toString()];
+        }
+      } else if (points is List) {
+        planPoints = List<String>.from(points.map((e) => e.toString()));
+      } else {
+        planPoints = [points.toString()];
+      }
+    } else {
+      planPoints = [];
+    }
     bookingLimit = json['bookingLimit'];
   }
 

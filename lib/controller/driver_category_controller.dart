@@ -67,10 +67,10 @@ class DriverCategoryController extends GetxController {
     }
   }
 
-  Future<bool> saveCategory() async {
+  Future<void> saveCategory() async {
     if (selectedParentCategories.isEmpty) {
       ShowToastDialog.showToast("Please select at least one Category");
-      return false;
+      return;
     }
 
     // Verify each selected parent has a subcategory selected
@@ -78,7 +78,7 @@ class DriverCategoryController extends GetxController {
       if (parent.subcategories != null && parent.subcategories!.isNotEmpty) {
         if (!selectedSubCategories.containsKey(parent.id.toString())) {
           ShowToastDialog.showToast("Please select a subcategory for ${parent.title}");
-          return false;
+          return;
         }
       }
     }
@@ -102,7 +102,17 @@ class DriverCategoryController extends GetxController {
         ? Get.find<AuthOtpController>()
         : Get.put(AuthOtpController());
     
-    final updatedUser = await authController.updateDriverCategory(primaryCategoryId, categories: finalSelection);
-    return updatedUser != null;
+    List<String> subcategoryIds = finalSelection
+        .map((item) => item["subcategory_id"]?.toString() ?? '')
+        .where((id) => id.isNotEmpty)
+        .toList();
+    
+    final updatedUser = await authController.updateDriverCategory(primaryCategoryId, subcategoryIds);
+    
+    if (updatedUser != null) {
+      // ShowToastDialog.showToast("Category updated successfully!");
+      // Don't navigate to vehicle info immediately, we'll navigate to Document Selection UI next.
+      // We will create the Document UI in step 2.
+    }
   }
 }
