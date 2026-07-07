@@ -1,3 +1,5 @@
+import 'package:flutter_callkit_incoming/entities/call_event.dart';
+import 'package:permission_handler/permission_handler.dart';
 // ignore_for_file: empty_catches, must_be_immutable, unused_local_variable, deprecated_member_use
 
 import 'dart:convert';
@@ -19,6 +21,7 @@ import 'package:cabme_driver/themes/styles.dart';
 import 'package:cabme_driver/utils/dark_theme_provider.dart';
 import 'package:cabme_driver/utils/Preferences.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -33,6 +36,79 @@ import 'package:cabme_driver/model/ride_model.dart';
 import 'package:cabme_driver/page/new_ride_screens/incoming_ride_screen.dart';
 import 'package:cabme_driver/page/route_view_screen/route_view_screen.dart';
 import 'package:cabme_driver/page/route_view_screen/route_osm_view_screen.dart';
+import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
+import 'package:flutter_callkit_incoming/entities/call_kit_params.dart';
+import 'package:flutter_callkit_incoming/entities/android_params.dart';
+import 'package:flutter_callkit_incoming/entities/ios_params.dart';
+import 'package:flutter_callkit_incoming/entities/notification_params.dart';
+
+
+
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  if (message.data['statut'] == 'new' || message.data['tag'] == 'ridenewrider') {
+    try {
+      final rideData = RideData.fromJson(message.data);
+      if (rideData.id != null && rideData.id!.isNotEmpty && rideData.id != 'null') {
+        await showCallkitIncoming(message.data);
+      }
+    } catch (e) {
+      log('Error showing callkit in background: $e');
+    }
+  }
+}
+
+Future<void> showCallkitIncoming(Map<String, dynamic> data) async {
+  final rideData = RideData.fromJson(data);
+  CallKitParams callKitParams = CallKitParams(
+    id: rideData.id ?? "unknown_id",
+    nameCaller: '${rideData.prenom ?? ''} ${rideData.nom ?? ''}'.trim().isNotEmpty ? '${rideData.prenom ?? ''} ${rideData.nom ?? ''}' : 'New Passenger',
+    appName: 'Fiinway Driver',
+    avatar: 'https://i.pravatar.cc/100', // You can use rideData.photoPath if available
+    handle: '${rideData.departName ?? 'Pickup'} -> ${rideData.destinationName ?? 'Dropoff'}',
+    type: 0,
+    missedCallNotification: const NotificationParams(
+      showNotification: true,
+      isShowCallback: false,
+      subtitle: 'Missed ride request',
+      callbackText: 'Call back',
+    ),
+    extra: data,
+    headers: <String, dynamic>{},
+    android: const AndroidParams(
+      isCustomNotification: true,
+      isShowLogo: false,
+      ringtonePath: 'system_ringtone_default',
+      backgroundColor: '#0955fa',
+      actionColor: '#4CAF50',
+      textColor: '#ffffff',
+      textAccept: 'Accept',
+      textDecline: 'Decline',
+      isShowFullLockedScreen: true,
+      isFullScreen: true,
+    ),
+    ios: const IOSParams(
+      iconName: 'CallKitLogo',
+      handleType: '',
+      supportsVideo: false,
+      maximumCallGroups: 2,
+      maximumCallsPerCallGroup: 1,
+      audioSessionMode: 'default',
+      audioSessionActive: true,
+      audioSessionPreferredSampleRate: 44100.0,
+      audioSessionPreferredIOBufferDuration: 0.005,
+      supportsDTMF: true,
+      supportsHolding: true,
+      supportsGrouping: false,
+      supportsUngrouping: false,
+      ringtonePath: 'system_ringtone_default',
+    ),
+  );
+  await FlutterCallkitIncoming.showCallkitIncoming(callKitParams);
+}
 
 class FirebaseService {
   static Future<void> initialize() async {
@@ -48,7 +124,8 @@ class FirebaseService {
   }
 
   static Future<void> setupMessaging() async {
-    await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+    await FirebaseMessaging.instance
+        .setForegroundNotificationPresentationOptions(
       alert: true,
       badge: true,
       sound: true,
@@ -65,30 +142,59 @@ class FirebaseService {
     );
   }
 
-  static Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-  }
+
 
   static Future<void> setupInteractedMessage(BuildContext context) async {
     await NotificationService.initialize(context);
     await FirebaseMessaging.instance.subscribeToTopic("cabme_driver");
 
-    RemoteMessage? initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+    // Handle CallKit events (Accept / Decline)
+    
+
+    FlutterCallkitIncoming.onEvent.listen((event) async {
+      if (event is CallEventActionCallAccept) {
+        final extra = event.callKitParams.extra;
+        if (extra != null) {
+          final Map<String, dynamic> data = Map<String, dynamic>.from(extra);
+          final rideData = RideData.fromJson(data);
+          Get.to(() => IncomingRideScreen(rideData: rideData));
+        }
+      } else if (event is CallEventActionCallDecline) {
+        // Handle decline if needed, or simply let it close
+      }
+    });
+
+    // Check for active calls if app started from Callkit Accept
+    var activeCalls = await FlutterCallkitIncoming.activeCalls();
+    if (activeCalls is List && activeCalls.isNotEmpty) {
+      final extra = activeCalls.first.extra;
+      if (extra != null) {
+        final Map<String, dynamic> data = Map<String, dynamic>.from(extra);
+        final rideData = RideData.fromJson(data);
+        if (rideData.id != null) {
+          Get.to(() => IncomingRideScreen(rideData: rideData));
+        }
+      }
+    }
+
+    RemoteMessage? initialMessage =
+        await FirebaseMessaging.instance.getInitialMessage();
     if (initialMessage != null) {
       // Handle initial message if needed
     }
 
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      if (message.data['statut'] == 'new' || message.data['tag'] == 'ridenewrider') {
+      if (message.data['statut'] == 'new' ||
+          message.data['tag'] == 'ridenewrider') {
         try {
           final rideData = RideData.fromJson(message.data);
-          if (rideData.id != null && rideData.id!.isNotEmpty && rideData.id != 'null') {
-            Get.to(() => IncomingRideScreen(rideData: rideData));
+          if (rideData.id != null &&
+              rideData.id!.isNotEmpty &&
+              rideData.id != 'null') {
+            showCallkitIncoming(message.data);
           }
         } catch (e) {
-          log('Error showing incoming ride screen: $e');
+          log('Error showing callkit incoming screen: $e');
         }
       }
       if (message.notification != null) {
@@ -105,15 +211,22 @@ class FirebaseService {
     try {
       if (message.data['status'] == "done") {
         await Get.to(ConversationScreen(), arguments: {
-          'receiverId': int.parse(json.decode(message.data['message'])['senderId'].toString()),
-          'orderId': int.parse(json.decode(message.data['message'])['orderId'].toString()),
-          'receiverName': json.decode(message.data['message'])['senderName'].toString(),
-          'receiverPhoto': json.decode(message.data['message'])['senderPhoto'].toString(),
+          'receiverId': int.parse(
+              json.decode(message.data['message'])['senderId'].toString()),
+          'orderId': int.parse(
+              json.decode(message.data['message'])['orderId'].toString()),
+          'receiverName':
+              json.decode(message.data['message'])['senderName'].toString(),
+          'receiverPhoto':
+              json.decode(message.data['message'])['senderPhoto'].toString(),
         });
-      } else if (message.data['statut'] == "new" || message.data['tag'] == "ridenewrider") {
+      } else if (message.data['statut'] == "new" ||
+          message.data['tag'] == "ridenewrider") {
         try {
           final rideData = RideData.fromJson(message.data);
-          if (rideData.id != null && rideData.id!.isNotEmpty && rideData.id != 'null') {
+          if (rideData.id != null &&
+              rideData.id!.isNotEmpty &&
+              rideData.id != 'null') {
             await Get.to(() => IncomingRideScreen(rideData: rideData));
             return;
           }
@@ -121,16 +234,21 @@ class FirebaseService {
           log('Error parsing rideData on tap: $e');
         }
         await Get.to(MainDashboard());
-      } else if (message.data['statut'] == "confirmed" || message.data['statut'] == "on ride") {
+      } else if (message.data['statut'] == "confirmed" ||
+          message.data['statut'] == "on ride") {
         try {
           final rideData = RideData.fromJson(message.data);
-          if (rideData.id != null && rideData.id!.isNotEmpty && rideData.id != 'null') {
+          if (rideData.id != null &&
+              rideData.id!.isNotEmpty &&
+              rideData.id != 'null') {
             var argumentData = {'type': rideData.statut, 'data': rideData};
             if (Constant.liveTrackingMapType == "inappmap") {
               if (Constant.selectedMapType == 'osm') {
-                await Get.to(() => const RouteOsmViewScreen(), arguments: argumentData);
+                await Get.to(() => const RouteOsmViewScreen(),
+                    arguments: argumentData);
               } else {
-                await Get.to(() => const RouteViewScreen(), arguments: argumentData);
+                await Get.to(() => const RouteViewScreen(),
+                    arguments: argumentData);
               }
             } else {
               Constant.redirectMap(
@@ -148,7 +266,8 @@ class FirebaseService {
       } else if (message.data['statut'] == "rejected") {
         await Get.to(MainDashboard());
       } else if (message.data['type'] == "payment received") {
-        DashBoardController dashBoardController = Get.put(DashBoardController());
+        DashBoardController dashBoardController =
+            Get.put(DashBoardController());
         dashBoardController.selectedDrawerIndex.value = 4;
         await Get.to(MainDashboard());
       }
@@ -159,12 +278,13 @@ class FirebaseService {
 }
 
 class NotificationService {
-  static final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
-  FlutterLocalNotificationsPlugin();
+  static final FlutterLocalNotificationsPlugin
+      _flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
   static Future<void> initialize(BuildContext context) async {
     // General high-importance channel
-    AndroidNotificationChannel generalChannel = const AndroidNotificationChannel(
+    AndroidNotificationChannel generalChannel =
+        const AndroidNotificationChannel(
       'high_importance_channel',
       'High Importance Notifications',
       importance: Importance.high,
@@ -182,53 +302,79 @@ class NotificationService {
     );
 
     const AndroidInitializationSettings initializationSettingsAndroid =
-    AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('@mipmap/ic_launcher');
 
     var iosInitializationSettings = const DarwinInitializationSettings();
 
-    final InitializationSettings initializationSettings = InitializationSettings(
-        android: initializationSettingsAndroid, iOS: iosInitializationSettings);
+    final InitializationSettings initializationSettings =
+        InitializationSettings(
+            android: initializationSettingsAndroid,
+            iOS: iosInitializationSettings);
 
     await _flutterLocalNotificationsPlugin.initialize(initializationSettings,
-        onDidReceiveNotificationResponse: (NotificationResponse response) async {
-          if (response.payload != null && response.payload!.isNotEmpty) {
-            try {
-              Map<String, dynamic> data = jsonDecode(response.payload!);
-              RemoteMessage msg = RemoteMessage(data: data);
-              await FirebaseService._handleNotificationTap(msg);
-            } catch (e) {
-              log('Error handling local notification tap response: $e');
-            }
-          }
-        });
+        onDidReceiveNotificationResponse:
+            (NotificationResponse response) async {
+      if (response.payload != null && response.payload!.isNotEmpty) {
+        try {
+          Map<String, dynamic> data = jsonDecode(response.payload!);
+          RemoteMessage msg = RemoteMessage(data: data);
+          await FirebaseService._handleNotificationTap(msg);
+        } catch (e) {
+          log('Error handling local notification tap response: $e');
+        }
+      }
+    });
 
-    final android = _flutterLocalNotificationsPlugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    final android =
+        _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
     await android?.createNotificationChannel(generalChannel);
     await android?.createNotificationChannel(rideChannel);
   }
 
   static void display(RemoteMessage message) async {
     try {
+      final isRideRequest = message.data['statut'] == 'new' ||
+          message.data['tag'] == 'ridenewrider';
+
+      // Skip display for ride requests because the native MyFirebaseMessagingService
+      // already handles showing the full-screen overlay and high-priority notification.
+      if (isRideRequest) {
+        return;
+      }
+
       final id = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-      final isRideRequest = message.data['statut'] == 'new' || message.data['tag'] == 'ridenewrider';
+
+      final title =
+          message.notification?.title ?? message.data['title'] ?? 'Fiinway';
+      final body = message.notification?.body ?? message.data['body'] ?? '';
 
       final NotificationDetails notificationDetails = NotificationDetails(
         android: AndroidNotificationDetails(
           isRideRequest ? 'ride_requests' : 'high_importance_channel',
           isRideRequest ? 'New Ride Requests' : 'High Importance Notifications',
+          channelDescription: isRideRequest
+              ? 'Alerts for incoming ride requests'
+              : 'General notifications',
           importance: Importance.max,
           priority: Priority.high,
+          // Shows the notification over the lock screen and wakes the display
           fullScreenIntent: isRideRequest,
+          // Keep the notification alive while the driver decides
+          autoCancel: !isRideRequest,
+          ongoing: isRideRequest,
+          // Notification drawer visibility
+          visibility: isRideRequest
+              ? NotificationVisibility.public
+              : NotificationVisibility.private,
+          ticker: isRideRequest ? 'New ride request arrived' : null,
           enableVibration: true,
           vibrationPattern: isRideRequest
               ? Int64List.fromList([0, 500, 200, 500, 200, 500])
               : null,
+          playSound: true,
         ),
       );
-
-      final title = message.notification?.title ?? message.data['title'] ?? 'Fiinway';
-      final body = message.notification?.body ?? message.data['body'] ?? '';
 
       await _flutterLocalNotificationsPlugin.show(
         id,
@@ -274,13 +420,19 @@ class AppInitialization {
     if (!Platform.isIOS) {
       // Set background message handler
       FirebaseMessaging.onBackgroundMessage(
-          FirebaseService.firebaseMessagingBackgroundHandler);
+          firebaseMessagingBackgroundHandler);
 
       // Android Maps configuration
       DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
       AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
       if (androidInfo.version.sdkInt > 28) {
         AndroidGoogleMapsFlutter.useAndroidViewSurface = true;
+      }
+      
+      // Request Display over other apps (System Alert Window) permission
+      var status = await Permission.systemAlertWindow.status;
+      if (!status.isGranted) {
+        await Permission.systemAlertWindow.request();
       }
     }
   }
@@ -305,7 +457,7 @@ class ThemeService with WidgetsBindingObserver {
 
   void getCurrentAppTheme() async {
     themeChangeProvider.darkTheme =
-    await themeChangeProvider.darkThemePreference.getTheme();
+        await themeChangeProvider.darkThemePreference.getTheme();
   }
 
   DarkThemeProvider get provider => themeChangeProvider;
@@ -392,8 +544,8 @@ class _MyAppState extends State<MyApp> {
               themeProvider.darkTheme == 0
                   ? true
                   : themeProvider.darkTheme == 1
-                  ? false
-                  : themeProvider.getSystemThem(),
+                      ? false
+                      : themeProvider.getSystemThem(),
               context,
             ),
             locale: LocalizationService.locale,
@@ -430,7 +582,8 @@ class _MyAppState extends State<MyApp> {
       if (languageCode.isNotEmpty) {
         LocalizationService().changeLocale(languageCode);
       }
-      API.header['accesstoken'] = Preferences.getString(Preferences.accesstoken);
+      API.header['accesstoken'] =
+          Preferences.getString(Preferences.accesstoken);
     });
   }
 }
@@ -450,6 +603,7 @@ class _MyAppState extends State<MyApp> {
 // import 'package:cabme_driver/themes/styles.dart';
 // import 'package:cabme_driver/utils/dark_theme_provider.dart';
 // import 'package:device_info_plus/device_info_plus.dart';
+
 // import 'package:firebase_app_check/firebase_app_check.dart';
 // import 'package:firebase_core/firebase_core.dart';
 // import 'package:firebase_messaging/firebase_messaging.dart';

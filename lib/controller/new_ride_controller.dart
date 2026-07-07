@@ -14,12 +14,14 @@ import 'package:cabme_driver/utils/Preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class NewRideController extends GetxController with WidgetsBindingObserver {
   var isLoading = true.obs;
   var rideList = <RideData>[].obs;
 
   Timer? timer;
+  StreamSubscription<RemoteMessage>? _fcmSubscription;
 
   @override
   void onInit() {
@@ -28,6 +30,10 @@ class NewRideController extends GetxController with WidgetsBindingObserver {
       getNewRide(isInit: true);
       getUsrData();
       startTimer();
+      _fcmSubscription = FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        log("FCM message received in NewRideController: refreshing rides");
+        getNewRide();
+      });
     } else {
       isLoading.value = false;
     }
@@ -36,7 +42,7 @@ class NewRideController extends GetxController with WidgetsBindingObserver {
 
   void startTimer() {
     timer?.cancel();
-    timer = Timer.periodic(const Duration(seconds: 20), (timer) {
+    timer = Timer.periodic(const Duration(seconds: 60), (timer) {
       getNewRide();
     });
   }
@@ -45,6 +51,7 @@ class NewRideController extends GetxController with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       startTimer();
+      getNewRide();
     } else if (state == AppLifecycleState.paused) {
       stopTimer();
     }
@@ -58,6 +65,7 @@ class NewRideController extends GetxController with WidgetsBindingObserver {
   void onClose() {
     WidgetsBinding.instance.removeObserver(this);
     stopTimer();
+    _fcmSubscription?.cancel();
     super.onClose();
   }
 
@@ -80,13 +88,16 @@ class NewRideController extends GetxController with WidgetsBindingObserver {
     showLog("API :: Request Header :: ${API.header.toString()} ");
     showLog("API :: responseStatus :: ${response.statusCode} ");
     showLog("API :: responseBody :: ${response.body} ");
-    Map<String, dynamic> responseBodyPhone = json.decode(response.body);
-    if (response.statusCode == 200 && responseBodyPhone['success'] == "success") {
-      // ShowToastDialog.closeLoader();
-      UserModel? value = UserModel.fromJson(responseBodyPhone);
-      Preferences.setString(Preferences.user, jsonEncode(value));
-      userModel.value = value;
-      update();
+    try {
+      Map<String, dynamic> responseBodyPhone = json.decode(response.body);
+      if (response.statusCode == 200 && responseBodyPhone['success'] == "success") {
+        UserModel? value = UserModel.fromJson(responseBodyPhone);
+        Preferences.setString(Preferences.user, jsonEncode(value));
+        userModel.value = value;
+        update();
+      }
+    } catch (e) {
+      log("Error parsing JSON in getUsrData: $e");
     }
 
     print("=======>${userModel.value.userData!.amount}");
@@ -292,7 +303,7 @@ class NewRideController extends GetxController with WidgetsBindingObserver {
     return null;
   }
 
-  Future<dynamic> setCompletedRequest(Map<String, String> bodyParams, RideData data) async {
+  Future<dynamic> setCompletedRequest(Map<String, String> bodyParams, RideData data, {String paymethod = "Cash"}) async {
     try {
       ShowToastDialog.showLoader("Please wait");
       final response = await http.post(Uri.parse(API.setCompleteRequest), headers: API.header, body: jsonEncode(bodyParams));
@@ -305,7 +316,7 @@ class NewRideController extends GetxController with WidgetsBindingObserver {
 
       if (response.statusCode == 200 && responseBody['success'] == "success") {
         if (data.rideType!.toString() == "driver") {
-          await cashPaymentRequest(data);
+          await cashPaymentRequest(data, paymethod: paymethod);
         }
         ShowToastDialog.closeLoader();
         return responseBody;
@@ -370,7 +381,7 @@ class NewRideController extends GetxController with WidgetsBindingObserver {
     return null;
   }
 
-  Future<dynamic> cashPaymentRequest(RideData data) async {
+  Future<dynamic> cashPaymentRequest(RideData data, {String paymethod = "Cash"}) async {
     List taxList = [];
 
     for (var v in Constant.taxList) {
@@ -381,7 +392,7 @@ class NewRideController extends GetxController with WidgetsBindingObserver {
       'id_driver': data.idConducteur.toString(),
       'id_user_app': data.idUserApp.toString(),
       'amount': data.montant.toString(),
-      'paymethod': "Cash",
+      'paymethod': paymethod,
       'discount': data.discount.toString(),
       'tip': data.tipAmount.toString(),
       'tax': taxList,
@@ -390,9 +401,7 @@ class NewRideController extends GetxController with WidgetsBindingObserver {
       'payment_status': "success",
     };
     try {
-      // ShowToastDialog.showLoader("Please wait");
       final response = await http.post(Uri.parse(API.payRequestCash), headers: API.header, body: jsonEncode(bodyParams));
-
       showLog("API :: URL :: ${API.payRequestCash}");
       showLog("API :: Request Body :: ${jsonEncode(bodyParams)}");
       showLog("API :: Request Header :: ${API.header.toString()} ");
@@ -400,32 +409,21 @@ class NewRideController extends GetxController with WidgetsBindingObserver {
       showLog("API :: responseBody :: ${response.body} ");
       Map<String, dynamic> responseBody = json.decode(response.body);
 
-      if (response.statusCode == 200 && responseBody['success'].toString().toLowerCase() == "Success".toString().toLowerCase()) {
-        ShowToastDialog.showToast("Successfully completed");
-
-        Get.back();
-        // ShowToastDialog.closeLoader();
-
+      if (response.statusCode == 200 && responseBody['success'].toString().toLowerCase() == "success") {
         return responseBody;
       } else if (response.statusCode == 200 && responseBody['success'] == "Failed") {
-        // ShowToastDialog.closeLoader();
         ShowToastDialog.showToast(responseBody['error']);
       } else {
-        // ShowToastDialog.closeLoader();
         ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
         throw Exception('Failed to load album');
       }
     } on TimeoutException catch (e) {
-      // ShowToastDialog.closeLoader();
       ShowToastDialog.showToast(e.message.toString());
     } on SocketException catch (e) {
-      // ShowToastDialog.closeLoader();
       ShowToastDialog.showToast(e.message.toString());
     } on Error catch (e) {
-      // ShowToastDialog.closeLoader();
       ShowToastDialog.showToast(e.toString());
     }
-    // ShowToastDialog.closeLoader();
     return null;
   }
 }

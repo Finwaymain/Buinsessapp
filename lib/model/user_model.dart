@@ -116,6 +116,9 @@ class UserData {
   SubscriptionPlanData? subscriptionPlan;
   AdminCommission? adminCommission;
   List<String>? selectedCategories;
+  String? onboardingCompleted; // 'yes' or 'no' — set by backend based on tj_conducteur_categories
+  String? alternatePhone;
+  String? marketplaceEnabled;
 
   UserData({
     this.id,
@@ -205,6 +208,9 @@ class UserData {
     this.subscriptionPlan,
     this.adminCommission,
     this.selectedCategories,
+    this.onboardingCompleted,
+    this.alternatePhone,
+    this.marketplaceEnabled,
   });
 
   UserData.fromJson(Map<String, dynamic> json) {
@@ -301,6 +307,9 @@ class UserData {
     if (json['selected_categories'] != null) {
       selectedCategories = List<String>.from(json['selected_categories'].map((x) => x.toString()));
     }
+    onboardingCompleted = json['onboarding_completed']?.toString();
+    alternatePhone = json['alternate_phone']?.toString();
+    marketplaceEnabled = json['marketplace_enabled']?.toString();
   }
 
   Map<String, dynamic> toJson() {
@@ -398,6 +407,9 @@ class UserData {
     if (selectedCategories != null) {
       data['selected_categories'] = selectedCategories;
     }
+    data['onboarding_completed'] = onboardingCompleted;
+    data['alternate_phone'] = alternatePhone;
+    data['marketplace_enabled'] = marketplaceEnabled;
     return data;
   }
 }

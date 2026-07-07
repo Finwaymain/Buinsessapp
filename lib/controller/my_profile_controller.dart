@@ -9,6 +9,7 @@ import 'package:cabme_driver/constant/show_toast_dialog.dart';
 import 'package:cabme_driver/model/user_model.dart';
 import 'package:cabme_driver/model/zone_model.dart';
 import 'package:cabme_driver/service/api.dart';
+import 'package:cabme_driver/utils/Preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
@@ -36,6 +37,8 @@ class MyProfileController extends GetxController {
   RxString userCat = "".obs;
   RxString profileImage = "".obs;
   RxString userID = "".obs;
+  var alternatePhoneController = TextEditingController().obs;
+  var marketplaceEnabled = true.obs;
 
   Future<void> getUsrData() async {
     UserModel userModel = Constant.getUserData();
@@ -43,6 +46,8 @@ class MyProfileController extends GetxController {
     lastNameController.value.text = userModel.userData!.nom!;
     emailController.value.text = userModel.userData!.email!;
     phoneController.value.text = userModel.userData!.phone!;
+    alternatePhoneController.value.text = userModel.userData!.alternatePhone ?? '';
+    marketplaceEnabled.value = (userModel.userData!.marketplaceEnabled == '1' || userModel.userData!.marketplaceEnabled == 1);
     log("Country Code :: ${userModel.userData!.country.toString()}");
     userCat.value = userModel.userData!.userCat!;
     profileImage.value = userModel.userData!.photoPath ?? "";
@@ -319,4 +324,133 @@ class MyProfileController extends GetxController {
   var currentPasswordController = TextEditingController().obs;
   var newPasswordController = TextEditingController().obs;
   var confirmPasswordController = TextEditingController().obs;
+
+  Future<bool> updateAlternatePhone(String phoneVal) async {
+    try {
+      ShowToastDialog.showLoader("Please wait");
+      final bodyParams = {
+        'id_user': userID.value,
+        'alternate_phone': phoneVal,
+        'user_cat': userCat.value,
+      };
+      final response = await http.post(
+        Uri.parse(API.updateUserAlternatePhone),
+        headers: API.header,
+        body: jsonEncode(bodyParams),
+      );
+      showLog("API :: URL :: ${API.updateUserAlternatePhone}");
+      showLog("API :: Request Body :: ${jsonEncode(bodyParams)} ");
+      showLog("API :: Response Status :: ${response.statusCode} ");
+      showLog("API :: Response Body :: ${response.body} ");
+      Map<String, dynamic> responseBody = json.decode(response.body);
+
+      if (response.statusCode == 200 && responseBody['success'] == 'success') {
+        ShowToastDialog.closeLoader();
+        UserModel updatedModel = Constant.getUserData();
+        if (updatedModel.userData != null) {
+          updatedModel.userData!.alternatePhone = phoneVal;
+          Preferences.setString(Preferences.user, jsonEncode(updatedModel.toJson()));
+        }
+        alternatePhoneController.value.text = phoneVal;
+        ShowToastDialog.showToast("Alternate phone updated successfully".tr);
+        return true;
+      } else {
+        ShowToastDialog.closeLoader();
+        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later'.tr);
+      }
+    } catch (e) {
+      ShowToastDialog.closeLoader();
+      ShowToastDialog.showToast(e.toString());
+    }
+    return false;
+  }
+
+  Future<void> showOtpVerificationDialog(BuildContext context, String phoneVal) async {
+    final otpTextController = TextEditingController();
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Verify Alternate Phone".tr),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text("${"Enter the 4-digit OTP sent to".tr} $phoneVal\n${"(Use dummy OTP 1234)".tr}"),
+              const SizedBox(height: 16),
+              TextField(
+                controller: otpTextController,
+                keyboardType: TextInputType.number,
+                maxLength: 4,
+                decoration: InputDecoration(
+                  labelText: "OTP".tr,
+                  hintText: "1234",
+                  counterText: "",
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text("Cancel".tr),
+            ),
+            TextButton(
+              onPressed: () async {
+                if (otpTextController.text.trim() == "1234") {
+                  Navigator.of(context).pop();
+                  await updateAlternatePhone(phoneVal);
+                } else {
+                  ShowToastDialog.showToast("Invalid OTP".tr);
+                }
+              },
+              child: Text("Verify".tr),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<bool> toggleMarketplace(bool enabled) async {
+    try {
+      ShowToastDialog.showLoader("Please wait");
+      final bodyParams = {
+        'id_user': userID.value,
+        'marketplace_enabled': enabled ? '1' : '0',
+        'user_cat': userCat.value,
+      };
+      final response = await http.post(
+        Uri.parse(API.userToggleMarketplace),
+        headers: API.header,
+        body: jsonEncode(bodyParams),
+      );
+      showLog("API :: URL :: ${API.userToggleMarketplace}");
+      showLog("API :: Request Body :: ${jsonEncode(bodyParams)} ");
+      showLog("API :: Response Status :: ${response.statusCode} ");
+      showLog("API :: Response Body :: ${response.body} ");
+      Map<String, dynamic> responseBody = json.decode(response.body);
+
+      if (response.statusCode == 200 && responseBody['success'] == 'success') {
+        ShowToastDialog.closeLoader();
+        UserModel updatedModel = Constant.getUserData();
+        if (updatedModel.userData != null) {
+          updatedModel.userData!.marketplaceEnabled = enabled ? '1' : '0';
+          Preferences.setString(Preferences.user, jsonEncode(updatedModel.toJson()));
+        }
+        marketplaceEnabled.value = enabled;
+        ShowToastDialog.showToast("Marketplace setting updated successfully".tr);
+        return true;
+      } else {
+        ShowToastDialog.closeLoader();
+        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later'.tr);
+      }
+    } catch (e) {
+      ShowToastDialog.closeLoader();
+      ShowToastDialog.showToast(e.toString());
+    }
+    return false;
+  }
 }

@@ -169,7 +169,7 @@ class RideDetailsController extends GetxController {
     return null;
   }
 
-  Future<dynamic> setCompletedRequest(Map<String, String> bodyParams, RideData data) async {
+  Future<dynamic> setCompletedRequest(Map<String, String> bodyParams, RideData data, {String paymethod = "Cash"}) async {
     try {
       ShowToastDialog.showLoader("Please wait");
       final response = await http.post(Uri.parse(API.setCompleteRequest), headers: API.header, body: jsonEncode(bodyParams));
@@ -181,11 +181,10 @@ class RideDetailsController extends GetxController {
       Map<String, dynamic> responseBody = json.decode(response.body);
 
       if (response.statusCode == 200 && responseBody['success'] == "success") {
-        ShowToastDialog.closeLoader();
-
         if (data.rideType!.toString() == "driver") {
-          await cashPaymentRequest(data);
+          await cashPaymentRequest(data, paymethod: paymethod);
         }
+        ShowToastDialog.closeLoader();
         return responseBody;
       } else if (response.statusCode == 200 && responseBody['success'] == "Failed") {
         ShowToastDialog.closeLoader();
@@ -248,7 +247,7 @@ class RideDetailsController extends GetxController {
     return null;
   }
 
-  Future<dynamic> cashPaymentRequest(RideData data) async {
+  Future<dynamic> cashPaymentRequest(RideData data, {String paymethod = "Cash"}) async {
     List taxList = [];
 
     for (var v in Constant.taxList) {
@@ -259,7 +258,7 @@ class RideDetailsController extends GetxController {
       'id_driver': data.idConducteur.toString(),
       'id_user_app': data.idUserApp.toString(),
       'amount': data.montant.toString(),
-      'paymethod': "Cash",
+      'paymethod': paymethod,
       'discount': data.discount.toString(),
       'tip': data.tipAmount.toString(),
       'tax': taxList,
@@ -268,7 +267,6 @@ class RideDetailsController extends GetxController {
       'payment_status': "success",
     };
     try {
-      // ShowToastDialog.showLoader("Please wait");
       final response = await http.post(Uri.parse(API.payRequestCash), headers: API.header, body: jsonEncode(bodyParams));
       showLog("API :: URL :: ${API.payRequestCash} ");
       showLog("API :: Request Body :: ${jsonEncode(bodyParams)} ");
@@ -277,32 +275,21 @@ class RideDetailsController extends GetxController {
       showLog("API :: responseBody :: ${response.body} ");
       Map<String, dynamic> responseBody = json.decode(response.body);
 
-      if (response.statusCode == 200 && responseBody['success'].toString().toLowerCase() == "Success".toString().toLowerCase()) {
-        ShowToastDialog.showToast("Successfully completed");
-
-        Get.back();
-        // ShowToastDialog.closeLoader();
-
+      if (response.statusCode == 200 && responseBody['success'].toString().toLowerCase() == "success") {
         return responseBody;
       } else if (response.statusCode == 200 && responseBody['success'] == "Failed") {
-        // ShowToastDialog.closeLoader();
         ShowToastDialog.showToast(responseBody['error']);
       } else {
-        // ShowToastDialog.closeLoader();
         ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
         throw Exception('Failed to load album');
       }
     } on TimeoutException catch (e) {
-      // ShowToastDialog.closeLoader();
       ShowToastDialog.showToast(e.message.toString());
     } on SocketException catch (e) {
-      // ShowToastDialog.closeLoader();
       ShowToastDialog.showToast(e.message.toString());
     } on Error catch (e) {
-      // ShowToastDialog.closeLoader();
       ShowToastDialog.showToast(e.toString());
     }
-    // ShowToastDialog.closeLoader();
     return null;
   }
 }

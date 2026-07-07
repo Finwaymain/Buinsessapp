@@ -206,40 +206,127 @@ class EditProfileScreen extends StatelessWidget {
                                   fit: BoxFit.cover,
                                 ),
                               ),
+                              suffix: IconButton(
+                                onPressed: () {
+                                  buildAlertChangeData(
+                                    context,
+                                    title: 'email'.tr,
+                                    controller: myProfileController.emailController.value,
+                                    validators: (String? value) {
+                                      if (value != null && value.isNotEmpty) {
+                                        return null;
+                                      } else {
+                                        return "required".tr;
+                                      }
+                                    },
+                                    onSubmitBtn: () {
+                                      if (myProfileController.emailController.value.text.isNotEmpty) {
+                                        myProfileController.updateEmail({
+                                          "id_user": myProfileController.userID.value,
+                                          "email": myProfileController.emailController.value.text,
+                                          "user_cat": "driver",
+                                        }).then((value) {
+                                          if (value != null) {
+                                            if (value["success"] == "success") {
+                                              UserModel userModel = Constant.getUserData();
+                                              userModel.userData!.email = value['data']['email'];
+                                              Preferences.setString(Preferences.user, jsonEncode(userModel.toJson()));
+                                              myProfileController.getUsrData();
+                                              dashboardController.getUsrData();
+                                              ShowToastDialog.showToast(value['message']);
+                                              Get.back(); // close dialog
+                                            } else {
+                                              ShowToastDialog.showToast(value['error']);
+                                              Get.back(); // close dialog
+                                            }
+                                          }
+                                        });
+                                      }
+                                    },
+                                  );
+                                },
+                                icon: Icon(
+                                  Icons.edit,
+                                  color: themeChange.getThem() ? AppThemeData.grey500Dark : AppThemeData.grey300Dark,
+                                  size: 20,
+                                ),
+                              ),
                               controller: myProfileController.emailController.value,
-                              hintText: 'email',
+                              hintText: 'email'.tr,
                               validators: (String? value) {
-                                if (value != null || value!.isNotEmpty) {
-                                  return null;
-                                } else {
-                                  return "required".tr;
-                                }
+                                return null;
                               },
                               onSubmitBtn: (v) {
-                                if (myProfileController.lastNameController.value.text.isNotEmpty) {
-                                  myProfileController.updateEmail({
-                                    "id_user": myProfileController.userID.value,
-                                    "email": myProfileController.emailController.value.text,
-                                    "user_cat": "driver",
-                                  }).then((value) {
-                                    if (value != null) {
-                                      if (value["success"] == "success") {
-                                        UserModel userModel = Constant.getUserData();
-                                        userModel.userData!.email = value['data']['email'];
-                                        Preferences.setString(Preferences.user, jsonEncode(userModel.toJson()));
-                                        myProfileController.getUsrData();
-                                        dashboardController.getUsrData();
-                                        ShowToastDialog.showToast(value['message']);
-                                        Get.back();
-                                      } else {
-                                        ShowToastDialog.showToast(value['error']);
-                                        Get.back();
-                                      }
-                                    }
-                                  });
-                                }
                                 return null;
                               }),
+                          dividerCust(
+                            isDarkMode: themeChange.getThem(),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: TextFieldWidget(
+                                    isBorderEnable: false,
+                                    prefix: IconButton(
+                                      onPressed: () {},
+                                      icon: Icon(
+                                        Icons.phone_android,
+                                        color: themeChange.getThem() ? AppThemeData.grey500Dark : AppThemeData.grey300Dark,
+                                      ),
+                                    ),
+                                    controller: myProfileController.alternatePhoneController.value,
+                                    hintText: 'Alternate Phone Number'.tr,
+                                    validators: (String? value) {
+                                      return null;
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    String phoneVal = myProfileController.alternatePhoneController.value.text.trim();
+                                    if (phoneVal.isEmpty) {
+                                      ShowToastDialog.showToast("Please enter alternate phone number".tr);
+                                      return;
+                                    }
+                                    myProfileController.showOtpVerificationDialog(context, phoneVal);
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppThemeData.primary200,
+                                    foregroundColor: Colors.white,
+                                  ),
+                                  child: Text("Verify".tr),
+                                ),
+                              ],
+                            ),
+                          ),
+                          dividerCust(
+                            isDarkMode: themeChange.getThem(),
+                          ),
+                          Obx(() => SwitchListTile(
+                            title: Text(
+                              'Marketplace Visibility'.tr,
+                              style: TextStyle(
+                                color: themeChange.getThem() ? Colors.white : Colors.black,
+                              ),
+                            ),
+                            subtitle: Text(
+                              myProfileController.marketplaceEnabled.value
+                                  ? 'Marketplace is active'.tr
+                                  : 'Marketplace is disabled'.tr,
+                              style: TextStyle(
+                                color: themeChange.getThem() ? Colors.white70 : Colors.black54,
+                                fontSize: 12,
+                              ),
+                            ),
+                            value: myProfileController.marketplaceEnabled.value,
+                            activeColor: AppThemeData.primary200,
+                            onChanged: (bool value) {
+                              myProfileController.toggleMarketplace(value);
+                            },
+                          )),
                         ],
                       ),
                     ),

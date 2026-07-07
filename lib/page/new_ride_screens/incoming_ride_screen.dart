@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:developer';
 import 'package:cabme_driver/constant/constant.dart';
 import 'package:cabme_driver/constant/show_toast_dialog.dart';
 import 'package:cabme_driver/controller/new_ride_controller.dart';
@@ -8,10 +10,13 @@ import 'package:cabme_driver/themes/custom_dialog_box.dart';
 import 'package:cabme_driver/utils/Preferences.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cabme_driver/page/route_view_screen/route_view_screen.dart';
 import 'package:cabme_driver/page/route_view_screen/route_osm_view_screen.dart';
+import 'package:http/http.dart' as http;
+import 'package:cabme_driver/service/api.dart';
 
 class IncomingRideScreen extends StatefulWidget {
   final RideData rideData;
@@ -34,9 +39,46 @@ class _IncomingRideScreenState extends State<IncomingRideScreen> with TickerProv
   final double _sliderHeight = 60.0;
   bool _isAccepted = false;
 
+  Future<void> _loadRideDetails() async {
+    try {
+      final url = "${API.rideDetails}?ride_id=${widget.rideData.id}&user_type=driver";
+      final response = await http.get(Uri.parse(url), headers: API.header);
+      if (response.statusCode == 200) {
+        final responseBody = json.decode(response.body);
+        if (responseBody['success'] == "success" && responseBody['data'] != null) {
+          final enriched = RideData.fromJson(responseBody['data']);
+          if (mounted) {
+            setState(() {
+              widget.rideData.nom = enriched.nom;
+              widget.rideData.prenom = enriched.prenom;
+              widget.rideData.phone = enriched.phone;
+              widget.rideData.photoPath = enriched.photoPath;
+              widget.rideData.moyenne = enriched.moyenneDriver ?? enriched.moyenne;
+              widget.rideData.moyenneDriver = enriched.moyenneDriver;
+              widget.rideData.departName = enriched.departName;
+              widget.rideData.destinationName = enriched.destinationName;
+              widget.rideData.latitudeDepart = enriched.latitudeDepart;
+              widget.rideData.longitudeDepart = enriched.longitudeDepart;
+              widget.rideData.latitudeArrivee = enriched.latitudeArrivee;
+              widget.rideData.longitudeArrivee = enriched.longitudeArrivee;
+              widget.rideData.montant = enriched.montant;
+              widget.rideData.distance = enriched.distance;
+              widget.rideData.distanceUnit = enriched.distanceUnit;
+              widget.rideData.duree = enriched.duree;
+              widget.rideData.numberPoeple = enriched.numberPoeple;
+            });
+          }
+        }
+      }
+    } catch (e) {
+      log('Error loading ride details: $e');
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    _loadRideDetails();
     
     // Fetch settings for timer if possible
     _pulseController = AnimationController(
@@ -74,6 +116,12 @@ class _IncomingRideScreenState extends State<IncomingRideScreen> with TickerProv
     _pulseController.dispose();
     _countdownController.dispose();
     _timer?.cancel();
+    try {
+      const MethodChannel('com.fiinwaybusiness/ride_overlay')
+          .invokeMethod('dismissRideOverlay');
+    } catch (e) {
+      log('Error dismissing ride overlay on screen dispose: $e');
+    }
     super.dispose();
   }
 

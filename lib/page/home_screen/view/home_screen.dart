@@ -191,33 +191,40 @@ class MainHomeScreen extends StatelessWidget {
                                         ),
                                         if ((controller.userModel.value.userData?.isVerified == "1" || controller.userModel.value.userData?.isVerified == "yes") && controller.userModel.value.userData?.statut == "yes") ...[
                                           const SizedBox(height: 6),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                            decoration: BoxDecoration(
-                                              color: Colors.green.withOpacity(0.2),
-                                              borderRadius: BorderRadius.circular(4),
-                                              border: Border.all(color: Colors.green),
-                                            ),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                const Icon(Icons.check_circle, size: 12, color: Colors.green),
-                                                const SizedBox(width: 4),
-                                                Text(
-                                                  "Verified".tr,
-                                                  style: const TextStyle(fontSize: 10, fontFamily: AppThemeData.medium, color: Colors.green),
+                                          Row(
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.green.withOpacity(0.2),
+                                                  borderRadius: BorderRadius.circular(4),
+                                                  border: Border.all(color: Colors.green),
                                                 ),
-                                              ],
-                                            ),
+                                                child: Row(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    const Icon(Icons.check_circle, size: 12, color: Colors.green),
+                                                    const SizedBox(width: 4),
+                                                    Text(
+                                                      "Verified".tr,
+                                                      style: const TextStyle(fontSize: 10, fontFamily: AppThemeData.medium, color: Colors.green),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                        ] else if (controller.userModel.value.userData?.brand == null || controller.userModel.value.userData!.brand!.isEmpty) ...[
+                                        ] else if (controller.userModel.value.userData?.onboardingCompleted != 'yes') ...[
+                                          // Driver hasn't completed onboarding yet
                                           const SizedBox(height: 6),
                                           GestureDetector(
                                             onTap: () {
                                               String token = controller.userModel.value.userData?.accesstoken ?? "";
                                               String driverId = controller.userModel.value.userData?.id ?? "";
                                               String finalUrl = 'https://api.fiinway.com/onboarding?accesstoken=$token&driver_id=$driverId';
-                                              Get.to(() => WebViewScreen(url: finalUrl, title: 'Complete Onboarding'));
+                                              Get.to(() => WebViewScreen(url: finalUrl, title: 'Complete Onboarding'))?.then((value) {
+                                                controller.getUsrData();
+                                              });
                                             },
                                             child: Container(
                                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -226,7 +233,7 @@ class MainHomeScreen extends StatelessWidget {
                                                 borderRadius: BorderRadius.circular(6),
                                                 boxShadow: [
                                                   BoxShadow(
-                                                    color: AppThemeData.primary200.withOpacity(0.3),
+                                                    color: AppThemeData.primary200.withValues(alpha: 0.3),
                                                     blurRadius: 4,
                                                     offset: const Offset(0, 2),
                                                   ),
@@ -239,18 +246,53 @@ class MainHomeScreen extends StatelessWidget {
                                             ),
                                           ),
                                         ] else ...[
+                                          // Onboarding done, awaiting admin verification
                                           const SizedBox(height: 6),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                            decoration: BoxDecoration(
-                                              color: AppThemeData.warning200.withOpacity(0.2),
-                                              borderRadius: BorderRadius.circular(4),
-                                              border: Border.all(color: AppThemeData.warning200),
-                                            ),
-                                            child: Text(
-                                              "Profile will be verified in 24-48 hrs".tr,
-                                              style: TextStyle(fontSize: 10, fontFamily: AppThemeData.medium, color: AppThemeData.warning200),
-                                            ),
+                                          Row(
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                decoration: BoxDecoration(
+                                                  color: AppThemeData.warning200.withValues(alpha: 0.2),
+                                                  borderRadius: BorderRadius.circular(4),
+                                                  border: Border.all(color: AppThemeData.warning200),
+                                                ),
+                                                child: Text(
+                                                  "Pending Verification".tr,
+                                                  style: TextStyle(fontSize: 10, fontFamily: AppThemeData.medium, color: AppThemeData.warning200),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              GestureDetector(
+                                                onTap: () {
+                                                  String token = controller.userModel.value.userData?.accesstoken ?? "";
+                                                  String driverId = controller.userModel.value.userData?.id ?? "";
+                                                  String finalUrl = 'https://api.fiinway.com/onboarding?accesstoken=$token&driver_id=$driverId';
+                                                  Get.to(() => WebViewScreen(url: finalUrl, title: 'Edit Categories'))?.then((value) {
+                                                    controller.getUsrData();
+                                                  });
+                                                },
+                                                child: Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                  decoration: BoxDecoration(
+                                                    color: AppThemeData.primary200.withValues(alpha: 0.2),
+                                                    borderRadius: BorderRadius.circular(4),
+                                                    border: Border.all(color: AppThemeData.primary200),
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: [
+                                                      Icon(Icons.edit, size: 12, color: AppThemeData.primary200),
+                                                      const SizedBox(width: 4),
+                                                      Text(
+                                                        "Edit Categories".tr,
+                                                        style: TextStyle(fontSize: 10, fontFamily: AppThemeData.medium, color: AppThemeData.primary200),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ],
                                         if (controller.userModel.value.userData?.brand != null && controller.userModel.value.userData!.brand!.isNotEmpty) ...[
@@ -314,8 +356,10 @@ class MainHomeScreen extends StatelessWidget {
                               ),
                             ),
 
+                            // Pending verification banner — only shown when onboarding is
+                            // complete but admin hasn't verified yet. No re-open link.
                             if (controller.userModel.value.userData != null && 
-                                (controller.userModel.value.userData?.categoryId != null && controller.userModel.value.userData?.categoryId != 'null' && controller.userModel.value.userData?.categoryId != '' && controller.userModel.value.userData?.categoryId != '0') &&
+                                controller.userModel.value.userData?.onboardingCompleted == 'yes' &&
                                 (controller.userModel.value.userData!.isVerified != "yes"))
                               Container(
                                 margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -331,7 +375,7 @@ class MainHomeScreen extends StatelessWidget {
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Text(
-                                        "Your account is pending verification approval. Your account will be verified within 24-48 hrs. Please ensure all documents are uploaded.".tr,
+                                        "Your account is pending verification approval. You will be verified within 24-48 hrs.".tr,
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontFamily: AppThemeData.medium,
@@ -339,15 +383,6 @@ class MainHomeScreen extends StatelessWidget {
                                         ),
                                       ),
                                     ),
-                                    TextButton(
-                                      onPressed: () {
-                                        String token = controller.userModel.value.userData?.accesstoken ?? "";
-                                        String driverId = controller.userModel.value.userData?.id ?? "";
-                                        String finalUrl = 'https://api.fiinway.com/onboarding?accesstoken=$token&driver_id=$driverId';
-                                        Get.to(() => WebViewScreen(url: finalUrl, title: 'Documents'));
-                                      },
-                                      child: Text("Documents".tr, style: TextStyle(color: AppThemeData.warning200, fontFamily: AppThemeData.bold)),
-                                    )
                                   ],
                                 ),
                               ),
@@ -434,6 +469,7 @@ class MainHomeScreen extends StatelessWidget {
                                 ),
                               ),
                             ),
+
 
                             // Asymmetrical grid/row of actions and value programs
                             Padding(
@@ -624,6 +660,20 @@ class MainHomeScreen extends StatelessWidget {
                                       }
                                       Get.to(() => const InProgressScreen(),
                                           transition: Transition.rightToLeftWithFade);
+                                    },
+                                  ),
+                                  VerticalIconWithText(
+                                    icon: Icons.more_horiz_outlined,
+                                    text: 'More',
+                                    onTap: () {
+                                      if (!Preferences.getBoolean(Preferences.isLogin)) {
+                                        Get.to(() => PhoneEntryScreen(mode: 'signup'), transition: Transition.rightToLeftWithFade);
+                                        return;
+                                      }
+                                      String token = Preferences.getString(Preferences.accesstoken);
+                                      String userId = Preferences.getInt(Preferences.userId).toString();
+                                      String finalUrl = 'https://api.fiinway.com/onboarding/more?accesstoken=$token&driver_id=$userId';
+                                      Get.to(() => WebViewScreen(url: finalUrl, title: 'More'));
                                     },
                                   ),
                                 ],

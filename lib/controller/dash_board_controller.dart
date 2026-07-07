@@ -9,7 +9,7 @@ import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:in_app_review/in_app_review.dart';
 import 'package:location/location.dart';
-
+import 'package:permission_handler/permission_handler.dart' hide PermissionStatus;
 import '../constant/constant.dart';
 import '../constant/logdata.dart';
 import '../constant/show_toast_dialog.dart';
@@ -27,6 +27,7 @@ import '../page/wallet/wallet_screen.dart';
 import '../service/api.dart';
 import '../utils/Preferences.dart';
 import '../widget/permission_dialog.dart';
+import '../page/marketplace/view/marketplace_home_screen.dart';
 
 class DashBoardController extends GetxController {
   Location location = Location();
@@ -59,10 +60,25 @@ class DashBoardController extends GetxController {
 
   @override
   void onInit() {
+    checkCallPermissions();
     getUsrData();
     getPaymentSettingData();
     initLocationTracking();
+    fetchDriverServices();
     super.onInit();
+  }
+
+  Future<void> checkCallPermissions() async {
+    try {
+      if (await Permission.ignoreBatteryOptimizations.isDenied) {
+        await Permission.ignoreBatteryOptimizations.request();
+      }
+      if (await Permission.systemAlertWindow.isDenied) {
+        await Permission.systemAlertWindow.request();
+      }
+    } catch (e) {
+      log("Error checking call permissions: $e");
+    }
   }
 
   Future<void> updateToken() async {
@@ -227,7 +243,8 @@ class DashBoardController extends GetxController {
         }
       }
     } catch (e) {
-      rethrow;
+      log("Error in getUsrData: $e");
+      ShowToastDialog.closeLoader();
     }
     log("Constant.parcelActive :: ${Constant.parcelActive.toString() == "yes"}  || ${userModel.value.userData?.parcelDelivery.toString() == "yes"}");
     getDrawerItems();
@@ -312,7 +329,7 @@ class DashBoardController extends GetxController {
   }
 
   void _enableBackgroundLocationTracking() {
-    location.enableBackgroundMode(enable: true);
+    location.enableBackgroundMode(enable: true).catchError((e) { log("Error enabling background mode: $e"); return false; });
     location.changeSettings(
       accuracy: LocationAccuracy.high,
       distanceFilter: double.parse(Constant.driverLocationUpdateUnit.toString()),
@@ -482,7 +499,7 @@ class DashBoardController extends GetxController {
     Get.back();
     if (index >= drawerItems.length) return;
     var item = drawerItems[index];
-    if (item.title == 'Wallet'.tr || item.title == 'My Profile'.tr || item.title == 'Update Categories'.tr || item.title == 'Change Password'.tr || item.title == 'Refer a Friend'.tr) {
+    if (item.title == 'Wallet'.tr || item.title == 'My Profile'.tr || item.title == 'Update Categories'.tr || item.title == 'Join as Partner'.tr || item.title == 'Change Password'.tr || item.title == 'Refer a Friend'.tr || item.title == 'Marketplace'.tr) {
       if (!isLogin) {
         Get.to(PhoneEntryScreen(mode: 'signup'));
         return;
@@ -492,6 +509,16 @@ class DashBoardController extends GetxController {
       Get.to(WalletScreen());
     } else if (item.title == 'My Profile'.tr) {
       Get.to(MyProfileScreen());
+    } else if (item.title == 'Marketplace'.tr) {
+      bool isMarketplaceEnabled = (Constant.getUserData().userData?.marketplaceEnabled == '1');
+      if (!isMarketplaceEnabled) {
+        ShowToastDialog.showToast("Marketplace is disabled. Please enable it in your profile.".tr);
+        return;
+      }
+      Get.to(() => const MarketplaceHomeScreen());
+    } else if (item.title == 'Join as Partner'.tr) {
+      String finalUrl = 'https://api.fiinway.com/onboarding/join-fiinway';
+      Get.to(() => WebViewScreen(url: finalUrl, title: 'Join Fiinway'));
     } else if (item.title == 'Update Categories'.tr) {
       String token = Preferences.getString(Preferences.accesstoken);
       String driverId = Preferences.getInt(Preferences.userId).toString();
@@ -531,7 +558,13 @@ class DashBoardController extends GetxController {
       DrawerItem(
         title: 'Home'.tr,
         description: '',
-        icon: 'assets/icons/ic_home.svg',
+        icon: 'assets/icons/ic_map.svg',
+      ),
+      DrawerItem(
+        title: 'Marketplace'.tr,
+        description: 'Buy and sell goods with other users and drivers',
+        icon: 'assets/icons/ic_all_car.svg',
+        section: 'Services'.tr,
       ),
       DrawerItem(
         title: 'Wallet'.tr,
@@ -543,6 +576,11 @@ class DashBoardController extends GetxController {
         title: 'My Profile'.tr,
         description: 'View and update your personal profile details',
         icon: 'assets/icons/ic_profile.svg',
+      ),
+      DrawerItem(
+        title: 'Join as Partner'.tr,
+        description: 'Become a partner with Fiinway',
+        icon: 'assets/icons/ic_user.svg',
       ),
 
       DrawerItem(
@@ -586,8 +624,69 @@ class DashBoardController extends GetxController {
     ];
   }
 
+  RxList<dynamic> driverServices = <dynamic>[].obs;
+  RxBool isLoadingServices = false.obs;
 
+  Future<void> fetchDriverServices() async {
+    try {
+      final String driverId = Preferences.getInt(Preferences.userId).toString();
+      if (driverId.isEmpty || driverId == "0") return;
 
+      isLoadingServices.value = true;
+      final response = await http.get(
+        Uri.parse("${API.getDriverServices}?driver_id=$driverId"),
+        headers: API.header,
+      );
+
+      if (response.statusCode == 200) {
+        Map<String, dynamic> responseBody = json.decode(response.body);
+        if (responseBody['success'] == "success") {
+          driverServices.value = responseBody['data'] ?? [];
+        }
+      }
+    } catch (e) {
+      log("Error fetching driver services: $e");
+    } finally {
+      isLoadingServices.value = false;
+    }
+  }
+
+  Future<bool> toggleService(dynamic categoryId, String statut) async {
+    try {
+      final String driverId = Preferences.getInt(Preferences.userId).toString();
+      if (driverId.isEmpty || driverId == "0") return false;
+
+      ShowToastDialog.showLoader("Please wait");
+      final response = await http.post(
+        Uri.parse(API.toggleDriverService),
+        headers: API.header,
+        body: jsonEncode({
+          'driver_id': driverId,
+          'category_id': categoryId,
+          'statut': statut,
+        }),
+      );
+
+      ShowToastDialog.closeLoader();
+      if (response.statusCode == 200) {
+        Map<String, dynamic> responseBody = json.decode(response.body);
+        if (responseBody['success'] == "success") {
+          // Find the service and update its status locally
+          for (var service in driverServices) {
+            if (service['category_id'] == categoryId || service['subcategory_id'] == categoryId) {
+              service['statut'] = statut;
+            }
+          }
+          driverServices.refresh();
+          return true;
+        }
+      }
+    } catch (e) {
+      ShowToastDialog.closeLoader();
+      log("Error toggling service: $e");
+    }
+    return false;
+  }
 }
 
 

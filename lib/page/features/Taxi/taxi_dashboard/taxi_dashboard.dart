@@ -277,6 +277,9 @@ class SubscriptionPlanWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeChange = Provider.of<DarkThemeProvider>(context);
+    final userData = userModel.userData;
+    if (userData == null) return const SizedBox.shrink();
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
       decoration: BoxDecoration(
@@ -307,7 +310,7 @@ class SubscriptionPlanWidget extends StatelessWidget {
                 Row(
                   children: [
                     NetworkImageWidget(
-                      imageUrl: userModel.userData!.subscriptionPlan?.image ?? '',
+                      imageUrl: (userData.subscriptionPlan?.image?.isNotEmpty == true) ? userData.subscriptionPlan!.image! : Constant.placeholderUrl.toString(),
                       fit: BoxFit.cover,
                       width: 50,
                       height: 50,
@@ -322,7 +325,7 @@ class SubscriptionPlanWidget extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  userModel.userData!.subscriptionPlan?.name ?? '',
+                                  userData.subscriptionPlan?.name ?? '',
                                   style: TextStyle(
                                     color: themeChange.getThem() ? AppThemeData.grey900 : AppThemeData.grey50,
                                     fontSize: 18,
@@ -331,9 +334,9 @@ class SubscriptionPlanWidget extends StatelessWidget {
                                   ),
                                 ),
                                 Text(
-                                  userModel.userData!.subscriptionPlan?.type == 'free'
-                                      ? userModel.userData!.subscriptionPlan?.description ?? ''
-                                      : Constant().amountShow(amount: userModel.userData!.subscriptionPlan?.price),
+                                  userData.subscriptionPlan?.type == 'free'
+                                      ? userData.subscriptionPlan?.description ?? ''
+                                      : Constant().amountShow(amount: userData.subscriptionPlan?.price),
                                   style: TextStyle(
                                     fontFamily: AppThemeData.medium,
                                     fontSize: 14,
@@ -343,7 +346,7 @@ class SubscriptionPlanWidget extends StatelessWidget {
                               ],
                             ),
                           ),
-                          if (userModel.userData!.subscriptionPlan?.type == 'paid')
+                          if (userData.subscriptionPlan?.type == 'paid')
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -356,7 +359,7 @@ class SubscriptionPlanWidget extends StatelessWidget {
                                   ),
                                 ),
                                 Text(
-                                  userModel.userData?.subscriptionPlan?.expiryDay == "-1" ? "LifeTime" : userModel.userData?.subscriptionExpiryDate ?? '',
+                                  userData.subscriptionPlan?.expiryDay == "-1" ? "LifeTime" : userData.subscriptionExpiryDate ?? '',
                                   style: TextStyle(
                                     fontFamily: AppThemeData.regular,
                                     fontSize: 12,
@@ -384,8 +387,8 @@ class SubscriptionPlanWidget extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(top: 10),
                     child: Text(
-                      userModel.userData?.adminCommission != null
-                          ? "${userModel.userData?.adminCommission?.type == 'Percentage' ? "${userModel.userData?.adminCommission?.value} %" : "${Constant().amountShow(amount: userModel.userData?.adminCommission?.value)} Flat"} ${"admin commission will be charged from your account after the ride/parcel booking is completed".tr}"
+                      userData.adminCommission != null
+                          ? "${userData.adminCommission?.type == 'Percentage' ? "${userData.adminCommission?.value} %" : "${Constant().amountShow(amount: userData.adminCommission?.value)} Flat"} ${"admin commission will be charged from your account after the ride/parcel booking is completed".tr}"
                           : "${Constant.adminCommission?.type == 'Percentage' ? "${Constant.adminCommission?.value} %" : "${Constant().amountShow(amount: Constant.adminCommission?.value)} Flat"} ${"admin commission will be charged from your account after the ride/parcel booking is completed".tr}", //${"admin commission will be charged from customer billing booking and the admin charge will be earned after the order is accepted by the restaurant.".tr}",
                       style: TextStyle(
                         fontFamily: AppThemeData.medium,

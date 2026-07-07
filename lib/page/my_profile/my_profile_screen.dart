@@ -26,6 +26,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:cabme_driver/page/web_view_screen/web_view_screen.dart';
 
 class MyProfileScreen extends StatelessWidget {
   MyProfileScreen({super.key});
@@ -188,6 +189,23 @@ class MyProfileScreen extends StatelessWidget {
                         icon: 'assets/icons/ic_profile.svg',
                         onPress: () {
                           Get.to(EditProfileScreen());
+                        },
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: dividerCust(isDarkMode: themeChange.getThem()),
+                      ),
+                      buildShowDetails(
+                        isDarkMode: themeChange.getThem(),
+                        title: "Edit Categories".tr,
+                        icon: 'assets/icons/ic_all_car.svg',
+                        onPress: () {
+                          String token = Preferences.getString(Preferences.accesstoken);
+                          String driverId = Preferences.getInt(Preferences.userId).toString();
+                          String finalUrl = 'https://api.fiinway.com/onboarding?accesstoken=$token&driver_id=$driverId&mode=edit_category';
+                          Get.to(() => WebViewScreen(url: finalUrl, title: 'Edit Categories'))?.then((value) {
+                            myProfileController.getUsrData();
+                          });
                         },
                       ),
                       Padding(

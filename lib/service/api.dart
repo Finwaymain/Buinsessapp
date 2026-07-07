@@ -37,6 +37,8 @@ class API {
   static const authSendEmailOtp = "${baseUrl}auth/send-email-otp";
   static const authVerifyEmailRegister = "${baseUrl}auth/verify-email-otp-register";
   static const authUpdateDriverCategory = "${baseUrl}auth/update-driver-category";
+  static const getDriverServices = "${baseUrl}driver/services";
+  static const toggleDriverService = "${baseUrl}driver/services/toggle";
 
 
 
@@ -73,6 +75,8 @@ class API {
   static const updateUserName = "${baseUrl}user-name";
   static const updateUserPhone = "${baseUrl}user-phone";
   static const updateUserEmail = "${baseUrl}update-user-email";
+  static const updateUserAlternatePhone = "${baseUrl}user-alternate-phone";
+  static const userToggleMarketplace = "${baseUrl}user-toggle-marketplace";
   static const changePassword = "${baseUrl}update-user-mdp";
   static const walletHistory = "${baseUrl}wallet-history";
 
@@ -155,7 +159,7 @@ class API {
   static const wallet = "${baseUrl}wallet";
 
 
-// Smart Value
+// Smart Value1
   static const accountDetails = "${baseUrl}get_profile/smart-value";
   static const getAddUser = "${baseUrl}showadduser/smart-value";
   static const addUser = "${baseUrl}adduser/smart-value";
@@ -163,4 +167,22 @@ class API {
   static const userSetMPin = "${baseUrl}user_changepasswordset/smart-value";
   static const withdrawWallet = "${baseUrl}withdrawWallet/smart-value";
 
+  // Marketplace API Endpoints
+  static const getMarketplaceProducts = "${baseUrl}marketplace/products";
+  static const getMarketplaceProductDetails = "${baseUrl}marketplace/products/"; // + id
+  static const getMarketplaceCategories = "${baseUrl}marketplace/categories";
+  static const getMyMarketplaceProducts = "${baseUrl}marketplace/my-products";
+  static const getMarketplaceProductProgress = "${baseUrl}marketplace/products/"; // + id + /progress
+  static const createMarketplaceProduct = "${baseUrl}marketplace/products";
+  static const uploadMarketplaceImage = "${baseUrl}marketplace/upload-image";
+  static const updateMarketplaceProduct = "${baseUrl}marketplace/products/"; // + id + /update
+  static const deleteMarketplaceProduct = "${baseUrl}marketplace/products/"; // + id + /delete
+
+  // Marketplace Order APIs
+  static const createMarketplaceOrder = "${baseUrl}marketplace/orders";
+  static const getMarketplaceBuyerOrders = "${baseUrl}marketplace/orders/buyer";
+  static const getMarketplaceSellerOrders = "${baseUrl}marketplace/orders/seller";
+  static const getMarketplaceOrderDetails = "${baseUrl}marketplace/orders/"; // + id
+  static const updateMarketplaceOrderStatus = "${baseUrl}marketplace/orders/"; // + id + /status
 }
+

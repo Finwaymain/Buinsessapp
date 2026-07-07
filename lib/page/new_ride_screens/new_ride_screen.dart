@@ -1,5 +1,6 @@
 
 import 'package:cabme_driver/constant/constant.dart';
+import 'package:cabme_driver/page/new_ride_screens/payment_collection_screen.dart';
 import 'package:cabme_driver/constant/show_toast_dialog.dart';
 import 'package:cabme_driver/controller/dash_board_controller.dart';
 import 'package:cabme_driver/controller/new_ride_controller.dart';
@@ -235,10 +236,11 @@ class NewRideScreen extends StatelessWidget {
 
           if (Constant.liveTrackingMapType == "inappmap") {
             if (Constant.selectedMapType == 'osm') {
-              Get.to(const RouteOsmViewScreen(), arguments: argumentData);
+              await Get.to(const RouteOsmViewScreen(), arguments: argumentData);
             } else {
-              Get.to(const RouteViewScreen(), arguments: argumentData);
+              await Get.to(const RouteViewScreen(), arguments: argumentData);
             }
+            controller.getNewRide();
           } else {
             Constant.redirectMap(
               latitude: double.parse(data.latitudeArrivee!), //orderModel.destinationLocationLAtLng!.latitude!,
@@ -898,10 +900,11 @@ class NewRideScreen extends StatelessWidget {
                                     if (Constant.liveTrackingMapType == "inappmap") {
                                       var argumentData = {'type': data.statut, 'data': data};
                                       if (Constant.selectedMapType == 'osm') {
-                                        Get.to(const RouteOsmViewScreen(), arguments: argumentData);
+                                        await Get.to(const RouteOsmViewScreen(), arguments: argumentData);
                                       } else {
-                                        Get.to(const RouteViewScreen(), arguments: argumentData);
+                                        await Get.to(const RouteViewScreen(), arguments: argumentData);
                                       }
+                                      controller.getNewRide();
                                     } else {
                                       String googleUrl =
                                           'https://www.google.com/maps/search/?api=1&query=${double.parse(data.latitudeArrivee.toString())},${double.parse(data.longitudeArrivee.toString())}';
@@ -933,47 +936,36 @@ class NewRideScreen extends StatelessWidget {
                                   btnColor: AppThemeData.success300,
                                   txtColor: isDarkMode ? AppThemeData.surface50 : AppThemeData.surface50,
                                   onPress: () async {
-                                    showDialog(
-                                      barrierColor: Colors.black26,
-                                      context: context,
-                                      builder: (context) {
-                                        return CustomAlertDialog(
-                                          title: "Do you want to complete this ride?".tr,
-                                          onPressNegative: () {
-                                            Get.back();
-                                          },
-                                          negativeButtonText: 'No'.tr,
-                                          positiveButtonText: 'Yes'.tr,
-                                          onPressPositive: () {
-                                            Map<String, String> bodyParams = {
-                                              'id_ride': data.id.toString(),
-                                              'id_user': data.idUserApp.toString(),
-                                              'driver_name': '${data.prenomConducteur.toString()} ${data.nomConducteur.toString()}',
-                                              'from_id': Preferences.getInt(Preferences.userId).toString(),
-                                            };
-                                            controller.setCompletedRequest(bodyParams, data).then((value) {
-                                              if (value != null) {
-                                                Get.back();
-                                                showDialog(
-                                                    context: context,
-                                                    builder: (BuildContext context) {
-                                                      return CustomDialogBox(
-                                                        title: "Completed Successfully".tr,
-                                                        descriptions: "Ride Successfully completed.".tr,
-                                                        text: "Ok".tr,
-                                                        onPress: () {
-                                                          Get.back();
-                                                          controller.getNewRide();
-                                                        },
-                                                        img: Image.asset('assets/images/green_checked.png'),
-                                                      );
-                                                    });
-                                              }
-                                            });
-                                          },
-                                        );
-                                      },
-                                    );
+                                    Get.to(() => PaymentCollectionScreen(
+                                      rideData: data,
+                                      onConfirm: (String paymethod) {
+                                        Map<String, String> bodyParams = {
+                                          'id_ride': data.id.toString(),
+                                          'id_user': data.idUserApp.toString(),
+                                          'driver_name': '${data.prenomConducteur.toString()} ${data.nomConducteur.toString()}',
+                                          'from_id': Preferences.getInt(Preferences.userId).toString(),
+                                        };
+                                        controller.setCompletedRequest(bodyParams, data, paymethod: paymethod).then((value) {
+                                          if (value != null) {
+                                            Get.back(); // close PaymentCollectionScreen
+                                            showDialog(
+                                                context: context,
+                                                builder: (BuildContext context) {
+                                                  return CustomDialogBox(
+                                                    title: "Completed Successfully".tr,
+                                                    descriptions: "Ride Successfully completed.".tr,
+                                                    text: "Ok".tr,
+                                                    onPress: () {
+                                                      Get.back();
+                                                      controller.getNewRide();
+                                                    },
+                                                    img: Image.asset('assets/images/green_checked.png'),
+                                                  );
+                                                });
+                                          }
+                                        });
+                                      }
+                                    ));
                                   },
                                 ),
                               ),

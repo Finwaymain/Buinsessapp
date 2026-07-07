@@ -14,6 +14,7 @@ import 'package:cabme_driver/utils/Preferences.dart';
 import 'package:cabme_driver/utils/dark_theme_provider.dart';
 import 'package:cabme_driver/widget/StarRating.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cabme_driver/page/new_ride_screens/payment_collection_screen.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
@@ -81,6 +82,17 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
         RideDetailsModel rideDetails = RideDetailsModel.fromJson(response.data);
         if (rideDetails.success == 'success' && rideDetails.rideDetailsdata != null) {
           var data = rideDetails.rideDetailsdata!;
+          if (mounted) {
+            setState(() {
+              rideData!.statut = data.statut;
+            });
+            if (data.statut != 'confirmed' && data.statut != 'on ride') {
+              _driverLocationTimer?.cancel();
+              ShowToastDialog.showToast("Ride is ${data.statut}");
+              Get.back();
+              return;
+            }
+          }
           if (data.driverLatitude != null && data.driverLatitude!.isNotEmpty &&
               data.driverLongitude != null && data.driverLongitude!.isNotEmpty) {
             double dLat = double.parse(data.driverLatitude!);
@@ -703,47 +715,36 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
                               btnColor: AppThemeData.primary200,
                               txtColor: Colors.black,
                               onPress: () async {
-                                showDialog(
-                                  barrierColor: Colors.black26,
-                                  context: context,
-                                  builder: (context) {
-                                    return CustomAlertDialog(
-                                      title: "Do you want to complete this ride?".tr,
-                                      onPressNegative: () {
-                                        Get.back();
-                                      },
-                                      negativeButtonText: 'No'.tr,
-                                      positiveButtonText: 'Yes'.tr,
-                                      onPressPositive: () {
-                                        Map<String, String> bodyParams = {
-                                          'id_ride': rideData!.id.toString(),
-                                          'id_user': rideData!.idUserApp.toString(),
-                                          'driver_name': '${rideData!.prenomConducteur.toString()} ${rideData!.nomConducteur.toString()}',
-                                          'from_id': Preferences.getInt(Preferences.userId).toString(),
-                                        };
-                                        controllerRideDetails.setCompletedRequest(bodyParams, rideData!).then((value) {
-                                          if (value != null) {
-                                            Get.back();
-                                            showDialog(
-                                                context: context,
-                                                builder: (BuildContext context) {
-                                                  return CustomDialogBox(
-                                                    title: "Completed Successfully".tr,
-                                                    descriptions: "Ride Successfully completed.".tr,
-                                                    text: "Ok".tr,
-                                                    onPress: () {
-                                                      Get.back();
-                                                      Get.back();
-                                                    },
-                                                    img: Image.asset('assets/images/green_checked.png'),
-                                                  );
-                                                });
-                                          }
-                                        });
-                                      },
-                                    );
+                                Get.to(() => PaymentCollectionScreen(
+                                  rideData: rideData!,
+                                  onConfirm: (String paymethod) {
+                                    Map<String, String> bodyParams = {
+                                      'id_ride': rideData!.id.toString(),
+                                      'id_user': rideData!.idUserApp.toString(),
+                                      'driver_name': '${rideData!.prenomConducteur.toString()} ${rideData!.nomConducteur.toString()}',
+                                      'from_id': Preferences.getInt(Preferences.userId).toString(),
+                                    };
+                                    controllerRideDetails.setCompletedRequest(bodyParams, rideData!, paymethod: paymethod).then((value) {
+                                      if (value != null) {
+                                        Get.back(); // close PaymentCollectionScreen
+                                        showDialog(
+                                            context: context,
+                                            builder: (BuildContext context) {
+                                              return CustomDialogBox(
+                                                title: "Completed Successfully".tr,
+                                                descriptions: "Ride Successfully completed.".tr,
+                                                text: "Ok".tr,
+                                                onPress: () {
+                                                  Get.back();
+                                                  Get.back();
+                                                },
+                                                img: Image.asset('assets/images/green_checked.png'),
+                                              );
+                                            });
+                                      }
+                                    });
                                   },
-                                );
+                                ));
                               },
                             ),
                           ),

@@ -68,73 +68,48 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               if (controller.userModel.value.userData == null) {
                 return SizedBox(); // Return empty widget if data is not ready
               }
-              return Row(
-                children: [
-                  Text(
-                    "Status".tr,
-                    style: TextStyle(
-                      color: themeChange.getThem()
-                          ? AppThemeData.grey500Dark
-                          : AppThemeData.grey500,
-                      fontFamily: AppThemeData.regular,
-                      fontSize: 16,
-                    ),
+              return Obx(() {
+                return GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () async {
+                    await controllerDashBoard.getUsrData();
+                    final userData = controllerDashBoard.userModel.value.userData!;
+                    if (userData.statutVehicule == "no") {
+                      showAlertDialog(context, "vehicleInformation");
+                    } else if (userData.isVerified != "yes") {
+                      showAlertDialog(context, "pendingApproval");
+                    } else {
+                      showActiveServicesDialog(context, controllerDashBoard, isDarkMode);
+                    }
+                  },
+                  child: Row(
+                    children: [
+                      Text(
+                        "Status".tr,
+                        style: TextStyle(
+                          color: themeChange.getThem()
+                              ? AppThemeData.grey500Dark
+                              : AppThemeData.grey500,
+                          fontFamily: AppThemeData.regular,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      IgnorePointer(
+                        child: Transform.scale(
+                          scale: 0.8,
+                          child: Switch(
+                            value: controllerDashBoard.isActive.value,
+                            activeThumbColor: AppThemeData.success300,
+                            inactiveTrackColor: AppThemeData.warning200,
+                            onChanged: (value) {},
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(
-                    width: 4,
-                  ),
-                  Transform.scale(
-                    scale: 0.8,
-                    child: Switch(
-                      value: controllerDashBoard.isActive.value,
-                      activeThumbColor: AppThemeData.success300,
-                      inactiveTrackColor: AppThemeData.warning200,
-                      onChanged: (value) async {
-                        await controllerDashBoard.getUsrData();
-                        final userData = controllerDashBoard.userModel.value.userData!;
-                        if (userData.statutVehicule == "no") {
-                          showAlertDialog(context, "vehicleInformation");
-                        } else if (userData.isVerified != "yes") {
-                          showAlertDialog(context, "pendingApproval");
-                        } else {
-                          ShowToastDialog.showLoader("Please wait");
-
-                          Map<String, dynamic> bodyParams = {
-                            'id_driver': Preferences.getInt(Preferences.userId),
-                            'online': controllerDashBoard.isActive.value
-                                ? 'no'
-                                : 'yes',
-                          };
-
-                          await controllerDashBoard
-                              .changeOnlineStatus(bodyParams)
-                              .then((value) {
-                            if (value != null) {
-                              if (value['success'] == "success") {
-                                UserModel userModel = Constant.getUserData();
-                                userModel.userData!.online =
-                                    value['data']['online'];
-                                controller.userModel.value = userModel;
-                                Preferences.setString(Preferences.user,
-                                    jsonEncode(userModel.toJson()));
-                                controllerDashBoard.isActive.value =
-                                    userModel.userData!.online == 'no'
-                                        ? false
-                                        : true;
-                                ShowToastDialog.showToast(value['message']);
-                              } else {
-                                ShowToastDialog.showToast(value['error']);
-                              }
-                            }
-                          });
-
-                          ShowToastDialog.closeLoader();
-                        }
-                      },
-                    ),
-                  ),
-                ],
-              );
+                );
+              });
             },
           ),
         ],
@@ -144,4 +119,243 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+}
+
+void showActiveServicesDialog(BuildContext context, DashBoardController controllerDashBoard, bool isDarkMode) {
+  controllerDashBoard.fetchDriverServices();
+
+  showDialog(
+    context: context,
+    builder: (context) {
+      return Obx(() {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          backgroundColor: isDarkMode ? const Color(0xFF1E1C15) : const Color(0xFFFFFDF5),
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Duty Status & Services".tr,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontFamily: AppThemeData.bold,
+                        color: isDarkMode ? AppThemeData.grey900Dark : AppThemeData.grey900,
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.close, color: isDarkMode ? Colors.white : Colors.black),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isDarkMode ? const Color(0xFF2A2822) : const Color(0xFFF9F6EE),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppThemeData.primary200.withOpacity(0.2),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Duty Status".tr,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontFamily: AppThemeData.bold,
+                              color: isDarkMode ? AppThemeData.grey900Dark : AppThemeData.grey900,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            (controllerDashBoard.isActive.value ? "You are Online" : "You are Offline").tr,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontFamily: AppThemeData.regular,
+                              color: controllerDashBoard.isActive.value
+                                  ? AppThemeData.success300
+                                  : AppThemeData.warning200,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Transform.scale(
+                        scale: 0.85,
+                        child: Switch(
+                          value: controllerDashBoard.isActive.value,
+                          activeThumbColor: Colors.white,
+                          activeTrackColor: AppThemeData.success300,
+                          inactiveThumbColor: Colors.white,
+                          inactiveTrackColor: isDarkMode ? const Color(0xFF333333) : const Color(0xFFCCCCCC),
+                          onChanged: (value) async {
+                            final userData = controllerDashBoard.userModel.value.userData!;
+                            if (userData.statutVehicule == "no") {
+                              showAlertDialog(context, "vehicleInformation");
+                            } else if (userData.isVerified != "yes") {
+                              showAlertDialog(context, "pendingApproval");
+                            } else {
+                              ShowToastDialog.showLoader("Please wait");
+                              Map<String, dynamic> bodyParams = {
+                                'id_driver': Preferences.getInt(Preferences.userId),
+                                'online': controllerDashBoard.isActive.value ? 'no' : 'yes',
+                              };
+                              await controllerDashBoard.changeOnlineStatus(bodyParams).then((res) {
+                                if (res != null) {
+                                  if (res['success'] == "success") {
+                                    UserModel userModel = Constant.getUserData();
+                                    userModel.userData!.online = res['data']['online'];
+                                    controllerDashBoard.userModel.value = userModel;
+                                    Preferences.setString(Preferences.user, jsonEncode(userModel.toJson()));
+                                    controllerDashBoard.isActive.value = userModel.userData!.online == 'no' ? false : true;
+                                    ShowToastDialog.showToast(res['message']);
+                                  } else {
+                                    ShowToastDialog.showToast(res['error']);
+                                  }
+                                }
+                              });
+                              ShowToastDialog.closeLoader();
+                            }
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  "Active Services".tr,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontFamily: AppThemeData.bold,
+                    color: isDarkMode ? AppThemeData.grey900Dark : AppThemeData.grey900,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "Toggle on/off the service types you want to receive requests for.".tr,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontFamily: AppThemeData.regular,
+                    color: isDarkMode ? AppThemeData.grey500Dark : AppThemeData.grey500,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                if (controllerDashBoard.isLoadingServices.value)
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 20),
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
+                else if (controllerDashBoard.driverServices.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    child: Center(
+                      child: Text(
+                        "No services found".tr,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontFamily: AppThemeData.medium,
+                          color: isDarkMode ? AppThemeData.grey500Dark : AppThemeData.grey500,
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  Container(
+                    constraints: const BoxConstraints(maxHeight: 250),
+                    decoration: BoxDecoration(
+                      color: isDarkMode ? const Color(0xFF2A2822) : const Color(0xFFF9F6EE),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: AppThemeData.primary200.withOpacity(0.15),
+                        width: 1,
+                      ),
+                    ),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      padding: EdgeInsets.zero,
+                      itemCount: controllerDashBoard.driverServices.length,
+                      separatorBuilder: (context, index) => Divider(
+                        height: 1,
+                        color: isDarkMode ? const Color(0xFF3A3832) : const Color(0xFFEFECE4),
+                      ),
+                      itemBuilder: (context, index) {
+                        final service = controllerDashBoard.driverServices[index];
+                        final String title = service['title'] ?? 'Service';
+                        final dynamic categoryId = service['subcategory_id'] ?? service['category_id'];
+                        final bool isServiceActive = service['statut'] == 'yes';
+
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      title.tr,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontFamily: AppThemeData.medium,
+                                        color: isDarkMode ? AppThemeData.grey900Dark : AppThemeData.grey900,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      (isServiceActive ? "Receiving requests" : "Offline").tr,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontFamily: AppThemeData.regular,
+                                        color: isServiceActive
+                                            ? AppThemeData.success300
+                                            : AppThemeData.warning200,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Transform.scale(
+                                scale: 0.85,
+                                child: Switch(
+                                  value: isServiceActive,
+                                  activeThumbColor: Colors.white,
+                                  activeTrackColor: AppThemeData.success300,
+                                  inactiveThumbColor: Colors.white,
+                                  inactiveTrackColor: isDarkMode ? const Color(0xFF333333) : const Color(0xFFCCCCCC),
+                                  onChanged: (bool value) async {
+                                    final String newStatus = value ? 'yes' : 'no';
+                                    await controllerDashBoard.toggleService(categoryId, newStatus);
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      });
+    },
+  );
 }
