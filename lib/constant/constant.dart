@@ -37,7 +37,7 @@ class Constant {
   static String? appVersion = "0.0";
   static String? minimumWalletBalance = "0";
   static String? decimal = "2";
-  static String? currency = "\$";
+  static String? currency = "";
   static String? commissionSubscriptionID = "1";
   static bool? subscriptionModel = false;
   static bool symbolAtRight = false;
@@ -170,7 +170,7 @@ class Constant {
 
   String amountShow({required String? amount}) {
     String amountdata = (amount == 'null' || amount == '' || amount == null) ? '0' : amount;
-    String currency = Constant.currency ?? "\$";
+    String currency = Constant.currency ?? "";
     int decimal = 2;
     try {
       if (Constant.decimal != null) {

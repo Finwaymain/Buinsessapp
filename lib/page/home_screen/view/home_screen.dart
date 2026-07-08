@@ -182,7 +182,7 @@ class MainHomeScreen extends StatelessWidget {
                                         ),
                                         const SizedBox(height: 6),
                                         Text(
-                                          "${controller.userModel.value.userData?.prenom ?? 'Driver'} ${controller.userModel.value.userData?.nom ?? ''}",
+                                          "${controller.userModel.value.userData?.prenom ?? 'Driver Activation & Value Program'} ${controller.userModel.value.userData?.nom ?? ''}",
                                           style: TextStyle(
                                             fontSize: 22,
                                             fontFamily: AppThemeData.bold,
@@ -1109,10 +1109,31 @@ class AddFundScreen extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.add_circle_outline_rounded,
-              color: Colors.white,
-              size: 24,
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(
+                  Icons.account_balance_wallet_outlined,
+                  color: Colors.white,
+                  size: 24,
+                ),
+                Positioned(
+                  top: -4,
+                  right: -4,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.add,
+                      color: AppThemeData.primary200,
+                      size: 10,
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(width: 12),
             Text(

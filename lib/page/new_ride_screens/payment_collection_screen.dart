@@ -61,7 +61,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
               child: Column(
                 children: [
                   Text(
-                    "₹${widget.rideData.montant ?? '0'}",
+                    "${widget.rideData.montant ?? '0'}",
                     style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 4),

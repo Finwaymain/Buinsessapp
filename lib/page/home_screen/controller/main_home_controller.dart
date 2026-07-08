@@ -9,6 +9,7 @@ import '../../features/SmartValue/Payout/view/payout_screen.dart';
 import '../../features/rewards_screen.dart';
 import '../../in_progress_screen.dart';
 import '../view/home_screen.dart';
+import '../../web_view_screen/web_view_screen.dart';
 
 class MainHomeController extends GetxController
     with GetTickerProviderStateMixin {
@@ -145,6 +146,12 @@ class MainHomeController extends GetxController
 
     if (!isLogin) {
       Get.to(() => PhoneEntryScreen(mode: 'signup'),
+          transition: Transition.rightToLeftWithFade);
+    } else if (routeName == '/smartValue') {
+      String token = Preferences.getString(Preferences.accesstoken);
+      String userId = Preferences.getInt(Preferences.userId).toString();
+      String finalUrl = 'https://api.fiinway.com/onboarding/smartvalue?accesstoken=$token&driver_id=$userId';
+      Get.to(() => WebViewScreen(url: finalUrl, title: 'Smart Value'),
           transition: Transition.rightToLeftWithFade);
     } else if (index == 0) {
       Get.to(() => TaxiDashBoard(), transition: Transition.rightToLeftWithFade);

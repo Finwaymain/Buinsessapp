@@ -444,6 +444,7 @@ class _ParcelOsmRouteViewScreenState extends State<ParcelOsmRouteViewScreen> {
                                                                         'id_user': parcelData!.idUserApp.toString(),
                                                                         'driver_name': '${parcelData!.driverName}',
                                                                         'driver_id': Preferences.getInt(Preferences.userId).toString(),
+                                                                        'otp': controllerParcelDetails.otpController.text.toString(),
                                                                       };
                                                                       controllerParcelDetails.onRideParcel(bodyParams).then((value) {
                                                                         if (value != null) {
