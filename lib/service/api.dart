@@ -6,7 +6,9 @@ class API {
   // static const baseUrl = "https://cabme.siswebapp.com/api/v1/"; // live
   // static const baseUrl = "https://staging.cabme.siswebapp.com/api/v1/"; // live
   // static const apiKey = "base64:tq7mTyHl6IUuVbnPZBgAxlzB9lM6QV+zNVpmJcAjs4k=";
-  static const baseUrl = "https://api.fiinway.com/api/v1/"; // live
+  // static const baseUrl = "https://api.fiinway.com/api/v1/"; // live
+  // static const baseUrl = "http://192.168.1.34:8000/api/v1/"; // local dev
+  static const baseUrl = "https://fiinway-maini.onrender.com/api/v1/"; // Render
   static const apiKey = "base64:nTfofcBByTDenJQYlsRbH0JjeVFW5lWsIIyXtq8/9sU=";
 
   static Map<String, String> get authheader => {
