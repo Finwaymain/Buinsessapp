@@ -7,6 +7,9 @@ import '../../auth_screens/phone_entry_screen.dart';
 import '../../features/SmartValue/ScanAndTransfer/view/scanner_and_transfer_screen.dart';
 import '../../features/SmartValue/Payout/view/payout_screen.dart';
 import '../../features/rewards_screen.dart';
+import '../../history/transaction_service_history_screen.dart';
+import '../../referral/referral_earn_screen.dart';
+import '../../subscription_plan_screen/business_premium_plan_screen.dart';
 import '../../in_progress_screen.dart';
 import '../view/home_screen.dart';
 import '../../web_view_screen/web_view_screen.dart';
@@ -18,21 +21,21 @@ class MainHomeController extends GetxController
 
   final featureCards = [
     {
-      "routeName": "/addFund",
-      "icon": Icons.attach_money,
-      "title": "Add Fund",
+      "routeName": "/history",
+      "icon": Icons.history_rounded,
+      "title": "History & Invoices",
       "status": 1,
     },
     {
-      "routeName": "/rewards",
+      "routeName": "/referral",
       "icon": Icons.card_giftcard,
-      "title": "Rewards",
+      "title": "Refer & Earn",
       "status": 1,
     },
     {
-      "routeName": "/payouts",
-      "icon": Icons.payments_outlined,
-      "title": "Payouts",
+      "routeName": "/premium",
+      "icon": Icons.workspace_premium,
+      "title": "Business Plan",
       "status": 1,
     },
   ];
@@ -41,19 +44,19 @@ class MainHomeController extends GetxController
     {
       "routeName": "/travelTransport",
       "title": "Travel & Transport",
-      "subtitle": "Book cabs, recharge passes, pay bills, and more",
+      "subtitle": "Book cabs, view requests, and track active rides",
       "status": 1,
     },
     {
-      "routeName": "/cashbackCard",
-      "title": "Cashback Card",
-      "subtitle": "Send money to friends or pay shops and earn rewards",
+      "routeName": "/referralProgram",
+      "title": "Refer & Earn Program",
+      "subtitle": "Share link & earn lifetime cashback on bookings",
       "status": 1,
     },
     {
       "routeName": "/smartValue",
-      "title": "Smart Value",
-      "subtitle": "Pay directly within the app and ride instantly",
+      "title": "Smart Value & QR",
+      "subtitle": "Scan QR & transfer wallet money instantly",
       "status": 1,
     },
   ];
@@ -99,22 +102,18 @@ class MainHomeController extends GetxController
 
   void onFeatureTap(int index) {
     final card = featureCards[index];
-    final status = card['status'] ?? 0;
     final routeName = (card['routeName'] ?? '').toString();
     final bool isLogin = Preferences.getBoolean(Preferences.isLogin) ?? false;
 
     if (!isLogin) {
       Get.to(() => PhoneEntryScreen(mode: 'signup'),
           transition: Transition.rightToLeftWithFade);
-    }
-    else if (routeName == '/addFund') {
-      Get.to(() => AddFundScreen(), transition: Transition.rightToLeftWithFade);
-    }
-    else if (routeName == '/rewards') {
-      Get.to(() => const RewardsScreen(), transition: Transition.rightToLeftWithFade);
-    }
-    else if (routeName == '/payouts') {
-      Get.to(() => PayoutScreen(), transition: Transition.rightToLeftWithFade);
+    } else if (routeName == '/history') {
+      Get.to(() => const TransactionServiceHistoryScreen(), transition: Transition.rightToLeftWithFade);
+    } else if (routeName == '/referral') {
+      Get.to(() => const ReferralEarnScreen(), transition: Transition.rightToLeftWithFade);
+    } else if (routeName == '/premium') {
+      Get.to(() => const BusinessPremiumPlanScreen(), transition: Transition.rightToLeftWithFade);
     } else {
       Get.to(() => const InProgressScreen(),
           transition: Transition.rightToLeftWithFade);
@@ -127,21 +126,19 @@ class MainHomeController extends GetxController
     if (!isLogin) {
       Get.to(() => PhoneEntryScreen(mode: 'signup'),
           transition: Transition.rightToLeftWithFade);
-      return false; // user login nahi hai
+      return false;
     } else if (inProgress) {
       Get.to(() => const InProgressScreen(),
           transition: Transition.rightToLeftWithFade);
-      return false; // login hai but in progress hai
+      return false;
     } else {
-      return true; // login hai aur in progress nahi hai
+      return true;
     }
   }
-
 
   void onServiceTap(int index) {
     final card = serviceCards[index];
     final bool isLogin = Preferences.getBoolean(Preferences.isLogin) ?? false;
-    final status = card['status'] ?? 0;
     final String routeName = card['routeName']?.toString() ?? '';
 
     if (!isLogin) {
@@ -153,10 +150,10 @@ class MainHomeController extends GetxController
       String finalUrl = 'https://fiinway-maini.onrender.com/onboarding/smartvalue?accesstoken=$token&driver_id=$userId';
       Get.to(() => WebViewScreen(url: finalUrl, title: 'Smart Value'),
           transition: Transition.rightToLeftWithFade);
+    } else if (routeName == '/referralProgram') {
+      Get.to(() => const ReferralEarnScreen(), transition: Transition.rightToLeftWithFade);
     } else if (index == 0) {
       Get.to(() => TaxiDashBoard(), transition: Transition.rightToLeftWithFade);
-    } else if (index == 2) {
-      Get.to(() => ScannerAndTransferScreen(), transition: Transition.rightToLeftWithFade);
     } else {
       Get.to(() => const InProgressScreen(),
           transition: Transition.rightToLeftWithFade);

@@ -10,8 +10,9 @@ import 'package:image_picker/image_picker.dart';
 class WebViewScreen extends StatefulWidget {
   final String url;
   final String title;
+  final bool showAppBar;
 
-  const WebViewScreen({super.key, required this.url, required this.title});
+  const WebViewScreen({super.key, required this.url, required this.title, this.showAppBar = true});
 
   @override
   State<WebViewScreen> createState() => _WebViewScreenState();
@@ -126,25 +127,27 @@ class _WebViewScreenState extends State<WebViewScreen> {
     final themeChange = Provider.of<DarkThemeProvider>(context);
     final isDark = themeChange.getThem();
     
-    return Scaffold(
+    final scaffold = Scaffold(
       backgroundColor: isDark ? AppThemeData.surface50Dark : AppThemeData.surface50,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: isDark ? Colors.white : AppThemeData.grey900, size: 20),
-          onPressed: () => Get.back(),
-        ),
-        title: Text(
-          widget.title,
-          style: TextStyle(
-            color: isDark ? Colors.white : AppThemeData.grey900,
-            fontFamily: AppThemeData.bold,
-            fontSize: 18,
-          ),
-        ),
-        centerTitle: true,
-      ),
+      appBar: widget.showAppBar
+          ? AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              leading: IconButton(
+                icon: Icon(Icons.arrow_back_ios_new_rounded, color: isDark ? Colors.white : AppThemeData.grey900, size: 20),
+                onPressed: () => Get.back(),
+              ),
+              title: Text(
+                widget.title,
+                style: TextStyle(
+                  color: isDark ? Colors.white : AppThemeData.grey900,
+                  fontFamily: AppThemeData.bold,
+                  fontSize: 18,
+                ),
+              ),
+              centerTitle: true,
+            )
+          : null,
       body: Stack(
         children: [
           if (!hasError) WebViewWidget(controller: controller),
@@ -205,5 +208,12 @@ class _WebViewScreenState extends State<WebViewScreen> {
         ],
       ),
     );
+
+    if (widget.showAppBar) return scaffold;
+
+    // Full-bleed mode (used for the post-onboarding web dashboard): this is
+    // effectively the app's home screen with nothing beneath it in the stack,
+    // so block the system back gesture instead of popping to nothing.
+    return PopScope(canPop: false, child: scaffold);
   }
 }

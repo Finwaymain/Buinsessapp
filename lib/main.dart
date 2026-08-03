@@ -552,7 +552,15 @@ class _MyAppState extends State<MyApp> {
             fallbackLocale: LocalizationService.locale,
             translations: LocalizationService(),
             initialBinding: InitialBinding(),
-            builder: EasyLoading.init(),
+            builder: (context, child) {
+              final easyLoadingBuilder = EasyLoading.init();
+              final builtChild = easyLoadingBuilder(context, child);
+              return SafeArea(
+                top: false,
+                bottom: true,
+                child: builtChild,
+              );
+            },
             home: GetX(
               init: SettingsController(),
               builder: (controller) {

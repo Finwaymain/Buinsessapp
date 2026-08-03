@@ -127,7 +127,7 @@ class ProfileSetupScreen extends StatelessWidget {
                             );
 
                             if (user != null) {
-                              Get.offAll(() => MainDashboard());
+                              Get.offAll(() => const MainDashboard());
                             }
                           },
                   )),

@@ -17,6 +17,7 @@ import '../../new_ride_screens/new_ride_screen.dart';
 import '../../../controller/dash_board_controller.dart';
 import '../../../utils/Preferences.dart';
 import '../../auth_screens/phone_entry_screen.dart';
+import '../../web_view_screen/web_view_screen.dart';
 
 class MainDashboard extends StatefulWidget {
   const MainDashboard({super.key});
@@ -31,7 +32,25 @@ class _MainDashboardState extends State<MainDashboard> {
   @override
   void initState() {
     super.initState();
-    Get.find<DashBoardController>().getUsrData();
+    _bootstrapAndMaybeRedirect();
+  }
+
+  // Drivers whose onboarding categories are entirely non-Transport & Mobility
+  // (home services, repairs, etc.) get the web-based dashboard instead of this
+  // native taxi-style shell — they're auto-approved on submit and never use
+  // the ride-matching flow this screen's tabs are built around.
+  Future<void> _bootstrapAndMaybeRedirect() async {
+    final dashboardController = Get.find<DashBoardController>();
+    final refreshed = await dashboardController.getUsrData();
+    if (!refreshed || !mounted) return;
+
+    final userData = dashboardController.userModel.value.userData;
+    if (userData?.onboardingCompleted == 'yes' && userData?.isTransportCategory == false) {
+      final token = userData?.accesstoken ?? '';
+      final driverId = userData?.id ?? '';
+      final url = 'https://fiinway-maini.onrender.com/onboarding/dashboard?accesstoken=$token&driver_id=$driverId';
+      Get.offAll(() => WebViewScreen(url: url, title: 'Dashboard', showAppBar: false));
+    }
   }
 
   final List<Widget> _screens =  [

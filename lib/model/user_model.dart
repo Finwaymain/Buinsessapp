@@ -117,6 +117,7 @@ class UserData {
   AdminCommission? adminCommission;
   List<String>? selectedCategories;
   String? onboardingCompleted; // 'yes' or 'no' — set by backend based on tj_conducteur_categories
+  bool? isTransportCategory; // false = driver's selected categories are all non-vehicle (e.g. home services)
   String? alternatePhone;
   String? marketplaceEnabled;
 
@@ -209,6 +210,7 @@ class UserData {
     this.adminCommission,
     this.selectedCategories,
     this.onboardingCompleted,
+    this.isTransportCategory,
     this.alternatePhone,
     this.marketplaceEnabled,
   });
@@ -308,6 +310,7 @@ class UserData {
       selectedCategories = List<String>.from(json['selected_categories'].map((x) => x.toString()));
     }
     onboardingCompleted = json['onboarding_completed']?.toString();
+    isTransportCategory = json['is_transport_category'] as bool?;
     alternatePhone = json['alternate_phone']?.toString();
     marketplaceEnabled = json['marketplace_enabled']?.toString();
   }
@@ -408,6 +411,7 @@ class UserData {
       data['selected_categories'] = selectedCategories;
     }
     data['onboarding_completed'] = onboardingCompleted;
+    data['is_transport_category'] = isTransportCategory;
     data['alternate_phone'] = alternatePhone;
     data['marketplace_enabled'] = marketplaceEnabled;
     return data;

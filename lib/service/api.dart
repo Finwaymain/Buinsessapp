@@ -3,12 +3,7 @@ import 'dart:io';
 import 'package:cabme_driver/utils/Preferences.dart';
 
 class API {
-  // static const baseUrl = "https://cabme.siswebapp.com/api/v1/"; // live
-  // static const baseUrl = "https://staging.cabme.siswebapp.com/api/v1/"; // live
-  // static const apiKey = "base64:tq7mTyHl6IUuVbnPZBgAxlzB9lM6QV+zNVpmJcAjs4k=";
-  // static const baseUrl = "https://api.fiinway.com/api/v1/"; // live
-  // static const baseUrl = "http://192.168.1.34:8000/api/v1/"; // local dev
-  static const baseUrl = "https://fiinway-maini.onrender.com/api/v1/"; // Render
+  static const baseUrl = "https://fiinway.online/api/v1/"; // Live VPS
   static const apiKey = "base64:nTfofcBByTDenJQYlsRbH0JjeVFW5lWsIIyXtq8/9sU=";
 
   static Map<String, String> get authheader => {
@@ -42,8 +37,6 @@ class API {
   static const getDriverServices = "${baseUrl}driver/services";
   static const toggleDriverService = "${baseUrl}driver/services/toggle";
 
-
-
   static const getProfileByPhone = "${baseUrl}profilebyphone";
   static const getExistingUserOrNot = "${baseUrl}existing-user";
   static const sendResetPasswordOtp = "${baseUrl}reset-password-otp";
@@ -59,6 +52,7 @@ class API {
   static const updateLocation = "${baseUrl}update-position";
   static const contactUs = "${baseUrl}contact-us";
   static const changeStatus = "${baseUrl}change-status";
+  static const driverDashboardStats = "${baseUrl}driver-dashboard-stats";
   static const updateToken = "${baseUrl}update-fcm";
   static const feelSafeAtDestination = "${baseUrl}feel-safe";
   static const conformPaymentByCash = "${baseUrl}payment-by-cash";
@@ -160,8 +154,7 @@ class API {
   static const referralAmount = "${baseUrl}get-referral";
   static const wallet = "${baseUrl}wallet";
 
-
-// Smart Value1
+  // Smart Value
   static const accountDetails = "${baseUrl}get_profile/smart-value";
   static const getAddUser = "${baseUrl}showadduser/smart-value";
   static const addUser = "${baseUrl}adduser/smart-value";
@@ -186,5 +179,9 @@ class API {
   static const getMarketplaceSellerOrders = "${baseUrl}marketplace/orders/seller";
   static const getMarketplaceOrderDetails = "${baseUrl}marketplace/orders/"; // + id
   static const updateMarketplaceOrderStatus = "${baseUrl}marketplace/orders/"; // + id + /status
-}
 
+  // New Live Features API Endpoints
+  static const unifiedTimelineHistory = "${baseUrl}history/timeline-full";
+  static const referralStats = "${baseUrl}referral/stats";
+  static const businessPlansActive = "${baseUrl}business-plans/active";
+}

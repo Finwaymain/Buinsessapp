@@ -72,7 +72,11 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 return GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () async {
-                    await controllerDashBoard.getUsrData();
+                    final refreshed = await controllerDashBoard.getUsrData();
+                    if (!refreshed) {
+                      ShowToastDialog.showToast("Couldn't refresh your status. Please check your connection and try again.".tr);
+                      return;
+                    }
                     final userData = controllerDashBoard.userModel.value.userData!;
                     if (userData.statutVehicule == "no") {
                       showAlertDialog(context, "vehicleInformation");
@@ -169,29 +173,32 @@ void showActiveServicesDialog(BuildContext context, DashBoardController controll
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Duty Status".tr,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontFamily: AppThemeData.bold,
-                              color: isDarkMode ? AppThemeData.grey900Dark : AppThemeData.grey900,
+                      Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Duty Status".tr,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontFamily: AppThemeData.bold,
+                                color: isDarkMode ? AppThemeData.grey900Dark : AppThemeData.grey900,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            (controllerDashBoard.isActive.value ? "You are Online" : "You are Offline").tr,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontFamily: AppThemeData.regular,
-                              color: controllerDashBoard.isActive.value
-                                  ? AppThemeData.success300
-                                  : AppThemeData.warning200,
+                            const SizedBox(height: 2),
+                            Text(
+                              (controllerDashBoard.isActive.value ? "You are Online" : "You are Offline").tr,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontFamily: AppThemeData.regular,
+                                color: controllerDashBoard.isActive.value
+                                    ? AppThemeData.success300
+                                    : AppThemeData.warning200,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                       Transform.scale(
                         scale: 0.85,

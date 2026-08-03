@@ -21,7 +21,7 @@ import '../page/my_profile/my_profile_screen.dart';
 import '../page/web_view_screen/web_view_screen.dart';
 
 import '../page/privacy_policy/privacy_policy_screen.dart';
-import '../page/referral_screen/referral_screen.dart';
+import '../page/referral/referral_earn_screen.dart';
 import '../page/terms_of_service/terms_of_service_screen.dart';
 import '../page/wallet/wallet_screen.dart';
 import '../service/api.dart';
@@ -205,14 +205,20 @@ class DashBoardController extends GetxController {
 
   Rx<UserModel> userModel = UserModel().obs;
 
-  Future<void> getUsrData() async {
+  /// Returns true only if the driver's profile was actually refreshed from
+  /// the server. Callers that gate a decision on fields like statutVehicule
+  /// (e.g. the "Go Online" toggle) must check this — otherwise a network
+  /// hiccup silently falls back to the local cache, which can still reflect
+  /// the driver's state from before they registered a vehicle.
+  Future<bool> getUsrData() async {
     userModel.value = Constant.getUserData();
-    if (userModel.value.userData == null) return;
-    
+    if (userModel.value.userData == null) return false;
+
     // Initialize active status and location tracking based on cached data
     isActive.value = userModel.value.userData!.online == "yes" ? true : false;
     initLocationTracking();
 
+    bool refreshed = false;
     try {
       Map<String, String> bodyParams = {
         'phone': userModel.value.userData!.phone.toString(),
@@ -233,6 +239,7 @@ class DashBoardController extends GetxController {
         userModel.value = value;
         isActive.value = userModel.value.userData!.online == "yes" ? true : false;
         initLocationTracking();
+        refreshed = true;
       } else if (response.statusCode == 200 && responseBodyPhone['success'] != "success") {
         if (responseBodyPhone['error'] == 'Driver Not Found') {
           Preferences.clearKeyData(Preferences.isLogin);
@@ -249,6 +256,41 @@ class DashBoardController extends GetxController {
     log("Constant.parcelActive :: ${Constant.parcelActive.toString() == "yes"}  || ${userModel.value.userData?.parcelDelivery.toString() == "yes"}");
     getDrawerItems();
     updateToken();
+    return refreshed;
+  }
+
+  RxString todayEarnings = "0".obs;
+  RxString todayBookings = "0".obs;
+  RxString driverRating = "0.0".obs;
+  RxInt driverRatingCount = 0.obs;
+  RxString pendingRequestsCount = "0".obs;
+  Rx<Map<String, dynamic>?> activeService = Rx<Map<String, dynamic>?>(null);
+  RxBool isStatsLoading = false.obs;
+
+  Future<void> fetchDashboardStats() async {
+    final driverId = Preferences.getInt(Preferences.userId);
+    if (driverId == 0) return;
+    isStatsLoading.value = true;
+    try {
+      final response = await http.get(
+        Uri.parse("${API.driverDashboardStats}/?driver_id=$driverId"),
+        headers: API.header,
+      );
+      final body = json.decode(response.body);
+      if (response.statusCode == 200 && body['success'].toString().toLowerCase() == 'success') {
+        final data = body['data'];
+        todayEarnings.value = data['today_earnings']?.toString() ?? "0";
+        todayBookings.value = data['today_bookings']?.toString() ?? "0";
+        driverRating.value = data['rating']?.toString() ?? "0.0";
+        driverRatingCount.value = int.tryParse(data['rating_count']?.toString() ?? "0") ?? 0;
+        pendingRequestsCount.value = data['pending_requests']?.toString() ?? "0";
+        activeService.value = data['active_service'] as Map<String, dynamic>?;
+      }
+    } catch (e) {
+      log("Error in fetchDashboardStats: $e");
+    } finally {
+      isStatsLoading.value = false;
+    }
   }
 
   RxBool isActive = true.obs;
@@ -527,7 +569,7 @@ class DashBoardController extends GetxController {
     } else if (item.title == 'Change Password'.tr) {
       Get.to(ChangePasswordScreen());
     } else if (item.title == 'Refer a Friend'.tr) {
-      Get.to(ReferralScreen());
+      Get.to(() => const ReferralEarnScreen());
     } else if (item.title == 'Terms & Conditions'.tr) {
       Get.to(const TermsOfServiceScreen());
     } else if (item.title == 'Privacy & Policy'.tr) {

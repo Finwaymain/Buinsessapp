@@ -28,7 +28,7 @@ import '../../in_progress_screen.dart';
 import '../../parcel_service/parcel_console_screen.dart';
 import '../../features/SmartValue/AccountDetails/view/account_details.dart';
 import '../../features/SmartValue/AddPerson/view/add_user_screen.dart';
-import '../../referral_screen/referral_screen.dart';
+import '../../referral/referral_earn_screen.dart';
 import '../../wallet/mercadopago_screen.dart';
 import '../../wallet/midtrans_screen.dart';
 import '../../wallet/orangePayScreen.dart';
@@ -41,6 +41,7 @@ import '../../features/Taxi/taxi_dashboard/taxi_dashboard.dart';
 import '../../wallet/xenditScreen.dart';
 import '../../web_view_screen/web_view_screen.dart';
 import '../controller/main_home_controller.dart';
+import '../widget/dashboard_status_section.dart';
 import '../widget/vertical_icon_with_text.dart';
 import '../widget/vertical_line_section.dart';
 import 'dart:convert';
@@ -358,7 +359,7 @@ class MainHomeScreen extends StatelessWidget {
 
                             // Pending verification banner — only shown when onboarding is
                             // complete but admin hasn't verified yet. No re-open link.
-                            if (controller.userModel.value.userData != null && 
+                            if (controller.userModel.value.userData != null &&
                                 controller.userModel.value.userData?.onboardingCompleted == 'yes' &&
                                 (controller.userModel.value.userData!.isVerified != "yes"))
                               Container(
@@ -386,6 +387,8 @@ class MainHomeScreen extends StatelessWidget {
                                   ],
                                 ),
                               ),
+
+                            const DashboardStatusSection(),
 
                             // Primary Hero Action CTA for receiving rides
                             Padding(
@@ -502,8 +505,8 @@ class MainHomeScreen extends StatelessWidget {
                                               onTap: () => homeController.onFeatureTap(originalIndex),
                                               borderRadius: BorderRadius.circular(16),
                                               child: Container(
-                                                height: 84,
-                                                padding: const EdgeInsets.all(16),
+                                                constraints: const BoxConstraints(minHeight: 84),
+                                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                                 decoration: BoxDecoration(
                                                   color: isDark ? const Color(0xFF1A1917) : const Color(0xFFF9F7F2),
                                                   borderRadius: BorderRadius.circular(16),
@@ -567,8 +570,8 @@ class MainHomeScreen extends StatelessWidget {
                                                 onTap: () => homeController.onServiceTap(originalIndex),
                                                 borderRadius: BorderRadius.circular(16),
                                                 child: Container(
-                                                  height: 84,
-                                                  padding: const EdgeInsets.all(16),
+                                                  constraints: const BoxConstraints(minHeight: 84),
+                                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                                   decoration: BoxDecoration(
                                                     color: isDark ? const Color(0xFF1A1917) : const Color(0xFFF9F7F2),
                                                     borderRadius: BorderRadius.circular(16),
@@ -750,7 +753,7 @@ class MainHomeScreen extends StatelessWidget {
                                   text: 'Refer & Earn',
                                   onTap: () {
                                     if (homeController.getLoginStatus(inProgress: false)) {
-                                      Get.to(() => ReferralScreen(),
+                                      Get.to(() => const ReferralEarnScreen(),
                                           transition: Transition.rightToLeftWithFade);
                                     }
                                   },
