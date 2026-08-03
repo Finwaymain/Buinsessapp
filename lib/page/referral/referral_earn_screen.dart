@@ -17,22 +17,13 @@ class ReferralEarnScreen extends StatefulWidget {
 }
 
 class _ReferralEarnScreenState extends State<ReferralEarnScreen> {
-  int _selectedTab = 0; // 0 = Consumer, 1 = Business
-
-  // Live Backend Data
-  String consumerCode = 'FIIN12345';
-  String consumerLink = 'https://fiinway.app/r/FIIN12345';
-  String consumerTotalRef = '125';
-  String consumerEarnings = '₹18,750';
-  String consumerWallet = '₹3,250';
-  String consumerActiveUsers = '80';
-
-  String bizCode = 'BIZ12345';
-  String bizLink = 'https://fiinway.app/r/BIZ12345';
-  String bizTotalRef = '98';
-  String bizEarnings = '₹12,540';
-  String bizActiveUsers = '52';
-  String bizUsers = '28';
+  // Live Dynamic Data from API
+  String referralCode = 'FIIN8829';
+  String referralLink = 'https://fiinway.online/r/FIIN8829';
+  String totalReferrals = '0';
+  String totalEarnings = '₹0.00';
+  String walletBalance = '₹0.00';
+  String activeUsers = '0';
 
   @override
   void initState() {
@@ -52,32 +43,18 @@ class _ReferralEarnScreenState extends State<ReferralEarnScreen> {
         final resData = json.decode(response.body);
         if (resData['success'] == 'success' && resData['data'] != null) {
           final data = resData['data'];
-          if (data['consumer'] != null) {
-            final cons = data['consumer'];
-            consumerCode = cons['referral_code'] ?? consumerCode;
-            consumerLink = cons['referral_link'] ?? consumerLink;
-            consumerTotalRef = cons['total_referrals']?.toString() ?? consumerTotalRef;
-            consumerEarnings = cons['earnings'] ?? consumerEarnings;
-            consumerWallet = cons['wallet_balance'] ?? consumerWallet;
-            consumerActiveUsers = cons['active_users']?.toString() ?? consumerActiveUsers;
-          }
-          if (data['business'] != null) {
-            final biz = data['business'];
-            bizCode = biz['referral_code'] ?? bizCode;
-            bizLink = biz['referral_link'] ?? bizLink;
-            bizTotalRef = biz['total_referrals']?.toString() ?? bizTotalRef;
-            bizEarnings = biz['earnings'] ?? bizEarnings;
-            bizActiveUsers = biz['active_users']?.toString() ?? bizActiveUsers;
-            bizUsers = biz['business_users']?.toString() ?? bizUsers;
-          }
+          setState(() {
+            referralCode = data['referral_code'] ?? referralCode;
+            referralLink = data['referral_link'] ?? referralLink;
+            totalReferrals = data['total_referrals']?.toString() ?? totalReferrals;
+            totalEarnings = data['earnings'] ?? totalEarnings;
+            walletBalance = data['wallet_balance'] ?? walletBalance;
+            activeUsers = data['active_users']?.toString() ?? activeUsers;
+          });
         }
       }
     } catch (e) {
       debugPrint('Error fetching referral stats: $e');
-    } finally {
-      if (mounted) {
-        setState(() {});
-      }
     }
   }
 
@@ -98,10 +75,6 @@ class _ReferralEarnScreenState extends State<ReferralEarnScreen> {
   Widget build(BuildContext context) {
     final themeChange = Provider.of<DarkThemeProvider>(context);
     final isDark = themeChange.getThem();
-
-    final isConsumer = _selectedTab == 0;
-    final activeCode = isConsumer ? consumerCode : bizCode;
-    final activeLink = isConsumer ? consumerLink : bizLink;
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF7F9FC),
@@ -127,65 +100,7 @@ class _ReferralEarnScreenState extends State<ReferralEarnScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Column(
             children: [
-              // Top Sub-Tabs Switcher (Consumer vs Business)
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => setState(() => _selectedTab = 0),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          decoration: BoxDecoration(
-                            color: isConsumer ? const Color(0xFF00A859) : Colors.transparent,
-                            borderRadius: BorderRadius.circular(25),
-                          ),
-                          child: Center(
-                            child: Text(
-                              'Consumer',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontFamily: AppThemeData.bold,
-                                color: isConsumer ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => setState(() => _selectedTab = 1),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          decoration: BoxDecoration(
-                            color: !isConsumer ? const Color(0xFF00A859) : Colors.transparent,
-                            borderRadius: BorderRadius.circular(25),
-                          ),
-                          child: Center(
-                            child: Text(
-                              'Business',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontFamily: AppThemeData.bold,
-                                color: !isConsumer ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Banner Card (Gift Box or Storefront)
+              // 1. Banner Card
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
@@ -204,18 +119,15 @@ class _ReferralEarnScreenState extends State<ReferralEarnScreen> {
                     ),
                   ],
                 ),
-                child: Row(
+                child: const Row(
                   children: [
-                    Text(
-                      isConsumer ? '🎁' : '🏪',
-                      style: const TextStyle(fontSize: 42),
-                    ),
-                    const SizedBox(width: 14),
+                    Text('🎁', style: TextStyle(fontSize: 42)),
+                    SizedBox(width: 14),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Refer & Earn',
                             style: TextStyle(
                               fontSize: 22,
@@ -223,10 +135,10 @@ class _ReferralEarnScreenState extends State<ReferralEarnScreen> {
                               color: Colors.white,
                             ),
                           ),
-                          const SizedBox(height: 2),
+                          SizedBox(height: 2),
                           Text(
-                            isConsumer ? 'Share. Connect. Earn Together' : 'Grow Your Business Network',
-                            style: const TextStyle(
+                            'Share. Connect. Earn Together',
+                            style: TextStyle(
                               fontSize: 12,
                               fontFamily: AppThemeData.medium,
                               color: Colors.white70,
@@ -240,7 +152,7 @@ class _ReferralEarnScreenState extends State<ReferralEarnScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Main Referral Details Container
+              // 2. Main Referral Code & Link Card
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -274,7 +186,7 @@ class _ReferralEarnScreenState extends State<ReferralEarnScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            activeCode,
+                            referralCode,
                             style: const TextStyle(
                               fontSize: 18,
                               fontFamily: AppThemeData.bold,
@@ -284,7 +196,7 @@ class _ReferralEarnScreenState extends State<ReferralEarnScreen> {
                           ),
                           const SizedBox(width: 8),
                           GestureDetector(
-                            onTap: () => _copyToClipboard(activeCode, 'Referral Code'),
+                            onTap: () => _copyToClipboard(referralCode, 'Referral Code'),
                             child: const Icon(Icons.copy_rounded, color: Color(0xFF00A859), size: 18),
                           ),
                         ],
@@ -309,7 +221,7 @@ class _ReferralEarnScreenState extends State<ReferralEarnScreen> {
                         children: [
                           Expanded(
                             child: Text(
-                              activeLink,
+                              referralLink,
                               style: const TextStyle(
                                 fontSize: 13,
                                 fontFamily: AppThemeData.medium,
@@ -320,7 +232,7 @@ class _ReferralEarnScreenState extends State<ReferralEarnScreen> {
                           ),
                           const SizedBox(width: 6),
                           GestureDetector(
-                            onTap: () => _copyToClipboard(activeLink, 'Referral Link'),
+                            onTap: () => _copyToClipboard(referralLink, 'Referral Link'),
                             child: const Icon(Icons.copy_rounded, color: Color(0xFF00A859), size: 18),
                           ),
                         ],
@@ -332,7 +244,7 @@ class _ReferralEarnScreenState extends State<ReferralEarnScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
-                        onPressed: () => _copyToClipboard(activeLink, 'Referral Link'),
+                        onPressed: () => _copyToClipboard(referralLink, 'Referral Link'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF00A859),
                           padding: const EdgeInsets.symmetric(vertical: 14),
@@ -351,31 +263,21 @@ class _ReferralEarnScreenState extends State<ReferralEarnScreen> {
               ),
               const SizedBox(height: 16),
 
-              // 4 Stat Cards Row (Exact Match to Screenshot)
+              // 3. 4 Stat Cards Row (Live API Data)
               Row(
-                children: isConsumer
-                    ? [
-                        _buildStatCard('Total Referrals', consumerTotalRef, Icons.groups_rounded, const Color(0xFF00A859), isDark),
-                        const SizedBox(width: 8),
-                        _buildStatCard('Earnings', consumerEarnings, Icons.stars_rounded, const Color(0xFF00A859), isDark),
-                        const SizedBox(width: 8),
-                        _buildStatCard('Wallet Balance', consumerWallet, Icons.account_balance_wallet_rounded, const Color(0xFF00A859), isDark),
-                        const SizedBox(width: 8),
-                        _buildStatCard('Active Users', consumerActiveUsers, Icons.insights_rounded, const Color(0xFF00A859), isDark),
-                      ]
-                    : [
-                        _buildStatCard('Total Referrals', bizTotalRef, Icons.groups_rounded, const Color(0xFF00A859), isDark),
-                        const SizedBox(width: 8),
-                        _buildStatCard('Earnings', bizEarnings, Icons.add_circle_outline_rounded, const Color(0xFF00A859), isDark),
-                        const SizedBox(width: 8),
-                        _buildStatCard('Active Users', bizActiveUsers, Icons.verified_user_rounded, const Color(0xFF00A859), isDark),
-                        const SizedBox(width: 8),
-                        _buildStatCard('Business Users', bizUsers, Icons.check_circle_outline_rounded, const Color(0xFF00A859), isDark),
-                      ],
+                children: [
+                  _buildStatCard('Total Referrals', totalReferrals, Icons.groups_rounded, const Color(0xFF00A859), isDark),
+                  const SizedBox(width: 8),
+                  _buildStatCard('Earnings', totalEarnings, Icons.stars_rounded, const Color(0xFF00A859), isDark),
+                  const SizedBox(width: 8),
+                  _buildStatCard('Wallet Balance', walletBalance, Icons.account_balance_wallet_rounded, const Color(0xFF00A859), isDark),
+                  const SizedBox(width: 8),
+                  _buildStatCard('Active Users', activeUsers, Icons.insights_rounded, const Color(0xFF00A859), isDark),
+                ],
               ),
               const SizedBox(height: 20),
 
-              // Quick Share Bar
+              // 4. Quick Share Bar
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
@@ -396,19 +298,19 @@ class _ReferralEarnScreenState extends State<ReferralEarnScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
                         _buildSocialIcon('WhatsApp', const Color(0xFF25D366), Icons.message_rounded, () {
-                          _copyToClipboard(activeLink, 'Referral Link');
+                          _copyToClipboard(referralLink, 'Referral Link');
                         }),
                         _buildSocialIcon('Telegram', const Color(0xFF0088CC), Icons.send_rounded, () {
-                          _copyToClipboard(activeLink, 'Referral Link');
+                          _copyToClipboard(referralLink, 'Referral Link');
                         }),
                         _buildSocialIcon('Facebook', const Color(0xFF1877F2), Icons.facebook_rounded, () {
-                          _copyToClipboard(activeLink, 'Referral Link');
+                          _copyToClipboard(referralLink, 'Referral Link');
                         }),
                         _buildSocialIcon('Instagram', const Color(0xFFE4405F), Icons.camera_alt_rounded, () {
-                          _copyToClipboard(activeLink, 'Referral Link');
+                          _copyToClipboard(referralLink, 'Referral Link');
                         }),
                         _buildSocialIcon('More', const Color(0xFF64748B), Icons.more_horiz_rounded, () {
-                          _copyToClipboard(activeLink, 'Referral Link');
+                          _copyToClipboard(referralLink, 'Referral Link');
                         }),
                       ],
                     ),
