@@ -117,7 +117,7 @@ class SubscriptionController extends GetxController {
     return null;
   }
 
-  Future<bool> completeSubscription() async {
+  Future<bool> completeSubscription({bool redirect = false}) async {
     try {
       ShowToastDialog.showLoader("Please wait");
       Map<String, String> bodyParams = {
@@ -136,17 +136,13 @@ class SubscriptionController extends GetxController {
         userModel.value.userData?.subscriptionPlan = selectedSubscriptionPlan.value;
         userModel.value.userData?.subscriptionPlanId = selectedSubscriptionPlan.value.id;
         await Preferences.setString(Preferences.user, jsonEncode(userModel.value));
-        dynamic argumentData = Get.arguments;
-        if (argumentData != null || isSplashScreen.value == true) {
-          isSplashScreen.value = false;
-          ShowToastDialog.closeLoader();
-          ShowToastDialog.showToast(responseBody['message']);
-          Get.offAll(MainDashboard());
-        } else {
-          DashBoardController dashcontroller = Get.put(DashBoardController());
-          await dashcontroller.getUsrData();
-          ShowToastDialog.closeLoader();
-          ShowToastDialog.showToast(responseBody['message']);
+        
+        DashBoardController dashcontroller = Get.put(DashBoardController());
+        await dashcontroller.getUsrData();
+        ShowToastDialog.closeLoader();
+        ShowToastDialog.showToast(responseBody['message'] ?? 'Subscription plan updated successfully!');
+
+        if (redirect) {
           Get.offAll(MainDashboard());
         }
         return true;

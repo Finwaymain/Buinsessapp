@@ -202,7 +202,7 @@ class MyProfileScreen extends StatelessWidget {
                         onPress: () {
                           String token = Preferences.getString(Preferences.accesstoken);
                           String driverId = Preferences.getInt(Preferences.userId).toString();
-                          String finalUrl = 'https://fiinway-maini.onrender.com/onboarding?accesstoken=$token&driver_id=$driverId&mode=edit_category';
+                          String finalUrl = 'https://fiinway.online/onboarding?accesstoken=$token&driver_id=$driverId&mode=edit_category';
                           Get.to(() => WebViewScreen(url: finalUrl, title: 'Edit Categories'))?.then((value) {
                             myProfileController.getUsrData();
                           });

@@ -559,12 +559,12 @@ class DashBoardController extends GetxController {
       }
       Get.to(() => const MarketplaceHomeScreen());
     } else if (item.title == 'Join as Partner'.tr) {
-      String finalUrl = 'https://fiinway-maini.onrender.com/onboarding/join-fiinway';
+      String finalUrl = 'https://fiinway.online/onboarding/join-fiinway';
       Get.to(() => WebViewScreen(url: finalUrl, title: 'Join Fiinway'));
     } else if (item.title == 'Update Categories'.tr) {
       String token = Preferences.getString(Preferences.accesstoken);
       String driverId = Preferences.getInt(Preferences.userId).toString();
-      String finalUrl = 'https://fiinway-maini.onrender.com/onboarding?accesstoken=$token&driver_id=$driverId';
+      String finalUrl = 'https://fiinway.online/onboarding?accesstoken=$token&driver_id=$driverId';
       Get.to(() => WebViewScreen(url: finalUrl, title: 'Update Categories'));
     } else if (item.title == 'Change Password'.tr) {
       Get.to(ChangePasswordScreen());

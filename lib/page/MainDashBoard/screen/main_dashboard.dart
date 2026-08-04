@@ -48,7 +48,7 @@ class _MainDashboardState extends State<MainDashboard> {
     if (userData?.onboardingCompleted == 'yes' && userData?.isTransportCategory == false) {
       final token = userData?.accesstoken ?? '';
       final driverId = userData?.id ?? '';
-      final url = 'https://fiinway-maini.onrender.com/onboarding/dashboard?accesstoken=$token&driver_id=$driverId';
+      final url = 'https://fiinway.online/onboarding/dashboard?accesstoken=$token&driver_id=$driverId';
       Get.offAll(() => WebViewScreen(url: url, title: 'Dashboard', showAppBar: false));
     }
   }

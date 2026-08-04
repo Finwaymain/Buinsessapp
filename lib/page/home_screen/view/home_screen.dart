@@ -222,7 +222,7 @@ class MainHomeScreen extends StatelessWidget {
                                             onTap: () {
                                               String token = controller.userModel.value.userData?.accesstoken ?? "";
                                               String driverId = controller.userModel.value.userData?.id ?? "";
-                                              String finalUrl = 'https://fiinway-maini.onrender.com/onboarding?accesstoken=$token&driver_id=$driverId';
+                                              String finalUrl = 'https://fiinway.online/onboarding?accesstoken=$token&driver_id=$driverId';
                                               Get.to(() => WebViewScreen(url: finalUrl, title: 'Complete Onboarding'))?.then((value) {
                                                 controller.getUsrData();
                                               });
@@ -268,7 +268,7 @@ class MainHomeScreen extends StatelessWidget {
                                                 onTap: () {
                                                   String token = controller.userModel.value.userData?.accesstoken ?? "";
                                                   String driverId = controller.userModel.value.userData?.id ?? "";
-                                                  String finalUrl = 'https://fiinway-maini.onrender.com/onboarding?accesstoken=$token&driver_id=$driverId';
+                                                  String finalUrl = 'https://fiinway.online/onboarding?accesstoken=$token&driver_id=$driverId';
                                                   Get.to(() => WebViewScreen(url: finalUrl, title: 'Edit Categories'))?.then((value) {
                                                     controller.getUsrData();
                                                   });
@@ -675,7 +675,7 @@ class MainHomeScreen extends StatelessWidget {
                                       }
                                       String token = Preferences.getString(Preferences.accesstoken);
                                       String userId = Preferences.getInt(Preferences.userId).toString();
-                                      String finalUrl = 'https://fiinway-maini.onrender.com/onboarding/more?accesstoken=$token&driver_id=$userId';
+                                      String finalUrl = 'https://fiinway.online/onboarding/more?accesstoken=$token&driver_id=$userId';
                                       Get.to(() => WebViewScreen(url: finalUrl, title: 'More'));
                                     },
                                   ),

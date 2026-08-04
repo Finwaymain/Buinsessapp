@@ -1,6 +1,7 @@
 // ignore_for_file: must_be_immutable, use_build_context_synchronously
 
 import 'dart:developer';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cabme_driver/constant/constant.dart';
 import 'package:cabme_driver/constant/show_toast_dialog.dart';
 import 'package:cabme_driver/controller/subscription_controller.dart';
@@ -11,6 +12,7 @@ import 'package:cabme_driver/themes/constant_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '../../../utils/dark_theme_provider.dart';
@@ -34,18 +36,48 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
   final Razorpay razorPayController = Razorpay();
   final WalletController walletController = Get.put(WalletController());
 
-  // View Navigation Modes (NO top tabs!):
-  // 'dashboard': My Membership Dashboard (Default Initial View)
-  // 'plans': Choose Subscription Plan Screen
-  // 'benefits': Plan Benefits & Advantages Screen
+  // View Navigation Modes (No tabs):
+  // 'dashboard': My Membership Dashboard (Dynamic User & Active Subscription Data)
+  // 'plans': Choose Subscription Plan Screen (Dynamic backend plans)
+  // 'benefits': Plan Benefits Screen (Dynamic selected plan benefits)
   // 'activated': Plan Activated Confirmation Screen
   String viewMode = 'dashboard';
-  int selectedPlanIndex = 1;
 
   @override
   void initState() {
     super.initState();
     viewMode = 'dashboard';
+    controller.getInitData();
+  }
+
+  String _calculateDaysRemaining(UserData? userData, SubscriptionPlanData? activePlan) {
+    if (userData?.subscriptionExpiryDate != null && userData!.subscriptionExpiryDate!.isNotEmpty) {
+      try {
+        final expiry = DateTime.parse(userData.subscriptionExpiryDate!);
+        final diff = expiry.difference(DateTime.now()).inDays;
+        if (diff > 0) return "$diff days";
+        if (diff == 0) return "Expires Today";
+        return "Expired";
+      } catch (_) {}
+    }
+    if (activePlan?.expiryDay != null) {
+      if (activePlan!.expiryDay == "-1") return "Lifetime";
+      return "${activePlan.expiryDay} days";
+    }
+    return "N/A";
+  }
+
+  String _formatExpiryDate(UserData? userData, SubscriptionPlanData? activePlan) {
+    if (userData?.subscriptionExpiryDate != null && userData!.subscriptionExpiryDate!.isNotEmpty) {
+      try {
+        final expiry = DateTime.parse(userData.subscriptionExpiryDate!);
+        return DateFormat('dd MMM yyyy').format(expiry);
+      } catch (_) {
+        return userData.subscriptionExpiryDate!;
+      }
+    }
+    if (activePlan?.expiryDay == "-1") return "Lifetime Unlimited";
+    return "Active Plan";
   }
 
   @override
@@ -135,22 +167,38 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
   }
 
   // ===========================================================================
-  // 1. DEFAULT SCREEN: MY MEMBERSHIP DASHBOARD (User Info + Active Benefits)
+  // 1. DEFAULT SCREEN: MY MEMBERSHIP DASHBOARD (Dynamic Backend User & Plan Data)
   // ===========================================================================
   Widget _buildDashboardScreen(bool isDark, SubscriptionController controller) {
-    final userData = Constant.getUserData().userData;
-    final String driverName = (userData?.nom != null && userData!.nom!.isNotEmpty) ? "${userData.nom} ${userData.prenom ?? ''}" : "Amit Sharma";
+    final userData = controller.userModel.value.userData ?? Constant.getUserData().userData;
 
-    final String activePlanName = (controller.selectedSubscriptionPlan.value.name != null && controller.selectedSubscriptionPlan.value.name!.isNotEmpty)
-        ? controller.selectedSubscriptionPlan.value.name!
-        : "Professional Plan";
+    final String driverName = (userData?.prenom != null || userData?.nom != null)
+        ? "${userData?.prenom ?? ''} ${userData?.nom ?? ''}".trim()
+        : "Driver Profile";
+
+    final SubscriptionPlanData activePlan = controller.selectedSubscriptionPlan.value;
+    final String activePlanName = activePlan.name ?? userData?.subscriptionPlan?.name ?? "Commission Plan";
+    final String activePlanPrice = activePlan.price != null
+        ? Constant().amountShow(amount: activePlan.price!)
+        : (userData?.subscriptionPlan?.price != null ? Constant().amountShow(amount: userData!.subscriptionPlan!.price!) : "Free");
+
+    final String formattedExpiry = _formatExpiryDate(userData, activePlan);
+    final String remainingDays = _calculateDaysRemaining(userData, activePlan);
+
+    final List<String> activePlanPoints = (activePlan.planPoints != null && activePlan.planPoints!.isNotEmpty)
+        ? activePlan.planPoints!
+        : (activePlan.description != null && activePlan.description!.isNotEmpty
+            ? [activePlan.description!]
+            : ["Commission base booking", "Standard payout schedule", "24/7 Driver support"]);
+
+    final bool hasActiveSubscription = userData?.subscriptionPlanId != null && userData!.subscriptionPlanId!.isNotEmpty;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Driver Profile Header Card
+          // Driver User Profile Card
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -179,24 +227,28 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                     children: [
                       Row(
                         children: [
-                          Text(
-                            driverName,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontFamily: AppThemeData.bold,
-                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          Expanded(
+                            child: Text(
+                              driverName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontFamily: AppThemeData.bold,
+                                color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              ),
                             ),
                           ),
                           const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: AppThemeData.primary200,
+                              color: hasActiveSubscription ? AppThemeData.primary200 : const Color(0xFF64748B),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Text(
-                              'Active',
-                              style: TextStyle(fontSize: 10, fontFamily: AppThemeData.bold, color: Colors.white),
+                            child: Text(
+                              hasActiveSubscription ? 'Active' : 'Standard',
+                              style: const TextStyle(fontSize: 10, fontFamily: AppThemeData.bold, color: Colors.white),
                             ),
                           ),
                         ],
@@ -234,7 +286,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                     children: [
                       Text('Plan Validity', style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
                       const SizedBox(height: 4),
-                      Text('10 Jun 2026', style: TextStyle(fontSize: 14, fontFamily: AppThemeData.bold, color: isDark ? Colors.white : const Color(0xFF0F172A))),
+                      Text(formattedExpiry, style: TextStyle(fontSize: 14, fontFamily: AppThemeData.bold, color: isDark ? Colors.white : const Color(0xFF0F172A))),
                     ],
                   ),
                 ),
@@ -253,7 +305,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                     children: [
                       Text('Days Remaining', style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
                       const SizedBox(height: 4),
-                      Text('312 days', style: TextStyle(fontSize: 14, fontFamily: AppThemeData.bold, color: AppThemeData.primary200)),
+                      Text(remainingDays, style: TextStyle(fontSize: 14, fontFamily: AppThemeData.bold, color: AppThemeData.primary200)),
                     ],
                   ),
                 ),
@@ -276,39 +328,60 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
               children: [
                 _buildSubDetailRow('Plan Name', activePlanName, isDark),
                 const Divider(height: 16),
-                _buildSubDetailRow('Subscription Price', '₹2,500 / Year', isDark),
+                _buildSubDetailRow('Subscription Price', activePlanPrice, isDark),
                 const Divider(height: 16),
-                _buildSubDetailRow('Activated On', '10 Jun 2025', isDark),
+                _buildSubDetailRow('Booking Limit', activePlan.bookingLimit == null || activePlan.bookingLimit == "-1" ? "Unlimited" : "${activePlan.bookingLimit} Rides", isDark),
               ],
             ),
           ),
           const SizedBox(height: 20),
 
-          // Active Plan Benefits Progress Grid
-          Text('Plan Benefits (Your Active Plan)', style: TextStyle(fontSize: 15, fontFamily: AppThemeData.bold, color: isDark ? Colors.white : const Color(0xFF0F172A))),
+          // Dynamic Active Plan Benefits List from Backend
+          Text('Plan Benefits (${activePlanName})', style: TextStyle(fontSize: 15, fontFamily: AppThemeData.bold, color: isDark ? Colors.white : const Color(0xFF0F172A))),
           const SizedBox(height: 12),
 
-          GridView.count(
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 1.5,
+          ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            children: [
-              _buildBenefitProgressCard('Free Rides', '150 / ∞', 0.8, Icons.directions_car_rounded, isDark),
-              _buildBenefitProgressCard('Wallet Cashback', '2%', 0.6, Icons.account_balance_wallet_rounded, isDark),
-              _buildBenefitProgressCard('Shopping Discount', '30%', 0.7, Icons.shopping_bag_rounded, isDark),
-              _buildBenefitProgressCard('Service Discount', '20%', 0.5, Icons.construction_rounded, isDark),
-              _buildBenefitProgressCard('Loan Eligibility', '₹5,00,000', 0.9, Icons.account_balance_rounded, isDark),
-              _buildBenefitProgressCard('Referral Bonus', '5%', 0.4, Icons.card_giftcard_rounded, isDark),
-              _buildBenefitProgressCard('Wallet Increment', '2%', 0.6, Icons.trending_up_rounded, isDark),
-              _buildBenefitProgressCard('Priority Booking', 'Enabled', 1.0, Icons.flash_on_rounded, isDark),
-            ],
+            itemCount: activePlanPoints.length,
+            itemBuilder: (context, idx) {
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: AppThemeData.primary200.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.check_rounded, color: AppThemeData.primary200, size: 16),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        activePlanPoints[idx],
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontFamily: AppThemeData.medium,
+                          color: isDark ? Colors.white : const Color(0xFF334155),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
           const SizedBox(height: 24),
 
-          // Option/Button to Change or Upgrade Plan
+          // Button to Change or Upgrade Plan
           SizedBox(
             width: double.infinity,
             height: 50,
@@ -338,7 +411,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
   }
 
   // ===========================================================================
-  // 2. CHOOSE SUBSCRIPTION PLAN SCREEN (List of Available Plans)
+  // 2. CHOOSE SUBSCRIPTION PLAN SCREEN (100% Dynamic API Plans with Images)
   // ===========================================================================
   Widget _buildPlansListScreen(bool isDark, SubscriptionController controller) {
     return SingleChildScrollView(
@@ -346,7 +419,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Banner Top
+          // Dynamic Top Banner
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -394,23 +467,31 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Render Dynamic Plans from Controller or fallback default plans
+          // Render Dynamic Subscription Plans from Controller API (Using Plan Images!)
           controller.isLoading.value
               ? Center(child: Constant.loader(context, isDarkMode: isDark))
-              : controller.subscriptionPlanList.isNotEmpty
-                  ? ListView.builder(
+              : controller.subscriptionPlanList.isEmpty
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Text(
+                          "No subscription plans available right now.".tr,
+                          style: TextStyle(color: isDark ? Colors.white70 : Colors.black87, fontSize: 14),
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
                       physics: const NeverScrollableScrollPhysics(),
                       shrinkWrap: true,
                       itemCount: controller.subscriptionPlanList.length,
                       itemBuilder: (context, idx) {
                         final plan = controller.subscriptionPlanList[idx];
-                        final isSelected = selectedPlanIndex == idx;
+                        final isSelected = controller.selectedSubscriptionPlan.value.id == plan.id;
 
                         return GestureDetector(
                           onTap: () {
                             controller.selectedSubscriptionPlan.value = plan;
                             controller.totalAmount.value = double.parse(plan.price ?? '0.0');
-                            setState(() => selectedPlanIndex = idx);
                           },
                           child: Container(
                             margin: const EdgeInsets.only(bottom: 14),
@@ -428,14 +509,34 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                             ),
                             child: Row(
                               children: [
-                                Container(
-                                  width: 48,
-                                  height: 48,
-                                  decoration: BoxDecoration(
-                                    color: AppThemeData.primary200.withValues(alpha: 0.12),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Icon(Icons.workspace_premium_rounded, color: AppThemeData.primary200, size: 28),
+                                // Dynamic Plan Image from Database (or Fallback Icon if missing)
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: (plan.image != null && plan.image!.isNotEmpty)
+                                      ? CachedNetworkImage(
+                                          imageUrl: plan.image!,
+                                          width: 52,
+                                          height: 52,
+                                          fit: BoxFit.cover,
+                                          errorWidget: (context, url, error) => Container(
+                                            width: 52,
+                                            height: 52,
+                                            decoration: BoxDecoration(
+                                              color: AppThemeData.primary200.withValues(alpha: 0.12),
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            child: Icon(Icons.workspace_premium_rounded, color: AppThemeData.primary200, size: 28),
+                                          ),
+                                        )
+                                      : Container(
+                                          width: 52,
+                                          height: 52,
+                                          decoration: BoxDecoration(
+                                            color: AppThemeData.primary200.withValues(alpha: 0.12),
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: Icon(Icons.workspace_premium_rounded, color: AppThemeData.primary200, size: 28),
+                                        ),
                                 ),
                                 const SizedBox(width: 14),
                                 Expanded(
@@ -463,7 +564,6 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                                     controller.selectedSubscriptionPlan.value = plan;
                                     controller.totalAmount.value = double.parse(plan.price ?? '0.0');
                                     setState(() {
-                                      selectedPlanIndex = idx;
                                       viewMode = 'benefits';
                                     });
                                   },
@@ -478,147 +578,57 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                           ),
                         );
                       },
-                    )
-                  : _buildDefaultPlansList(isDark, controller),
+                    ),
 
           const SizedBox(height: 20),
 
-          // Select Plan CTA Button
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton(
-              onPressed: () => setState(() => viewMode = 'benefits'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppThemeData.primary200,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Text('Select Plan & View Benefits', style: TextStyle(fontSize: 15, fontFamily: AppThemeData.bold, color: Colors.white)),
-                  SizedBox(width: 8),
-                  Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18),
-                ],
+          if (controller.subscriptionPlanList.isNotEmpty)
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: () => setState(() => viewMode = 'benefits'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppThemeData.primary200,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    Text('Select Plan & View Benefits', style: TextStyle(fontSize: 15, fontFamily: AppThemeData.bold, color: Colors.white)),
+                    SizedBox(width: 8),
+                    Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18),
+                  ],
+                ),
               ),
             ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildDefaultPlansList(bool isDark, SubscriptionController controller) {
-    final List<Map<String, dynamic>> defaultPlans = [
-      {'title': 'Basic Plan', 'price': '₹1,200 / Year', 'tag': 'Popular'},
-      {'title': 'Professional Plan', 'price': '₹2,500 / Year', 'tag': 'Recommended'},
-      {'title': 'Premium Plus', 'price': '₹5,000 / Year', 'tag': 'VIP'},
-    ];
-
-    return Column(
-      children: defaultPlans.asMap().entries.map((entry) {
-        final idx = entry.key;
-        final plan = entry.value;
-        final isSelected = selectedPlanIndex == idx;
-
-        return GestureDetector(
-          onTap: () => setState(() => selectedPlanIndex = idx),
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 14),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E293B) : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isSelected ? AppThemeData.primary200 : const Color(0xFFE2E8F0),
-                width: isSelected ? 2 : 1,
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: AppThemeData.primary200.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.workspace_premium_rounded, color: AppThemeData.primary200, size: 28),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        plan['title'],
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontFamily: AppThemeData.bold,
-                          color: isDark ? Colors.white : const Color(0xFF0F172A),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        plan['price'],
-                        style: TextStyle(fontSize: 15, fontFamily: AppThemeData.bold, color: AppThemeData.primary200),
-                      ),
-                    ],
-                  ),
-                ),
-                OutlinedButton(
-                  onPressed: () {
-                    setState(() {
-                      selectedPlanIndex = idx;
-                      viewMode = 'benefits';
-                    });
-                  },
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: AppThemeData.primary200),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  child: Text('View Benefits', style: TextStyle(fontSize: 11, fontFamily: AppThemeData.bold, color: AppThemeData.primary200)),
-                ),
-              ],
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
   // ===========================================================================
-  // 3. PLAN BENEFITS & ADVANTAGES PAGE
+  // 3. PLAN BENEFITS & ADVANTAGES PAGE (Dynamic Selected Plan Data & Image)
   // ===========================================================================
   Widget _buildBenefitsScreen(bool isDark, SubscriptionController controller) {
-    final String planTitle = (controller.subscriptionPlanList.isNotEmpty && selectedPlanIndex < controller.subscriptionPlanList.length)
-        ? (controller.subscriptionPlanList[selectedPlanIndex].name ?? 'Professional Plan')
-        : 'Professional Plan';
+    final plan = controller.selectedSubscriptionPlan.value;
 
-    final String planPrice = (controller.subscriptionPlanList.isNotEmpty && selectedPlanIndex < controller.subscriptionPlanList.length)
-        ? Constant().amountShow(amount: controller.subscriptionPlanList[selectedPlanIndex].price ?? '2500')
-        : '₹2,500 / Year';
+    final String planTitle = plan.name ?? 'Subscription Plan';
+    final String planPrice = Constant().amountShow(amount: plan.price ?? '0.0');
+    final String expiryText = plan.expiryDay == "-1" ? "Lifetime" : "${plan.expiryDay ?? '365'} Days";
 
-    final List<String> benefitsList = [
-      'Business Verified Batch',
-      'Premium Listing',
-      'QR Pay Send & Receive (Up to 2%)',
-      'Daily Value Increment (Up to 2%)',
-      'Free Incoming Booking (150)',
-      'Interest-Free Loan Eligibility (Up to ₹5 Lakh)',
-      'Value Transfer Cashback (Up to 2%)',
-      'Wallet Enabled',
-      'Professional Dashboard',
-      'Priority Support',
-      'Analytics Dashboard',
-    ];
+    final List<String> benefitsList = (plan.planPoints != null && plan.planPoints!.isNotEmpty)
+        ? plan.planPoints!
+        : (plan.description != null && plan.description!.isNotEmpty
+            ? [plan.description!]
+            : ["Verified driver badge", "Standard booking access", "24/7 Support access"]);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Selected Plan Header Box
+          // Dynamic Selected Plan Header Box with Plan Image
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -628,14 +638,33 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
             ),
             child: Row(
               children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: AppThemeData.primary200,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(Icons.workspace_premium_rounded, color: Colors.white, size: 28),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: (plan.image != null && plan.image!.isNotEmpty)
+                      ? CachedNetworkImage(
+                          imageUrl: plan.image!,
+                          width: 52,
+                          height: 52,
+                          fit: BoxFit.cover,
+                          errorWidget: (context, url, error) => Container(
+                            width: 52,
+                            height: 52,
+                            decoration: BoxDecoration(
+                              color: AppThemeData.primary200,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(Icons.workspace_premium_rounded, color: Colors.white, size: 28),
+                          ),
+                        )
+                      : Container(
+                          width: 52,
+                          height: 52,
+                          decoration: BoxDecoration(
+                            color: AppThemeData.primary200,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.workspace_premium_rounded, color: Colors.white, size: 28),
+                        ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -648,7 +677,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        planPrice,
+                        "$planPrice / $expiryText",
                         style: TextStyle(fontSize: 15, fontFamily: AppThemeData.bold, color: AppThemeData.primary200),
                       ),
                     ],
@@ -662,37 +691,42 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
           Text('Key Benefits & Advantages', style: TextStyle(fontSize: 16, fontFamily: AppThemeData.bold, color: isDark ? Colors.white : const Color(0xFF0F172A))),
           const SizedBox(height: 12),
 
-          ...benefitsList.map((b) {
-            return Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: AppThemeData.primary200.withValues(alpha: 0.12),
-                      shape: BoxShape.circle,
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: benefitsList.length,
+            itemBuilder: (context, idx) {
+              return Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: AppThemeData.primary200.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.check_rounded, color: AppThemeData.primary200, size: 16),
                     ),
-                    child: Icon(Icons.check_rounded, color: AppThemeData.primary200, size: 16),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      b,
-                      style: TextStyle(fontSize: 13, fontFamily: AppThemeData.medium, color: isDark ? Colors.white : const Color(0xFF334155)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        benefitsList[idx],
+                        style: TextStyle(fontSize: 13, fontFamily: AppThemeData.medium, color: isDark ? Colors.white : const Color(0xFF334155)),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            );
-          }),
+                  ],
+                ),
+              );
+            },
+          ),
           const SizedBox(height: 24),
 
           // Proceed to Payment Button
@@ -701,10 +735,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
             height: 50,
             child: ElevatedButton(
               onPressed: () {
-                if (controller.subscriptionPlanList.isNotEmpty && selectedPlanIndex < controller.subscriptionPlanList.length) {
-                  controller.selectedSubscriptionPlan.value = controller.subscriptionPlanList[selectedPlanIndex];
-                  controller.totalAmount.value = double.parse(controller.selectedSubscriptionPlan.value.price ?? '0.0');
-                }
+                controller.totalAmount.value = double.parse(plan.price ?? '0.0');
                 paymentDialog(context, controller, isDark);
               },
               style: ElevatedButton.styleFrom(
@@ -742,6 +773,10 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
   // 4. PLAN ACTIVATED SUCCESS CONFIRMATION SCREEN
   // ===========================================================================
   Widget _buildActivatedSuccessScreen(bool isDark, SubscriptionController controller) {
+    final plan = controller.selectedSubscriptionPlan.value;
+    final planName = plan.name ?? "Subscription Plan";
+    final planPrice = Constant().amountShow(amount: plan.price ?? '0.0');
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -779,14 +814,33 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
             ),
             child: Row(
               children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: AppThemeData.primary200,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.workspace_premium_rounded, color: Colors.white, size: 26),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: (plan.image != null && plan.image!.isNotEmpty)
+                      ? CachedNetworkImage(
+                          imageUrl: plan.image!,
+                          width: 44,
+                          height: 44,
+                          fit: BoxFit.cover,
+                          errorWidget: (context, url, error) => Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: AppThemeData.primary200,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.workspace_premium_rounded, color: Colors.white, size: 26),
+                          ),
+                        )
+                      : Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: AppThemeData.primary200,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(Icons.workspace_premium_rounded, color: Colors.white, size: 26),
+                        ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -795,7 +849,14 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                     children: [
                       Row(
                         children: [
-                          Text('Professional Plan', style: TextStyle(fontSize: 16, fontFamily: AppThemeData.bold, color: isDark ? Colors.white : const Color(0xFF0F172A))),
+                          Expanded(
+                            child: Text(
+                              planName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(fontSize: 16, fontFamily: AppThemeData.bold, color: isDark ? Colors.white : const Color(0xFF0F172A)),
+                            ),
+                          ),
                           const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -804,7 +865,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                           ),
                         ],
                       ),
-                      Text('₹2,500 / Year', style: TextStyle(fontSize: 14, fontFamily: AppThemeData.bold, color: AppThemeData.primary200)),
+                      Text(planPrice, style: TextStyle(fontSize: 14, fontFamily: AppThemeData.bold, color: AppThemeData.primary200)),
                     ],
                   ),
                 ),
@@ -813,7 +874,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
           ),
           const SizedBox(height: 24),
 
-          // Go to Dashboard Button (Updates Dashboard with Activated Plan)
+          // Go to Dashboard Button
           SizedBox(
             width: double.infinity,
             height: 50,
@@ -845,54 +906,6 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
         Text(label, style: TextStyle(fontSize: 12, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
         Text(value, style: TextStyle(fontSize: 13, fontFamily: AppThemeData.bold, color: isDark ? Colors.white : const Color(0xFF0F172A))),
       ],
-    );
-  }
-
-  Widget _buildBenefitProgressCard(String title, String val, double progress, IconData icon, bool isDark) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: AppThemeData.primary200.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, size: 18, color: AppThemeData.primary200),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 11, fontFamily: AppThemeData.semiBold, color: isDark ? Colors.white70 : const Color(0xFF475569)),
-                ),
-              ),
-            ],
-          ),
-          Text(val, style: TextStyle(fontSize: 14, fontFamily: AppThemeData.bold, color: isDark ? Colors.white : const Color(0xFF0F172A))),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 4,
-              backgroundColor: const Color(0xFFE2E8F0),
-              valueColor: AlwaysStoppedAnimation<Color>(AppThemeData.primary200!),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -938,7 +951,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                             onPressed: () => Get.back(),
                             icon: Transform(
                               alignment: Alignment.center,
-                              transform: Directionality.of(context) == TextDirection.rtl ? Matrix4.rotationY(3.14159) : Matrix4.identity(),
+                              transform: Directionality.of(context).name == 'rtl' ? Matrix4.rotationY(3.14159) : Matrix4.identity(),
                               child: SvgPicture.asset(
                                 'assets/icons/ic_left.svg',
                                 width: 18,

@@ -465,7 +465,7 @@ Future<void> showAlertDialog(BuildContext context, String type) async {
                 Get.back();
                 String token = Preferences.getString(Preferences.accesstoken);
                 String driverId = Preferences.getInt(Preferences.userId).toString();
-                String finalUrl = 'https://fiinway-maini.onrender.com/onboarding?accesstoken=$token&driver_id=$driverId';
+                String finalUrl = 'https://fiinway.online/onboarding?accesstoken=$token&driver_id=$driverId';
                 Get.to(() => WebViewScreen(url: finalUrl, title: 'Complete Onboarding'));
               },
             ),

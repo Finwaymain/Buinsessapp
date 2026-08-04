@@ -194,13 +194,31 @@ class CustomDrawer extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppThemeData.primary200.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(Icons.workspace_premium_rounded, color: AppThemeData.primary200, size: 24),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: (dashBoardController.userModel.value.userData?.subscriptionPlan?.image?.isNotEmpty == true)
+                          ? CachedNetworkImage(
+                              imageUrl: dashBoardController.userModel.value.userData!.subscriptionPlan!.image!,
+                              width: 36,
+                              height: 36,
+                              fit: BoxFit.cover,
+                              errorWidget: (context, url, error) => Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: AppThemeData.primary200.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(Icons.workspace_premium_rounded, color: AppThemeData.primary200, size: 24),
+                              ),
+                            )
+                          : Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: AppThemeData.primary200.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(Icons.workspace_premium_rounded, color: AppThemeData.primary200, size: 24),
+                            ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -208,16 +226,16 @@ class CustomDrawer extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'My Membership & Upgrade Plan',
+                            dashBoardController.userModel.value.userData?.subscriptionPlan?.name ?? 'Standard Plan',
                             style: TextStyle(
                               color: isDark ? Colors.white : AppThemeData.grey900,
-                              fontSize: 13,
+                              fontSize: 14,
                               fontFamily: AppThemeData.bold,
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Change plan & view active benefits',
+                            'View membership & change plan',
                             style: TextStyle(
                               color: themeChange.getThem() ? AppThemeData.grey400Dark : AppThemeData.grey500,
                               fontSize: 11,
