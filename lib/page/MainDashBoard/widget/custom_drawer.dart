@@ -20,6 +20,7 @@ class CustomDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isLogin = Preferences.getBoolean(Preferences.isLogin) ?? false;
     final themeChange = Provider.of<DarkThemeProvider>(context);
+    final bool isDark = themeChange.getThem();
     final dashBoardController = Get.put(DashBoardController());
 
     var drawerOptions = <Widget>[];
