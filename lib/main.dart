@@ -1,5 +1,4 @@
 import 'package:flutter_callkit_incoming/entities/call_event.dart';
-import 'package:permission_handler/permission_handler.dart';
 // ignore_for_file: empty_catches, must_be_immutable, unused_local_variable, deprecated_member_use
 
 import 'dart:convert';
@@ -429,11 +428,6 @@ class AppInitialization {
         AndroidGoogleMapsFlutter.useAndroidViewSurface = true;
       }
       
-      // Request Display over other apps (System Alert Window) permission
-      var status = await Permission.systemAlertWindow.status;
-      if (!status.isGranted) {
-        await Permission.systemAlertWindow.request();
-      }
     }
   }
 }
