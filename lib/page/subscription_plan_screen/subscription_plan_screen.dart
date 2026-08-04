@@ -34,24 +34,17 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
   final Razorpay razorPayController = Razorpay();
   final WalletController walletController = Get.put(WalletController());
 
-  // Screen View Mode:
-  // 'dashboard': Show Active Membership Dashboard directly (Default Initial Screen)
-  // 'plans': Show List of Subscription Plans
-  // 'benefits': Show Benefits & Advantages of Selected Plan
-  // 'activated': Show Payment Success & Activated Plan Summary
+  // View Navigation Modes (NO top tabs!):
+  // 'dashboard': My Membership Dashboard (Default Initial View)
+  // 'plans': Choose Subscription Plan Screen
+  // 'benefits': Plan Benefits & Advantages Screen
+  // 'activated': Plan Activated Confirmation Screen
   String viewMode = 'dashboard';
   int selectedPlanIndex = 1;
-
-  // Primary Theme Colors (NO Green)
-  static const Color primaryBlue = Color(0xFF2563EB);
-  static const Color primaryDarkBlue = Color(0xFF1D4ED8);
-  static const Color primarySoftBg = Color(0xFFEFF6FF);
-  static const Color accentOrange = Color(0xFFF97316);
 
   @override
   void initState() {
     super.initState();
-    // Driver opens directly onto the Dashboard view
     viewMode = 'dashboard';
   }
 
@@ -142,7 +135,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
   }
 
   // ===========================================================================
-  // 1. DEFAULT DIRECT DASHBOARD (My Membership & Active Plan Benefits)
+  // 1. DEFAULT SCREEN: MY MEMBERSHIP DASHBOARD (User Info + Active Benefits)
   // ===========================================================================
   Widget _buildDashboardScreen(bool isDark, SubscriptionController controller) {
     final userData = Constant.getUserData().userData;
@@ -173,11 +166,11 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                 Container(
                   width: 52,
                   height: 52,
-                  decoration: const BoxDecoration(
-                    color: primarySoftBg,
+                  decoration: BoxDecoration(
+                    color: AppThemeData.primary200.withValues(alpha: 0.12),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.person_rounded, size: 32, color: primaryBlue),
+                  child: Icon(Icons.person_rounded, size: 32, color: AppThemeData.primary200),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -198,7 +191,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: primaryBlue,
+                              color: AppThemeData.primary200,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Text(
@@ -225,16 +218,16 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
           ),
           const SizedBox(height: 14),
 
-          // Plan Validity Cards
+          // Plan Validity Stats
           Row(
             children: [
               Expanded(
                 child: Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1E293B) : primarySoftBg,
+                    color: isDark ? const Color(0xFF1E293B) : AppThemeData.primary200.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: primaryBlue.withValues(alpha: 0.2)),
+                    border: Border.all(color: AppThemeData.primary200.withValues(alpha: 0.2)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -251,16 +244,16 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1E293B) : primarySoftBg,
+                    color: isDark ? const Color(0xFF1E293B) : AppThemeData.primary200.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: primaryBlue.withValues(alpha: 0.2)),
+                    border: Border.all(color: AppThemeData.primary200.withValues(alpha: 0.2)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text('Days Remaining', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-                      SizedBox(height: 4),
-                      Text('312 days', style: TextStyle(fontSize: 14, fontFamily: AppThemeData.bold, color: primaryBlue)),
+                    children: [
+                      Text('Days Remaining', style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
+                      const SizedBox(height: 4),
+                      Text('312 days', style: TextStyle(fontSize: 14, fontFamily: AppThemeData.bold, color: AppThemeData.primary200)),
                     ],
                   ),
                 ),
@@ -291,7 +284,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
           ),
           const SizedBox(height: 20),
 
-          // Plan Benefits Progress Cards Grid (Your Active Plan)
+          // Active Plan Benefits Progress Grid
           Text('Plan Benefits (Your Active Plan)', style: TextStyle(fontSize: 15, fontFamily: AppThemeData.bold, color: isDark ? Colors.white : const Color(0xFF0F172A))),
           const SizedBox(height: 12),
 
@@ -315,14 +308,14 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
           ),
           const SizedBox(height: 24),
 
-          // Upgrade Plan CTA Button
+          // Option/Button to Change or Upgrade Plan
           SizedBox(
             width: double.infinity,
             height: 50,
             child: ElevatedButton(
               onPressed: () => setState(() => viewMode = 'plans'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: primaryBlue,
+                backgroundColor: AppThemeData.primary200,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 elevation: 2,
               ),
@@ -332,7 +325,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                   Icon(Icons.workspace_premium_rounded, color: Colors.white, size: 20),
                   SizedBox(width: 8),
                   Text(
-                    'Upgrade / Change Subscription Plan',
+                    'Change / Upgrade Subscription Plan',
                     style: TextStyle(fontSize: 15, fontFamily: AppThemeData.bold, color: Colors.white),
                   ),
                 ],
@@ -357,33 +350,33 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E293B) : primarySoftBg,
+              color: isDark ? const Color(0xFF1E293B) : AppThemeData.primary200.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: primaryBlue.withValues(alpha: 0.2)),
+              border: Border.all(color: AppThemeData.primary200.withValues(alpha: 0.2)),
             ),
             child: Row(
               children: [
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    children: [
                       Text(
                         'Grow Your Business with',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: primaryDarkBlue),
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppThemeData.primary200),
                       ),
                       Text(
                         'FIINWAY Premium Plans',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: primaryBlue),
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppThemeData.primary200),
                       ),
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Text(
                         'More Benefits. More Earnings. More Growth.',
-                        style: TextStyle(fontSize: 11, color: Color(0xFF475569)),
+                        style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
                       ),
                     ],
                   ),
                 ),
-                const Icon(Icons.show_chart_rounded, size: 40, color: primaryBlue),
+                Icon(Icons.show_chart_rounded, size: 40, color: AppThemeData.primary200),
               ],
             ),
           ),
@@ -401,7 +394,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Render Dynamic Plans from Controller
+          // Render Dynamic Plans from Controller or fallback default plans
           controller.isLoading.value
               ? Center(child: Constant.loader(context, isDarkMode: isDark))
               : controller.subscriptionPlanList.isNotEmpty
@@ -426,11 +419,11 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                               color: isDark ? const Color(0xFF1E293B) : Colors.white,
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: isSelected ? primaryBlue : const Color(0xFFE2E8F0),
+                                color: isSelected ? AppThemeData.primary200 : const Color(0xFFE2E8F0),
                                 width: isSelected ? 2 : 1,
                               ),
                               boxShadow: [
-                                if (isSelected) BoxShadow(color: primaryBlue.withValues(alpha: 0.12), blurRadius: 10, offset: const Offset(0, 4)),
+                                if (isSelected) BoxShadow(color: AppThemeData.primary200.withValues(alpha: 0.12), blurRadius: 10, offset: const Offset(0, 4)),
                               ],
                             ),
                             child: Row(
@@ -439,10 +432,10 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                                   width: 48,
                                   height: 48,
                                   decoration: BoxDecoration(
-                                    color: primarySoftBg,
+                                    color: AppThemeData.primary200.withValues(alpha: 0.12),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: const Icon(Icons.workspace_premium_rounded, color: primaryBlue, size: 28),
+                                  child: Icon(Icons.workspace_premium_rounded, color: AppThemeData.primary200, size: 28),
                                 ),
                                 const SizedBox(width: 14),
                                 Expanded(
@@ -460,7 +453,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                                       const SizedBox(height: 4),
                                       Text(
                                         '${Constant().amountShow(amount: plan.price ?? '0.0')} / ${plan.expiryDay == "-1" ? "Lifetime" : "${plan.expiryDay} Days"}',
-                                        style: const TextStyle(fontSize: 14, fontFamily: AppThemeData.bold, color: primaryBlue),
+                                        style: TextStyle(fontSize: 14, fontFamily: AppThemeData.bold, color: AppThemeData.primary200),
                                       ),
                                     ],
                                   ),
@@ -475,10 +468,10 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                                     });
                                   },
                                   style: OutlinedButton.styleFrom(
-                                    side: const BorderSide(color: primaryBlue),
+                                    side: BorderSide(color: AppThemeData.primary200),
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                   ),
-                                  child: const Text('View Benefits', style: TextStyle(fontSize: 11, fontFamily: AppThemeData.bold, color: primaryBlue)),
+                                  child: Text('View Benefits', style: TextStyle(fontSize: 11, fontFamily: AppThemeData.bold, color: AppThemeData.primary200)),
                                 ),
                               ],
                             ),
@@ -490,14 +483,14 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
 
           const SizedBox(height: 20),
 
-          // Select Plan CTA
+          // Select Plan CTA Button
           SizedBox(
             width: double.infinity,
             height: 50,
             child: ElevatedButton(
               onPressed: () => setState(() => viewMode = 'benefits'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: primaryBlue,
+                backgroundColor: AppThemeData.primary200,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               child: Row(
@@ -537,7 +530,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
               color: isDark ? const Color(0xFF1E293B) : Colors.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isSelected ? primaryBlue : const Color(0xFFE2E8F0),
+                color: isSelected ? AppThemeData.primary200 : const Color(0xFFE2E8F0),
                 width: isSelected ? 2 : 1,
               ),
             ),
@@ -546,45 +539,29 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                 Container(
                   width: 48,
                   height: 48,
-                  decoration: const BoxDecoration(
-                    color: primarySoftBg,
+                  decoration: BoxDecoration(
+                    color: AppThemeData.primary200.withValues(alpha: 0.12),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.workspace_premium_rounded, color: primaryBlue, size: 28),
+                  child: Icon(Icons.workspace_premium_rounded, color: AppThemeData.primary200, size: 28),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Text(
-                            plan['title'],
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontFamily: AppThemeData.bold,
-                              color: isDark ? Colors.white : const Color(0xFF0F172A),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: accentOrange,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              plan['tag'],
-                              style: const TextStyle(fontSize: 10, fontFamily: AppThemeData.bold, color: Colors.white),
-                            ),
-                          ),
-                        ],
+                      Text(
+                        plan['title'],
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontFamily: AppThemeData.bold,
+                          color: isDark ? Colors.white : const Color(0xFF0F172A),
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         plan['price'],
-                        style: const TextStyle(fontSize: 15, fontFamily: AppThemeData.bold, color: primaryBlue),
+                        style: TextStyle(fontSize: 15, fontFamily: AppThemeData.bold, color: AppThemeData.primary200),
                       ),
                     ],
                   ),
@@ -597,10 +574,10 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                     });
                   },
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: primaryBlue),
+                    side: BorderSide(color: AppThemeData.primary200),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: const Text('View Benefits', style: TextStyle(fontSize: 11, fontFamily: AppThemeData.bold, color: primaryBlue)),
+                  child: Text('View Benefits', style: TextStyle(fontSize: 11, fontFamily: AppThemeData.bold, color: AppThemeData.primary200)),
                 ),
               ],
             ),
@@ -645,9 +622,9 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E293B) : primarySoftBg,
+              color: isDark ? const Color(0xFF1E293B) : AppThemeData.primary200.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: primaryBlue.withValues(alpha: 0.3)),
+              border: Border.all(color: AppThemeData.primary200.withValues(alpha: 0.3)),
             ),
             child: Row(
               children: [
@@ -655,7 +632,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: primaryBlue,
+                    color: AppThemeData.primary200,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(Icons.workspace_premium_rounded, color: Colors.white, size: 28),
@@ -672,7 +649,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                       const SizedBox(height: 4),
                       Text(
                         planPrice,
-                        style: const TextStyle(fontSize: 15, fontFamily: AppThemeData.bold, color: primaryBlue),
+                        style: TextStyle(fontSize: 15, fontFamily: AppThemeData.bold, color: AppThemeData.primary200),
                       ),
                     ],
                   ),
@@ -699,11 +676,11 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                   Container(
                     width: 24,
                     height: 24,
-                    decoration: const BoxDecoration(
-                      color: primarySoftBg,
+                    decoration: BoxDecoration(
+                      color: AppThemeData.primary200.withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.check_rounded, color: primaryBlue, size: 16),
+                    child: Icon(Icons.check_rounded, color: AppThemeData.primary200, size: 16),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -731,7 +708,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                 paymentDialog(context, controller, isDark);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: primaryBlue,
+                backgroundColor: AppThemeData.primary200,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               child: Row(
@@ -762,7 +739,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
   }
 
   // ===========================================================================
-  // 4. PLAN ACTIVATED SUCCESS SCREEN
+  // 4. PLAN ACTIVATED SUCCESS CONFIRMATION SCREEN
   // ===========================================================================
   Widget _buildActivatedSuccessScreen(bool isDark, SubscriptionController controller) {
     return SingleChildScrollView(
@@ -773,8 +750,8 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
           Container(
             width: 76,
             height: 76,
-            decoration: const BoxDecoration(
-              color: primaryBlue,
+            decoration: BoxDecoration(
+              color: AppThemeData.primary200,
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.check_rounded, color: Colors.white, size: 48),
@@ -792,13 +769,13 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
           ),
           const SizedBox(height: 20),
 
-          // Activated Plan Summary
+          // Activated Plan Summary Card
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E293B) : primarySoftBg,
+              color: isDark ? const Color(0xFF1E293B) : AppThemeData.primary200.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: primaryBlue.withValues(alpha: 0.3)),
+              border: Border.all(color: AppThemeData.primary200.withValues(alpha: 0.3)),
             ),
             child: Row(
               children: [
@@ -806,7 +783,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: primaryBlue,
+                    color: AppThemeData.primary200,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(Icons.workspace_premium_rounded, color: Colors.white, size: 26),
@@ -822,12 +799,12 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                           const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(color: primaryBlue, borderRadius: BorderRadius.circular(6)),
+                            decoration: BoxDecoration(color: AppThemeData.primary200, borderRadius: BorderRadius.circular(6)),
                             child: const Text('Active', style: TextStyle(fontSize: 10, fontFamily: AppThemeData.bold, color: Colors.white)),
                           ),
                         ],
                       ),
-                      const Text('₹2,500 / Year', style: TextStyle(fontSize: 14, fontFamily: AppThemeData.bold, color: primaryBlue)),
+                      Text('₹2,500 / Year', style: TextStyle(fontSize: 14, fontFamily: AppThemeData.bold, color: AppThemeData.primary200)),
                     ],
                   ),
                 ),
@@ -836,14 +813,14 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
           ),
           const SizedBox(height: 24),
 
-          // Go to Dashboard Button
+          // Go to Dashboard Button (Updates Dashboard with Activated Plan)
           SizedBox(
             width: double.infinity,
             height: 50,
             child: ElevatedButton(
               onPressed: () => setState(() => viewMode = 'dashboard'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: primaryBlue,
+                backgroundColor: AppThemeData.primary200,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               child: Row(
@@ -888,10 +865,10 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: primarySoftBg,
+                  color: AppThemeData.primary200.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, size: 18, color: primaryBlue),
+                child: Icon(icon, size: 18, color: AppThemeData.primary200),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -911,7 +888,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
               value: progress,
               minHeight: 4,
               backgroundColor: const Color(0xFFE2E8F0),
-              valueColor: const AlwaysStoppedAnimation<Color>(primaryBlue),
+              valueColor: AlwaysStoppedAnimation<Color>(AppThemeData.primary200!),
             ),
           ),
         ],
@@ -1012,7 +989,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                               height: 48,
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: primaryBlue,
+                                  backgroundColor: AppThemeData.primary200,
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 ),
                                 onPressed: () async {
@@ -1057,7 +1034,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
         color: isDarkMode ? AppThemeData.surface50Dark : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: controller.selectedRadioTile.value == value ? primaryBlue : const Color(0xFFE2E8F0),
+          color: controller.selectedRadioTile.value == value ? AppThemeData.primary200! : const Color(0xFFE2E8F0),
         ),
       ),
       child: RadioListTile<String>(
@@ -1071,7 +1048,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
         ),
         value: value,
         groupValue: controller.selectedRadioTile.value,
-        activeColor: primaryBlue,
+        activeColor: AppThemeData.primary200,
         onChanged: (val) {
           controller.selectedRadioTile.value = val!;
         },
