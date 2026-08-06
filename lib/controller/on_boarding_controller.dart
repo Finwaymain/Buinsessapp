@@ -25,6 +25,34 @@ class OnBoardingController extends GetxController {
     super.onInit();
   }
 
+  void _setupFallbackData() {
+    if (onboardingModel.value.data == null || onboardingModel.value.data!.isEmpty) {
+      onboardingModel.value = OnboardingModel(
+        success: "success",
+        data: [
+          OnboardingData(
+            id: "1",
+            title: "Accept Rides Easily".tr,
+            description: "Receive instant ride requests nearby and manage your trips effortlessly.".tr,
+            image: "assets/images/intro_1.png",
+          ),
+          OnboardingData(
+            id: "2",
+            title: "Flexible Earnings".tr,
+            description: "Drive on your own schedule and earn competitive fares with daily payouts.".tr,
+            image: "assets/images/intro_3.png",
+          ),
+          OnboardingData(
+            id: "3",
+            title: "Live GPS Navigation".tr,
+            description: "Turn-by-turn navigation and optimal routes for hassle-free journeys.".tr,
+            image: "assets/images/intro_2.png",
+          ),
+        ],
+      );
+    }
+  }
+
   Future<dynamic> getBoardingData() async {
     try {
       ShowToastDialog.showLoader("Please wait");
@@ -34,32 +62,20 @@ class OnBoardingController extends GetxController {
       showLog("API :: Request Header :: ${API.header.toString()}");
       showLog("API :: Response Status :: ${response.statusCode} ");
       showLog("API :: Response Body :: ${response.body} ");
-      var decodedResponse = jsonDecode(response.body);
-      if (decodedResponse['success'] == 'success') {
-        onboardingModel.value = OnboardingModel.fromJson(decodedResponse as Map<String, dynamic>);
-        isLastPage = selectedPageIndex.value == (onboardingModel.value.data?.length ?? 0) - 1;
-        isLoading.value = false;
-        ShowToastDialog.closeLoader();
-        return decodedResponse;
-      } else {
-        ShowToastDialog.closeLoader();
-        isLoading.value = false;
+      
+      if (response.statusCode == 200) {
+        var decodedResponse = jsonDecode(response.body);
+        if (decodedResponse is Map<String, dynamic> && decodedResponse['success'] == 'success') {
+          onboardingModel.value = OnboardingModel.fromJson(decodedResponse);
+        }
       }
-    } on TimeoutException catch (e) {
-      isLoading.value = false;
-      ShowToastDialog.closeLoader();
-      ShowToastDialog.showToast(e.message.toString());
-    } on SocketException catch (e) {
-      isLoading.value = false;
-      ShowToastDialog.closeLoader();
-      ShowToastDialog.showToast(e.message.toString());
-    } on Error catch (e) {
-      isLoading.value = false;
-      ShowToastDialog.closeLoader();
-      ShowToastDialog.showToast(e.toString());
     } catch (e) {
+      showLog("OnBoarding Exception: $e");
+    } finally {
+      _setupFallbackData();
+      isLastPage = selectedPageIndex.value == (onboardingModel.value.data?.length ?? 0) - 1;
+      isLoading.value = false;
       ShowToastDialog.closeLoader();
-      ShowToastDialog.showToast(e.toString());
     }
 
     return null;

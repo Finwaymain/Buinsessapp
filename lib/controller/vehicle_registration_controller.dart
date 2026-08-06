@@ -118,7 +118,7 @@ class VehicleRegistrationController extends GetxController {
 
   Future<bool> uploadDocument({required String documentId, required File file}) async {
     try {
-      ShowToastDialog.showLoader("Uploading...");
+      ShowToastDialog.showLoader("Uploading document...");
       var request = http.MultipartRequest('POST', Uri.parse(API.driverDocumentUpdate));
       request.headers.addAll(API.header);
       request.fields['driver_id'] = Preferences.getInt(Preferences.userId).toString();
@@ -127,17 +127,26 @@ class VehicleRegistrationController extends GetxController {
 
       final res = await request.send();
       final responseData = await res.stream.toBytes();
-      final body = json.decode(String.fromCharCodes(responseData));
+      final responseString = String.fromCharCodes(responseData);
       ShowToastDialog.closeLoader();
 
-      if (res.statusCode == 200 && body['success'].toString().toLowerCase() == 'success') {
+      Map<String, dynamic> body;
+      try {
+        body = json.decode(responseString);
+      } catch (e) {
+        ShowToastDialog.showToast("Server error during upload. Please try again.");
+        return false;
+      }
+
+      if (res.statusCode == 200 && (body['success'].toString().toLowerCase() == 'success')) {
+        ShowToastDialog.showToast(body['message']?.toString() ?? "Uploaded successfully!");
         return true;
       }
-      ShowToastDialog.showToast(body['error']?.toString() ?? "Upload failed");
+      ShowToastDialog.showToast(body['error']?.toString() ?? body['message']?.toString() ?? "Upload failed. Please try again.");
       return false;
     } catch (e) {
       ShowToastDialog.closeLoader();
-      ShowToastDialog.showToast("An error occurred: $e");
+      ShowToastDialog.showToast("An error occurred during upload: $e");
       return false;
     }
   }

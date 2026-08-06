@@ -40,6 +40,7 @@ import '../../features/Taxi/taxi_dashboard/taxi_dashboard.dart';
 
 import '../../wallet/xenditScreen.dart';
 import '../../web_view_screen/web_view_screen.dart';
+import '../../features/AllServices/all_services_screen.dart';
 import '../controller/main_home_controller.dart';
 import '../widget/dashboard_status_section.dart';
 import '../widget/vertical_icon_with_text.dart';
@@ -158,8 +159,19 @@ class MainHomeScreen extends StatelessWidget {
                       },
                     ),
                     Expanded(
-                      child: SingleChildScrollView(
-                        child: Column(
+                      child: RefreshIndicator(
+                        color: AppThemeData.primary200,
+                        onRefresh: () async {
+                          await controller.getUsrData();
+                          try {
+                            if (Get.isRegistered<NewRideController>()) {
+                              await Get.find<NewRideController>().getUsrData();
+                            }
+                          } catch (_) {}
+                        },
+                        child: SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Premium welcoming header
@@ -673,10 +685,8 @@ class MainHomeScreen extends StatelessWidget {
                                         Get.to(() => PhoneEntryScreen(mode: 'signup'), transition: Transition.rightToLeftWithFade);
                                         return;
                                       }
-                                      String token = Preferences.getString(Preferences.accesstoken);
-                                      String userId = Preferences.getInt(Preferences.userId).toString();
-                                      String finalUrl = 'https://fiinway.online/onboarding/more?accesstoken=$token&driver_id=$userId';
-                                      Get.to(() => WebViewScreen(url: finalUrl, title: 'More'));
+                                      Get.to(() => const AllServicesScreen(),
+                                          transition: Transition.rightToLeftWithFade);
                                     },
                                   ),
                                 ],
@@ -765,7 +775,8 @@ class MainHomeScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                  ],
+                  ),
+                ],
                 ),
               ),
             );

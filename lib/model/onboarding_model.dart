@@ -12,13 +12,19 @@ class OnboardingModel {
   });
 
   factory OnboardingModel.fromJson(Map<String, dynamic> json) {
-    var list = json['data'] as List;
-    List<OnboardingData> dataList = list.map((i) => OnboardingData.fromJson(i)).toList();
+    List<OnboardingData> dataList = [];
+    if (json['data'] != null && json['data'] is List) {
+      var list = json['data'] as List;
+      dataList = list
+          .where((i) => i != null && i is Map<String, dynamic>)
+          .map((i) => OnboardingData.fromJson(i as Map<String, dynamic>))
+          .toList();
+    }
 
     return OnboardingModel(
-      success: json['success'],
-      error: json['error'],
-      message: json['message'],
+      success: json['success']?.toString(),
+      error: json['error']?.toString(),
+      message: json['message']?.toString(),
       data: dataList,
     );
   }
@@ -50,11 +56,11 @@ class OnboardingData {
 
   factory OnboardingData.fromJson(Map<String, dynamic> json) {
     return OnboardingData(
-      id: json['id'],
-      type: json['type'],
-      title: json['title'],
-      description: json['description'],
-      image: json['image'],
+      id: json['id']?.toString(),
+      type: json['type']?.toString(),
+      title: json['title']?.toString(),
+      description: json['description']?.toString(),
+      image: json['image']?.toString(),
     );
   }
 

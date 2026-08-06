@@ -69,11 +69,21 @@ class MyProfileController extends GetxController {
 
       var res = await request.send();
       var responseData = await res.stream.toBytes();
+      var responseString = String.fromCharCodes(responseData);
       showLog("API :: URL :: ${API.userUpdateProfile}");
       showLog("API :: Request Body :: ${jsonEncode(request.fields)} ");
       showLog("API :: Response Status :: ${res.statusCode} ");
-      showLog("API :: Response Body :: ${String.fromCharCodes(responseData)} ");
-      Map<String, dynamic> response = jsonDecode(String.fromCharCodes(responseData));
+      showLog("API :: Response Body :: $responseString ");
+
+      Map<String, dynamic> response;
+      try {
+        response = jsonDecode(responseString);
+      } catch (e) {
+        ShowToastDialog.closeLoader();
+        ShowToastDialog.showToast("Server error during photo upload. Please try again.");
+        return null;
+      }
+
       if (res.statusCode == 200) {
         ShowToastDialog.closeLoader();
         ShowToastDialog.showToast("Uploaded!");
@@ -81,7 +91,7 @@ class MyProfileController extends GetxController {
       } else {
         ShowToastDialog.closeLoader();
         ShowToastDialog.showToast(response['error'] ?? 'Something went wrong. Please try again later');
-        throw Exception('Failed to load album');
+        return null;
       }
     } on TimeoutException catch (e) {
       ShowToastDialog.closeLoader();

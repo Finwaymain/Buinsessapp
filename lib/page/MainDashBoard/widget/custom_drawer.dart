@@ -253,6 +253,43 @@ class CustomDrawer extends StatelessWidget {
 
             const Divider(height: 1),
 
+            // Theme Switcher (Dark / Light Mode)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                        size: 20,
+                        color: isDark ? AppThemeData.primary200 : AppThemeData.grey400,
+                      ),
+                      const SizedBox(width: 16),
+                      Text(
+                        'Dark Mode'.tr,
+                        style: TextStyle(
+                          color: isDark ? AppThemeData.grey900Dark : AppThemeData.grey900,
+                          fontSize: 15,
+                          fontFamily: AppThemeData.medium,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Switch.adaptive(
+                    value: isDark,
+                    activeColor: AppThemeData.primary200,
+                    onChanged: (bool val) {
+                      themeChange.darkTheme = val ? 0 : 1;
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+            const Divider(height: 1),
+
             Column(children: drawerOptions),
           ],
         ),

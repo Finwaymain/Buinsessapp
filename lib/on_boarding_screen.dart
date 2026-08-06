@@ -22,48 +22,61 @@ class OnBoardingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeChange = Provider.of<DarkThemeProvider>(context);
+    final isDark = themeChange.getThem();
+
     return GetX<OnBoardingController>(
       init: OnBoardingController(),
       builder: (controller) {
+        final dataLength = controller.onboardingModel.value.data?.length ?? 0;
+        final isLastPage = dataLength > 0 && controller.selectedPageIndex.value == dataLength - 1;
+
         return Scaffold(
-          backgroundColor: themeChange.getThem() ? AppThemeData.surface50Dark : AppThemeData.surface50,
+          backgroundColor: isDark ? AppThemeData.surface50Dark : AppThemeData.surface50,
           appBar: AppbarCustom(
             elevation: 0,
-            bgColor: themeChange.getThem() ? AppThemeData.surface50Dark : AppThemeData.surface50,
+            bgColor: isDark ? AppThemeData.surface50Dark : AppThemeData.surface50,
             title: '',
             isLeadingIcon: controller.selectedPageIndex.value != 0,
             leading: IconButton(
-                onPressed: () {
+              onPressed: () {
+                if (controller.selectedPageIndex.value > 0) {
                   controller.selectedPageIndex.value = controller.selectedPageIndex.value - 1;
-                  controller.pageController.jumpToPage(controller.selectedPageIndex.value);
-                  controller.update();
-                },
-                icon: SvgPicture.asset(
-                  "assets/icons/ic_back_arrow.svg",
-                  colorFilter: ColorFilter.mode(
-                    themeChange.getThem() ? AppThemeData.grey900Dark : AppThemeData.grey900,
-                    BlendMode.srcIn,
-                  ),
-                )),
+                  controller.pageController.animateToPage(
+                    controller.selectedPageIndex.value,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                }
+              },
+              icon: SvgPicture.asset(
+                "assets/icons/ic_back_arrow.svg",
+                colorFilter: ColorFilter.mode(
+                  isDark ? AppThemeData.grey900Dark : AppThemeData.grey900,
+                  BlendMode.srcIn,
+                ),
+              ),
+            ),
             actions: [
-              if (controller.isLoading.value == false && controller.selectedPageIndex.value != ((controller.onboardingModel.value.data?.length ?? 2) - 1))
-                InkWell(
-                  splashColor: Colors.transparent,
-                  onTap: () {
-                    Preferences.setBoolean(Preferences.isFinishOnBoardingKey, true);
-                    // Get.offAll(PhoneEntryScreen(mode: 'signup'));
-                    Get.offAll(const MainDashboard());
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 20),
+              if (!controller.isLoading.value && !isLastPage)
+                Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: TextButton(
+                    style: TextButton.styleFrom(
+                      backgroundColor: AppThemeData.primary200.withOpacity(0.12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    ),
+                    onPressed: () {
+                      Preferences.setBoolean(Preferences.isFinishOnBoardingKey, true);
+                      Get.offAll(const MainDashboard());
+                    },
                     child: Text(
                       'Skip'.tr,
                       style: TextStyle(
-                        fontSize: 16,
-                        decoration: TextDecoration.underline,
-                        decorationColor: AppThemeData.secondary200,
-                        color: AppThemeData.secondary200,
-                        fontFamily: AppThemeData.regular,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppThemeData.primary200,
+                        fontFamily: AppThemeData.medium,
                       ),
                     ),
                   ),
@@ -71,176 +84,143 @@ class OnBoardingScreen extends StatelessWidget {
             ],
           ),
           body: SafeArea(
-            child: controller.isLoading.value == true
-                ? SizedBox()
+            child: controller.isLoading.value
+                ? Constant.loader(context, isDarkMode: isDark)
                 : Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Expanded(
                         child: PageView.builder(
-                            controller: controller.pageController,
-                            onPageChanged: controller.selectedPageIndex,
-                            itemCount: controller.onboardingModel.value.data?.length,
-                            itemBuilder: (context, index) {
-                              return Column(
+                          controller: controller.pageController,
+                          onPageChanged: (index) {
+                            controller.selectedPageIndex.value = index;
+                          },
+                          itemCount: dataLength,
+                          itemBuilder: (context, index) {
+                            final item = controller.onboardingModel.value.data?[index];
+                            final imageUrl = item?.image ?? '';
+                            final fallbackImage = controller.localImage[index % controller.localImage.length];
+
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 24),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Expanded(
-                                    flex: 2,
+                                    flex: 3,
                                     child: Center(
-                                      child: CachedNetworkImage(
-                                        filterQuality: FilterQuality.high,
-                                        fit: BoxFit.cover,
-                                        width: Responsive.width(75, context),
-                                        height: Responsive.width(75, context),
-                                        imageUrl: controller.onboardingModel.value.data?[index].image ?? '',
-                                        placeholder: (context, url) => Constant.loader(context, isDarkMode: themeChange.getThem()),
-                                        errorWidget: (context, url, error) => Image.asset(
-                                          controller.localImage[index],
-                                          fit: BoxFit.cover,
-                                          width: Responsive.width(75, context),
-                                          height: Responsive.width(75, context),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(20),
+                                        decoration: BoxDecoration(
+                                          color: isDark
+                                              ? Colors.white.withOpacity(0.04)
+                                              : AppThemeData.primary200.withOpacity(0.05),
+                                          shape: BoxShape.circle,
                                         ),
+                                        child: imageUrl.startsWith('http')
+                                            ? CachedNetworkImage(
+                                                filterQuality: FilterQuality.high,
+                                                fit: BoxFit.contain,
+                                                width: Responsive.width(70, context),
+                                                height: Responsive.width(70, context),
+                                                imageUrl: imageUrl,
+                                                placeholder: (context, url) => Constant.loader(context, isDarkMode: isDark),
+                                                errorWidget: (context, url, error) => Image.asset(
+                                                  fallbackImage,
+                                                  fit: BoxFit.contain,
+                                                  width: Responsive.width(70, context),
+                                                  height: Responsive.width(70, context),
+                                                ),
+                                              )
+                                            : Image.asset(
+                                                fallbackImage,
+                                                fit: BoxFit.contain,
+                                                width: Responsive.width(70, context),
+                                                height: Responsive.width(70, context),
+                                              ),
                                       ),
                                     ),
                                   ),
-                                  // Expanded(
-                                  //   flex: 2,
-                                  //   child: Center(
-                                  //     child: Image.asset(
-                                  //       controller.localImage[index],
-                                  //       fit: BoxFit.cover,
-                                  //       width: Responsive.width(75, context),
-                                  //       height: Responsive.width(75, context),
-                                  //     ),
-                                  //   ),
-                                  // ),
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 10, bottom: 50),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: List.generate(
-                                        controller.onboardingModel.value.data?.length ?? 0,
-                                        (index) => Container(
-                                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                                          width: controller.selectedPageIndex.value == index ? 38 : 10,
-                                          height: 10,
-                                          decoration: BoxDecoration(
-                                            color: controller.selectedPageIndex.value == index
-                                                ? themeChange.getThem()
-                                                    ? AppThemeData.primary200
-                                                    : AppThemeData.primary200
-                                                : AppThemeData.grey200,
-                                            borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-                                          ),
-                                        ),
-                                      ),
+                                  const SizedBox(height: 20),
+                                  Text(
+                                    item?.title ?? '',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 22,
+                                      color: isDark ? AppThemeData.grey900Dark : AppThemeData.grey900,
+                                      fontFamily: AppThemeData.bold,
+                                      height: 1.3,
                                     ),
                                   ),
-                                  const SizedBox(height: 40),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          controller.onboardingModel.value.data?[index].title ?? '',
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(
-                                              fontSize: 24,
-                                              color: themeChange.getThem() ? AppThemeData.grey900Dark : AppThemeData.grey900,
-                                              fontFamily: AppThemeData.semiBold,
-                                              letterSpacing: 1.5),
-                                        ),
-                                        const SizedBox(height: 10),
-                                        Text(
-                                          controller.onboardingModel.value.data?[index].description ?? '',
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            color: themeChange.getThem() ? AppThemeData.grey900Dark : AppThemeData.grey900,
-                                            letterSpacing: 1.5,
-                                            fontFamily: AppThemeData.regular,
-                                          ),
-                                        ),
-                                      ],
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    item?.description ?? '',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: isDark ? AppThemeData.grey500Dark : AppThemeData.grey500,
+                                      height: 1.5,
+                                      fontFamily: AppThemeData.regular,
                                     ),
                                   ),
+                                  const SizedBox(height: 30),
                                 ],
-                              );
-                            }),
+                              ),
+                            );
+                          },
+                        ),
                       ),
-                      const SizedBox(
-                        height: 40,
+                      // Smooth Page Indicator
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(
+                          dataLength,
+                          (index) {
+                            final isSelected = controller.selectedPageIndex.value == index;
+                            return AnimatedContainer(
+                              duration: const Duration(milliseconds: 300),
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              width: isSelected ? 28 : 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: isSelected ? AppThemeData.primary200 : (isDark ? Colors.grey[700] : AppThemeData.grey200),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            );
+                          },
+                        ),
                       ),
-                      if (controller.onboardingModel.value.data != null && controller.selectedPageIndex.value == (controller.onboardingModel.value.data!.length - 1))
-                        Center(
-                          heightFactor: 1,
-                          child: ButtonThem.buildButton(
-                            context,
-                            title: 'Start Your Journey'.tr,
-                            btnHeight: 55,
-                            btnWidthRatio: 0.6,
-                            txtColor: AppThemeData.grey900,
-                            onPress: () async {
+                      const SizedBox(height: 32),
+                      // Action Button
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        child: ButtonThem.buildButton(
+                          context,
+                          title: isLastPage ? 'Start Your Journey'.tr : 'Next'.tr,
+                          btnHeight: 52,
+                          btnWidthRatio: 0.85,
+                          btnColor: AppThemeData.primary200,
+                          txtColor: Colors.white,
+                          onPress: () async {
+                            if (isLastPage) {
                               Preferences.setBoolean(Preferences.isFinishOnBoardingKey, true);
                               Get.offAll(const MainDashboard());
-                              // Get.offAll(PhoneEntryScreen(mode: 'signup'));
-                            },
-                          ),
-                        ),
-                      if (controller.onboardingModel.value.data != null && controller.selectedPageIndex.value != (controller.onboardingModel.value.data!.length - 1))
-                        Center(
-                          heightFactor: 1,
-                          child: ButtonThem.buildButton(
-                            context,
-                            title: 'Next'.tr,
-                            btnHeight: 55,
-                            btnWidthRatio: 0.6,
-                            txtColor: AppThemeData.grey900,
-                            onPress: () async {
+                            } else {
                               controller.selectedPageIndex.value = controller.selectedPageIndex.value + 1;
-                              controller.pageController.jumpToPage(controller.selectedPageIndex.value);
-                            },
-                          ),
+                              controller.pageController.animateToPage(
+                                controller.selectedPageIndex.value,
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                              );
+                            }
+                          },
                         ),
-                      const SizedBox(height: 40),
+                      ),
+                      const SizedBox(height: 36),
                     ],
                   ),
           ),
         );
       },
     );
-  }
-
-  BorderRadiusGeometry borderRadius(int index, int currentIndex) {
-    if (index == 0 && currentIndex == 0) {
-      return const BorderRadius.all(Radius.circular(10.0));
-    }
-    if (index == 0 && currentIndex == 1) {
-      return const BorderRadius.only(topLeft: Radius.circular(40.0), bottomLeft: Radius.circular(40.0));
-    }
-    if (index == 0 && currentIndex == 2) {
-      return const BorderRadius.only(topRight: Radius.circular(40.0), bottomRight: Radius.circular(40.0));
-    }
-    if (index == 1 && currentIndex == 1) {
-      return const BorderRadius.all(Radius.circular(10.0));
-    }
-    if (index == 1 && currentIndex == 1) {
-      return const BorderRadius.all(Radius.circular(10.0));
-    }
-    if (index == 1 && currentIndex == 2) {
-      return const BorderRadius.all(Radius.circular(10.0));
-    }
-    if (index == 2 && currentIndex == 2) {
-      return const BorderRadius.all(Radius.circular(10.0));
-    }
-    if (index == 2 && currentIndex == 0) {
-      return const BorderRadius.only(topLeft: Radius.circular(40.0), bottomLeft: Radius.circular(40.0));
-    }
-    if (index == 2 && currentIndex == 1) {
-      return const BorderRadius.only(topRight: Radius.circular(40.0), bottomRight: Radius.circular(40.0));
-    }
-    return const BorderRadius.all(Radius.circular(10.0));
   }
 }

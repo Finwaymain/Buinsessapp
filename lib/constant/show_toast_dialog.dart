@@ -16,20 +16,27 @@ class ShowToastDialog {
     if (msg.contains("Failed to load album") ||
         msg.contains("Null check operator") ||
         msg.contains("null check operator") ||
-        msg.contains("Exception:")) {
+        msg.contains("type cast") ||
+        msg.contains("is not a subtype") ||
+        msg.contains("Exception")) {
       debugPrint("Silent Toast Blocked: $msg");
       return;
     }
 
+    bool actualError = isError ||
+        msg.toLowerCase().contains("error") ||
+        msg.toLowerCase().contains("failed") ||
+        msg.toLowerCase().contains("exception");
+
     Get.snackbar(
-      isError
+      actualError
           ? "Error"
           : isWarning
           ? "Warning"
           : "Success",
       msg,
       snackPosition: SnackPosition.TOP,
-      backgroundColor: isError
+      backgroundColor: actualError
           ? Colors.redAccent
           : isWarning
           ? Colors.amber
