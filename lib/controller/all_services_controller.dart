@@ -160,17 +160,19 @@ class AllServicesController extends GetxController {
   }
 
   List<ServiceCategoryData> fallbackSubCategories(String categoryName) {
-    final list = subCategoryCatalog[categoryName] ?? [];
+    final cleanName = cleanServiceName(categoryName);
+    final list = subCategoryCatalog[cleanName] ?? [];
     if (list.isEmpty) {
       for (final key in subCategoryCatalog.keys) {
-        if (key.toLowerCase().contains(categoryName.toLowerCase()) || categoryName.toLowerCase().contains(key.toLowerCase())) {
-          return List.generate(subCategoryCatalog[key]!.length, (i) {
-            final name = subCategoryCatalog[key]![i];
+        if (key.toLowerCase().contains(cleanName.toLowerCase()) || cleanName.toLowerCase().contains(key.toLowerCase())) {
+          final foundList = subCategoryCatalog[key]!;
+          return List.generate(foundList.length, (i) {
+            final name = foundList[i];
             return ServiceCategoryData(
               id: -(i + 100),
               libelle: name,
               image: 'icon:${name}',
-              hasChildren: false,
+              hasChildren: isParentServiceCategory(name),
             );
           });
         }
@@ -179,39 +181,39 @@ class AllServicesController extends GetxController {
     }
     return List.generate(list.length, (i) {
       final name = list[i];
-      final subHasChildren = subCategoryCatalog.containsKey(name);
       return ServiceCategoryData(
         id: -(i + 100),
         libelle: name,
         image: 'icon:${name}',
-        hasChildren: subHasChildren,
+        hasChildren: isParentServiceCategory(name),
       );
     });
   }
 
   Future<List<ServiceCategoryData>> fetchCategories({int? parentId, String? categoryName}) async {
+    final fallback = categoryName != null ? fallbackSubCategories(categoryName) : fallbackHomeCategories();
+
     try {
-      final uri = parentId != null
+      final uri = parentId != null && parentId > 0
           ? Uri.parse(API.getServiceCategories).replace(queryParameters: {'parent_id': parentId.toString()})
-          : Uri.parse(API.getServiceCategories);
-      final response = await http.get(uri, headers: API.header);
+          : (categoryName != null
+              ? Uri.parse(API.getServiceCategories).replace(queryParameters: {'search': cleanServiceName(categoryName)})
+              : Uri.parse(API.getServiceCategories));
+
+      final response = await http.get(uri, headers: API.header).timeout(const Duration(seconds: 4));
       final body = json.decode(response.body);
       if (response.statusCode == 200 && body['success'] == 'success') {
         final list = (body['data'] as List).map((e) => ServiceCategoryData.fromJson(e)).toList();
-        if (parentId == null) {
-          if (list.isEmpty) return fallbackHomeCategories();
+        if (list.isNotEmpty) {
+          if (parentId == null && categoryName == null) {
+            return list;
+          }
           return list;
         }
-        if (list.isEmpty && categoryName != null) {
-          return fallbackSubCategories(categoryName);
-        }
-        return list;
       }
-      if (parentId == null) return fallbackHomeCategories();
-      return categoryName != null ? fallbackSubCategories(categoryName) : [];
+      return fallback;
     } catch (e) {
-      if (parentId == null) return fallbackHomeCategories();
-      return categoryName != null ? fallbackSubCategories(categoryName) : [];
+      return fallback;
     }
   }
 
