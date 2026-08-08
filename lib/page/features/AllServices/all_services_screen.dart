@@ -8,6 +8,7 @@ import 'package:cabme_driver/controller/all_services_controller.dart';
 import 'package:cabme_driver/model/service_category_model.dart';
 import 'package:cabme_driver/themes/constant_colors.dart';
 import 'package:cabme_driver/utils/dark_theme_provider.dart';
+import 'lab_sample_selection_screen.dart';
 import 'service_category_detail_screen.dart';
 import 'service_category_tile.dart';
 import 'service_request_screen.dart';
@@ -97,14 +98,20 @@ class _AllServicesScreenState extends State<AllServicesScreen> {
   }
 
   void _onTapCategory(ServiceCategoryData category) {
-    if (category.hasChildren) {
-      Get.to(() => ServiceCategoryDetailScreen(categoryId: category.id!, categoryName: category.libelle ?? ''));
-    } else {
-      Get.to(() => ServiceRequestScreen(
-            serviceName: category.libelle ?? '',
-            categoryName: _parentCategoryName(category),
-          ));
+    final id = category.id;
+    final name = (category.libelle ?? '').toLowerCase();
+    if (name.contains('lab sample') || name.contains('lab collection')) {
+      Get.to(() => LabSampleSelectionScreen(categoryName: _parentCategoryName(category)));
+      return;
     }
+    if (category.hasChildren || (id != null && id > 0)) {
+      Get.to(() => ServiceCategoryDetailScreen(categoryId: id!, categoryName: category.libelle ?? ''));
+      return;
+    }
+    Get.to(() => ServiceRequestScreen(
+          serviceName: category.libelle ?? '',
+          categoryName: _parentCategoryName(category),
+        ));
   }
 
   Widget _buildGrid(List<ServiceCategoryData> items, bool isDarkMode, {bool showBreadcrumb = false}) {
