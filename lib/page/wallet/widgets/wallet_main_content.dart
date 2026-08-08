@@ -1,5 +1,4 @@
 import 'package:cabme_driver/controller/wallet_controller.dart';
-import 'package:cabme_driver/model/trancation_model.dart';
 import 'package:cabme_driver/page/wallet/widgets/wallet_overview_tab.dart';
 import 'package:cabme_driver/page/wallet/widgets/wallet_transactions_tab.dart';
 import 'package:cabme_driver/page/wallet/widgets/wallet_withdrawals_tab.dart';
@@ -16,7 +15,6 @@ class WalletMainContent extends StatefulWidget {
     required this.onTopUp,
     required this.onWithdraw,
     required this.onRefresh,
-    required this.transactionBuilder,
     this.isTab = false,
   });
 
@@ -24,7 +22,6 @@ class WalletMainContent extends StatefulWidget {
   final VoidCallback onTopUp;
   final VoidCallback onWithdraw;
   final Future<void> Function() onRefresh;
-  final Widget Function(TansactionData data, bool isDark) transactionBuilder;
   final bool isTab;
 
   @override
@@ -118,7 +115,6 @@ class _WalletMainContentState extends State<WalletMainContent> with SingleTicker
                   onRefresh: widget.onRefresh,
                   child: WalletTransactionsTab(
                     controller: widget.walletController,
-                    itemBuilder: widget.transactionBuilder,
                     bottomPadding: bottomPad,
                   ),
                 ),

@@ -41,14 +41,27 @@ class _MainDashboardState extends State<MainDashboard> {
   }
 
   Future<void> _resolveDashboard() async {
-    final dashboardController = Get.find<DashBoardController>();
-    final refreshed = await dashboardController.getUsrData();
-    if (!mounted) return;
+    try {
+      final dashboardController = Get.isRegistered<DashBoardController>()
+          ? Get.find<DashBoardController>()
+          : Get.put(DashBoardController());
 
-    final userData = refreshed ? dashboardController.userModel.value.userData : null;
-    setState(() {
-      _mode = shouldUseWebDashboard(userData) ? _DashboardMode.web : _DashboardMode.native;
-    });
+      await dashboardController.getUsrData().timeout(
+        const Duration(seconds: 15),
+        onTimeout: () => false,
+      );
+      if (!mounted) return;
+
+      final userData = dashboardController.userModel.value.userData;
+      setState(() {
+        _mode = shouldUseWebDashboard(userData)
+            ? _DashboardMode.web
+            : _DashboardMode.native;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _mode = _DashboardMode.native);
+    }
   }
 
   final List<Widget> _screens = [

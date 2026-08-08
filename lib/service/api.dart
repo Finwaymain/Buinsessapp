@@ -157,6 +157,7 @@ class API {
   // Smart Value
   static const accountDetails = "${baseUrl}get_profile/smart-value";
   static const showWalletAmount = "${baseUrl}show_wallet_amount/smart-value";
+  static const showTransactionHistory = "${baseUrl}show_transaction_history/smart-value";
   static const getAddUser = "${baseUrl}showadduser/smart-value";
   static const addUser = "${baseUrl}adduser/smart-value";
   static const transferToWallet = "${baseUrl}transfer_to_wallet/smart-value";

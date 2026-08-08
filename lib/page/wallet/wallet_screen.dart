@@ -105,7 +105,6 @@ class WalletScreen extends StatelessWidget {
             }
           },
           onRefresh: _refreshAPI,
-          transactionBuilder: showRideTransaction,
         ),
       ),
     );

@@ -13,6 +13,7 @@ import 'package:cabme_driver/model/bank_details_model.dart';
 import 'package:cabme_driver/model/payment_method_model.dart';
 import 'package:cabme_driver/model/payment_setting_model.dart';
 import 'package:cabme_driver/model/razorpay_gen_userid_model.dart';
+import 'package:cabme_driver/model/transaction_history_model.dart';
 import 'package:cabme_driver/model/trancation_model.dart';
 import 'package:cabme_driver/model/user_model.dart';
 import 'package:cabme_driver/service/api.dart';
@@ -183,6 +184,14 @@ class WalletController extends GetxController with GetSingleTickerProviderStateM
   }
 
   var transactionList = <TansactionData>[].obs;
+  var historyList = <TransactionHistoryData>[].obs;
+  final historyDaysFilter = 30.obs;
+
+  Future<void> setHistoryDaysFilter(int days) async {
+    if (historyDaysFilter.value == days) return;
+    historyDaysFilter.value = days;
+    await getTrancation(showLoader: true);
+  }
 
   Future<dynamic> getTrancation({bool showLoader = true}) async {
     if (!Preferences.getBoolean(Preferences.isLogin)) {
@@ -191,43 +200,153 @@ class WalletController extends GetxController with GetSingleTickerProviderStateM
     }
     try {
       if (showLoader) isLoading.value = true;
-      final response = await http.get(Uri.parse("${API.walletHistory}?id_diver=${Preferences.getInt(Preferences.userId)}"), headers: API.header);
-      showLog("API :: URL :: ${API.walletHistory}?id_diver=${Preferences.getInt(Preferences.userId)}");
-      showLog("API :: Request Header :: ${API.header.toString()} ");
-      showLog("API :: responseStatus :: ${response.statusCode} ");
-      showLog("API :: responseBody :: ${response.body} ");
-      Map<String, dynamic> responseBody = json.decode(response.body);
 
-      if (response.statusCode == 200 && responseBody['success'] == "success") {
-        isLoading.value = false;
+      final acNo = Constant.getUserData().userData?.acNo;
+      final loaded = acNo != null && acNo.isNotEmpty
+          ? await _fetchSmartValueTransactionHistory(acNo, showLoader: showLoader)
+          : await _fetchLegacyWalletHistory(showLoader: showLoader);
 
-        TruncationModel model = TruncationModel.fromJson(responseBody);
-        transactionList.value = model.data!;
-        totalEarn.value = model.totalEarnings!.toString();
-        update();
-      } else if (response.statusCode == 200 &&
-          (responseBody['success'] == "Failed" || responseBody['success'] == "failed")) {
-        transactionList.clear();
-        isLoading.value = false;
-      } else {
-        isLoading.value = false;
-        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
-        throw Exception('Failed to load album');
+      if (!loaded) {
+        historyList.clear();
       }
+
+      await _fetchTotalEarnings();
     } on TimeoutException catch (e) {
       isLoading.value = false;
+      if (showLoader) ShowToastDialog.closeLoader();
       ShowToastDialog.showToast(e.message.toString());
     } on SocketException catch (e) {
       isLoading.value = false;
+      if (showLoader) ShowToastDialog.closeLoader();
       ShowToastDialog.showToast(e.message.toString());
     } on Error catch (e) {
       isLoading.value = false;
+      if (showLoader) ShowToastDialog.closeLoader();
       ShowToastDialog.showToast(e.toString());
     } catch (e) {
-      ShowToastDialog.closeLoader();
+      isLoading.value = false;
+      if (showLoader) ShowToastDialog.closeLoader();
       ShowToastDialog.showToast(e.toString());
     }
     return null;
+  }
+
+  Future<bool> _fetchSmartValueTransactionHistory(String acNo, {required bool showLoader}) async {
+    final response = await http.post(
+      Uri.parse(API.showTransactionHistory),
+      headers: API.header,
+      body: jsonEncode({
+        'ac_no': acNo,
+        'user_type': 'driver',
+        'days': historyDaysFilter.value,
+      }),
+    );
+    showLog("API :: URL :: ${API.showTransactionHistory}");
+    showLog("API :: responseStatus :: ${response.statusCode} ");
+    showLog("API :: responseBody :: ${response.body} ");
+    final responseBody = json.decode(response.body);
+
+    if (response.statusCode == 200 && responseBody['res'] == 'success' && responseBody['data'] is List) {
+      isLoading.value = false;
+      historyList.value = (responseBody['data'] as List)
+          .map((item) => TransactionHistoryData.fromJson(Map<String, dynamic>.from(item)))
+          .toList();
+      if (showLoader) ShowToastDialog.closeLoader();
+      return true;
+    }
+
+    return _fetchLegacyWalletHistory(showLoader: showLoader);
+  }
+
+  Future<bool> _fetchLegacyWalletHistory({required bool showLoader}) async {
+    final response = await http.get(
+      Uri.parse("${API.walletHistory}?id_diver=${Preferences.getInt(Preferences.userId)}"),
+      headers: API.header,
+    );
+    showLog("API :: URL :: ${API.walletHistory}?id_diver=${Preferences.getInt(Preferences.userId)}");
+    showLog("API :: responseStatus :: ${response.statusCode} ");
+    showLog("API :: responseBody :: ${response.body} ");
+    final responseBody = json.decode(response.body);
+
+    if (response.statusCode == 200 && responseBody['success'] == "success") {
+      isLoading.value = false;
+      final model = TruncationModel.fromJson(responseBody);
+      transactionList.value = model.data ?? [];
+      historyList.value = transactionList.map(_mapLegacyTransaction).toList();
+      totalEarn.value = model.totalEarnings?.toString() ?? totalEarn.value;
+      update();
+      if (showLoader) ShowToastDialog.closeLoader();
+      return true;
+    }
+
+    if (response.statusCode == 200 &&
+        (responseBody['success'] == "Failed" || responseBody['success'] == "failed")) {
+      transactionList.clear();
+      historyList.clear();
+      isLoading.value = false;
+      if (showLoader) ShowToastDialog.closeLoader();
+      return false;
+    }
+
+    isLoading.value = false;
+    if (showLoader) ShowToastDialog.closeLoader();
+    ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
+    return false;
+  }
+
+  Future<void> _fetchTotalEarnings() async {
+    try {
+      final response = await http.get(
+        Uri.parse("${API.walletHistory}?id_diver=${Preferences.getInt(Preferences.userId)}"),
+        headers: API.header,
+      );
+      if (response.statusCode == 200) {
+        final responseBody = json.decode(response.body);
+        if (responseBody['success'] == 'success' && responseBody['total_earnings'] != null) {
+          totalEarn.value = responseBody['total_earnings'].toString();
+        }
+      }
+    } catch (_) {}
+  }
+
+  TransactionHistoryData _mapLegacyTransaction(TansactionData data) {
+    final orderType = data.orderType?.toString() ?? '';
+    String category;
+    String icon;
+    if (data.planId != null && data.planId!.isNotEmpty) {
+      category = 'Subscription';
+      icon = 'subscription';
+    } else if (orderType == 'parcel') {
+      category = 'Parcel Delivery';
+      icon = 'parcel';
+    } else if (orderType == 'ride') {
+      category = 'Cab Ride';
+      icon = 'cab';
+    } else {
+      category = 'Wallet Top-up';
+      icon = 'topup';
+    }
+
+    final counterparty = [
+      data.nom,
+      data.prenom,
+      data.receiverName,
+      data.libelle,
+      data.payment,
+    ].whereType<String>().map((e) => e.trim()).firstWhere((e) => e.isNotEmpty, orElse: () => '');
+
+    return TransactionHistoryData(
+      id: data.id,
+      amount: data.amount ?? data.transactionAmount ?? data.montant,
+      paymentMethod: data.payment ?? data.libelle,
+      paymentStatus: data.paymentStatus ?? data.statutPaiement ?? 'success',
+      creer: data.creer ?? data.createdAt,
+      categoryTitle: category,
+      counterpartyName: counterparty.isEmpty ? null : counterparty,
+      formattedDate: data.creer ?? data.createdAt,
+      statusLabel: 'Paid',
+      iconType: icon,
+    );
   }
 
   Future<bool?> setWithdrawals(Map<String, dynamic> bodyParams) async {
