@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
+import 'package:cabme_driver/controller/all_services_controller.dart';
 import 'package:cabme_driver/themes/button_them.dart';
 import 'package:cabme_driver/themes/constant_colors.dart';
 import 'package:cabme_driver/utils/dark_theme_provider.dart';
@@ -593,7 +594,7 @@ class _ServiceOptionSelectionScreenState extends State<ServiceOptionSelectionScr
             margin: const EdgeInsets.fromLTRB(14, 8, 14, 8),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isDarkMode ? AppThemeData.surface100Dark : style.bg,
+              color: isDarkMode ? AppThemeData.surface50Dark : style.bg,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
@@ -664,7 +665,7 @@ class _ServiceOptionSelectionScreenState extends State<ServiceOptionSelectionScr
                               ),
                               selected: isSelected,
                               selectedColor: style.color,
-                              backgroundColor: isDarkMode ? AppThemeData.surface100Dark : Colors.white,
+                              backgroundColor: isDarkMode ? AppThemeData.surface50Dark : Colors.white,
                               onSelected: (_) => setState(() => _selectedFrequency = freq),
                             ),
                           );
@@ -700,7 +701,7 @@ class _ServiceOptionSelectionScreenState extends State<ServiceOptionSelectionScr
                       )
                     : null,
                 filled: true,
-                fillColor: isDarkMode ? AppThemeData.surface100Dark : Colors.white,
+                fillColor: isDarkMode ? AppThemeData.surface50Dark : Colors.white,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -744,7 +745,7 @@ class _ServiceOptionSelectionScreenState extends State<ServiceOptionSelectionScr
                           child: Container(
                             padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
-                              color: isDarkMode ? AppThemeData.surface100Dark : Colors.white,
+                              color: isDarkMode ? AppThemeData.surface50Dark : Colors.white,
                               borderRadius: BorderRadius.circular(14),
                               border: Border.all(
                                 color: isDarkMode ? Colors.white10 : Colors.black.withOpacity(0.06),
