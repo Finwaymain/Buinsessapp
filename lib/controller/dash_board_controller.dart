@@ -566,13 +566,13 @@ class DashBoardController extends GetxController {
     Get.back();
     if (index >= drawerItems.length) return;
     var item = drawerItems[index];
-    if (item.title == 'Wallet'.tr || item.title == 'My Profile'.tr || item.title == 'Update Categories'.tr || item.title == 'Join as Partner'.tr || item.title == 'Change Password'.tr || item.title == 'Refer a Friend'.tr || item.title == 'Marketplace'.tr) {
+    if (item.title == 'Wallet'.tr || item.title == 'Smart Value'.tr || item.title == 'My Profile'.tr || item.title == 'Update Categories'.tr || item.title == 'Join as Partner'.tr || item.title == 'Change Password'.tr || item.title == 'Refer a Friend'.tr || item.title == 'Marketplace'.tr) {
       if (!isLogin) {
         Get.to(PhoneEntryScreen(mode: 'signup'));
         return;
       }
     }
-    if (item.title == 'Wallet'.tr) {
+    if (item.title == 'Wallet'.tr || item.title == 'Smart Value'.tr) {
       Get.to(WalletScreen());
     } else if (item.title == 'My Profile'.tr) {
       Get.to(MyProfileScreen());
@@ -638,7 +638,7 @@ class DashBoardController extends GetxController {
         section: 'Services'.tr,
       ),
       DrawerItem(
-        title: 'Wallet'.tr,
+        title: 'Smart Value'.tr,
         description: 'Manage transactions, view balance and earnings',
         icon: 'assets/icons/ic_wallet.svg',
         section: 'Account & Payments'.tr,

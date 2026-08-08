@@ -74,7 +74,7 @@ class WalletScreen extends StatelessWidget {
       appBar: isTab
           ? null
           : AppbarCustom(
-              title: 'My Earnings'.tr,
+              title: 'Smart Value'.tr,
               elevation: 0,
             ),
       backgroundColor: themeChange.getThem() ? AppThemeData.grey50Dark : AppThemeData.grey50,

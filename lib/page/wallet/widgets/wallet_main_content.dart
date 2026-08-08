@@ -60,7 +60,7 @@ class _WalletMainContentState extends State<WalletMainContent> with SingleTicker
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
             child: Text(
-              'Wallet',
+              'Smart Value',
               style: TextStyle(
                 color: headingColor,
                 fontSize: 20,

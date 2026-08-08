@@ -57,7 +57,7 @@ class MainHomeController extends GetxController
     {
       "routeName": "/smartValue",
       "title": "Smart Value & QR",
-      "subtitle": "Scan QR & transfer wallet money instantly",
+      "subtitle": "Scan QR & transfer Smart Value money instantly",
       "status": 1,
     },
   ];

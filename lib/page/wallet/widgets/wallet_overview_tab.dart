@@ -80,7 +80,7 @@ class WalletOverviewTab extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Your Wallets', style: _sectionStyle(isDark)),
+              Text('Your Smart Value', style: _sectionStyle(isDark)),
               TextButton(
                 onPressed: () => _requireLogin(() => Get.to(() => const BusinessPremiumPlanScreen())),
                 child: Text(
@@ -95,7 +95,7 @@ class WalletOverviewTab extends StatelessWidget {
                 children: [
                   _walletCard(
                     isDark,
-                    'Main Wallet',
+                    'Main Smart Value',
                     'Available balance',
                     walletController.walletAmount.value,
                     Icons.account_balance_wallet_rounded,
@@ -104,7 +104,7 @@ class WalletOverviewTab extends StatelessWidget {
                   const SizedBox(height: 12),
                   _walletCard(
                     isDark,
-                    'Cashback Wallet',
+                    'Cashback Smart Value',
                     'Rewards & earnings',
                     walletController.earnAmount.value,
                     Icons.card_giftcard_rounded,
@@ -156,7 +156,7 @@ class WalletOverviewTab extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Wallet Balance'.tr,
+                      'Smart Value Balance'.tr,
                       style: const TextStyle(color: Colors.white70, fontSize: 14, fontFamily: AppThemeData.medium),
                     ),
                   ),

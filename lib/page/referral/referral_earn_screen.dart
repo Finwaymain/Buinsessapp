@@ -390,7 +390,7 @@ class _ReferralEarnScreenState extends State<ReferralEarnScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Referral Wallet Balance'.tr,
+                  'Referral Smart Value Balance'.tr,
                   style: TextStyle(
                     fontSize: 12,
                     fontFamily: AppThemeData.medium,
