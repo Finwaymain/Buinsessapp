@@ -25,6 +25,7 @@ class WalletController extends GetxController with GetSingleTickerProviderStateM
   RxString ref = "".obs;
 
   RxDouble walletAmount = 0.0.obs;
+  RxDouble earnAmount = 0.0.obs;
   RxString totalEarn = "0".obs;
   RxDouble dailyEarn = 0.0.obs;
   RxDouble weeklyEarn = 0.0.obs;
@@ -60,7 +61,23 @@ class WalletController extends GetxController with GetSingleTickerProviderStateM
     selectedRadioTile = "".obs;
     paymentSettingModel.value = Constant.getPaymentSetting();
 
+    refreshPaymentSettings();
     super.onInit();
+  }
+
+  Future<void> refreshPaymentSettings() async {
+    try {
+      final response = await http
+          .get(Uri.parse(API.paymentSetting), headers: API.header)
+          .timeout(const Duration(seconds: 15));
+      if (response.statusCode == 200) {
+        final body = json.decode(response.body);
+        if (body['success'] == 'success') {
+          Preferences.setString(Preferences.paymentSetting, jsonEncode(body));
+          paymentSettingModel.value = PaymentSettingModel.fromJson(body);
+        }
+      }
+    } catch (_) {}
   }
 
   Rx<UserModel> userModel = UserModel().obs;
@@ -167,12 +184,13 @@ class WalletController extends GetxController with GetSingleTickerProviderStateM
 
   var transactionList = <TansactionData>[].obs;
 
-  Future<dynamic> getTrancation() async {
+  Future<dynamic> getTrancation({bool showLoader = true}) async {
     if (!Preferences.getBoolean(Preferences.isLogin)) {
       isLoading.value = false;
       return null;
     }
     try {
+      if (showLoader) isLoading.value = true;
       final response = await http.get(Uri.parse("${API.walletHistory}?id_diver=${Preferences.getInt(Preferences.userId)}"), headers: API.header);
       showLog("API :: URL :: ${API.walletHistory}?id_diver=${Preferences.getInt(Preferences.userId)}");
       showLog("API :: Request Header :: ${API.header.toString()} ");
@@ -187,7 +205,8 @@ class WalletController extends GetxController with GetSingleTickerProviderStateM
         transactionList.value = model.data!;
         totalEarn.value = model.totalEarnings!.toString();
         update();
-      } else if (response.statusCode == 200 && responseBody['success'] == "Failed") {
+      } else if (response.statusCode == 200 &&
+          (responseBody['success'] == "Failed" || responseBody['success'] == "failed")) {
         transactionList.clear();
         isLoading.value = false;
       } else {
@@ -270,6 +289,9 @@ class WalletController extends GetxController with GetSingleTickerProviderStateM
 
       if (response.statusCode == 200 && responseBody['success'] == "success") {
         ShowToastDialog.closeLoader();
+        // Refresh wallet data after successful transaction
+        await getAmount();
+        await getTrancation(showLoader: false);
         return responseBody;
       } else if (response.statusCode == 200 && responseBody['success'] == "failed") {
         ShowToastDialog.closeLoader();
@@ -327,6 +349,13 @@ class WalletController extends GetxController with GetSingleTickerProviderStateM
 
   ///razorPay
   Future<CreateRazorPayOrderModel?> createOrderRazorPay({required int amount, bool isTopup = false}) async {
+    await refreshPaymentSettings();
+    final razorpay = paymentSettingModel.value.razorpay;
+    if (razorpay == null || !razorpay.isConfigured) {
+      ShowToastDialog.showToast("Razorpay is not configured. Please contact admin.");
+      return null;
+    }
+
     final String orderId = "${Preferences.getInt(Preferences.userId)}_${DateTime.now().microsecondsSinceEpoch}";
 
     const url = "${API.baseUrl}payments/razorpay/createorder";
@@ -507,23 +536,35 @@ class WalletController extends GetxController with GetSingleTickerProviderStateM
 
       if (response.statusCode == 200 && responseBody['success'] == "success") {
         userModel.value = Constant.getUserData();
-        print("getAmount :: ${userModel.value.toJson()}");
         walletAmount.value = responseBody['data']['amount'] != null ? double.parse(responseBody['data']['amount'].toString()) : 0;
-      } else if (response.statusCode == 200 && responseBody['success'] == "failed") {
+        final earned = responseBody['data']['earn_amount'] ?? userModel.value.userData?.earnAmount;
+        earnAmount.value = earned != null ? double.tryParse(earned.toString()) ?? 0 : 0;
+      } else if (response.statusCode == 200 &&
+          (responseBody['success'] == "failed" || responseBody['success'] == "Failed")) {
+        _applyCachedWalletAmounts();
       } else {
-        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
-        throw Exception('Failed to load album');
+        _applyCachedWalletAmounts();
       }
     } on TimeoutException catch (e) {
+      _applyCachedWalletAmounts();
       ShowToastDialog.showToast(e.message.toString());
     } on SocketException catch (e) {
+      _applyCachedWalletAmounts();
       ShowToastDialog.showToast(e.message.toString());
     } on Error catch (e) {
+      _applyCachedWalletAmounts();
       ShowToastDialog.showToast(e.toString());
     } catch (e) {
+      _applyCachedWalletAmounts();
       ShowToastDialog.closeLoader();
       ShowToastDialog.showToast(e.toString());
     }
     return null;
+  }
+
+  void _applyCachedWalletAmounts() {
+    userModel.value = Constant.getUserData();
+    walletAmount.value = double.tryParse(userModel.value.userData?.amount ?? '0') ?? 0;
+    earnAmount.value = double.tryParse(userModel.value.userData?.earnAmount ?? '0') ?? 0;
   }
 }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
@@ -7,10 +9,10 @@ import 'package:cabme_driver/model/service_category_model.dart';
 import 'package:cabme_driver/themes/constant_colors.dart';
 import 'package:cabme_driver/utils/dark_theme_provider.dart';
 import 'service_category_detail_screen.dart';
+import 'service_category_tile.dart';
 import 'service_request_screen.dart';
 import 'service_style.dart';
 
-/// "All Services" hub — the destination for the home page's "More" tile.
 class AllServicesScreen extends StatefulWidget {
   const AllServicesScreen({super.key});
 
@@ -20,8 +22,28 @@ class AllServicesScreen extends StatefulWidget {
 
 class _AllServicesScreenState extends State<AllServicesScreen> {
   final _controller = Get.put(AllServicesController(), tag: UniqueKey().toString());
+  final _searchController = TextEditingController();
+  Timer? _searchDebounce;
+
   bool _isLoading = true;
+  bool _searchOpen = false;
+  bool _searchLoading = false;
   List<ServiceCategoryData> _categories = [];
+  List<ServiceCategoryData> _searchResults = [];
+
+  static const _gridDelegate = SliverGridDelegateWithFixedCrossAxisCount(
+    crossAxisCount: 4,
+    mainAxisSpacing: 12,
+    crossAxisSpacing: 10,
+    childAspectRatio: 0.78,
+  );
+
+  static const _searchGridDelegate = SliverGridDelegateWithFixedCrossAxisCount(
+    crossAxisCount: 4,
+    mainAxisSpacing: 12,
+    crossAxisSpacing: 10,
+    childAspectRatio: 0.62,
+  );
 
   @override
   void initState() {
@@ -29,11 +51,11 @@ class _AllServicesScreenState extends State<AllServicesScreen> {
     _load();
   }
 
-  // Remove emojis from service name
-  String _cleanServiceName(String? name) {
-    if (name == null) return '';
-    // Remove emoji characters (Unicode ranges for emojis)
-    return name.replaceAll(RegExp(r'[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]', unicode: true), '').trim();
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -41,18 +63,85 @@ class _AllServicesScreenState extends State<AllServicesScreen> {
     if (mounted) setState(() { _categories = data; _isLoading = false; });
   }
 
+  void _toggleSearch() {
+    setState(() {
+      _searchOpen = !_searchOpen;
+      if (!_searchOpen) {
+        _searchController.clear();
+        _searchResults = [];
+        _searchLoading = false;
+      }
+    });
+  }
+
+  void _onSearchChanged(String value) {
+    _searchDebounce?.cancel();
+    if (value.trim().isEmpty) {
+      setState(() { _searchResults = []; _searchLoading = false; });
+      return;
+    }
+    setState(() => _searchLoading = true);
+    _searchDebounce = Timer(const Duration(milliseconds: 350), () async {
+      final results = await _controller.searchCategories(value);
+      if (mounted) setState(() { _searchResults = results; _searchLoading = false; });
+    });
+  }
+
+  String _breadcrumbLabel(ServiceCategoryData category) {
+    return category.breadcrumb.map(cleanServiceName).where((s) => s.isNotEmpty).join(' › ');
+  }
+
+  String _parentCategoryName(ServiceCategoryData category) {
+    if (category.breadcrumb.isNotEmpty) return cleanServiceName(category.breadcrumb.last);
+    return cleanServiceName(category.libelle);
+  }
+
   void _onTapCategory(ServiceCategoryData category) {
     if (category.hasChildren) {
       Get.to(() => ServiceCategoryDetailScreen(categoryId: category.id!, categoryName: category.libelle ?? ''));
     } else {
-      Get.to(() => ServiceRequestScreen(serviceName: category.libelle ?? '', categoryName: category.libelle ?? ''));
+      Get.to(() => ServiceRequestScreen(
+            serviceName: category.libelle ?? '',
+            categoryName: _parentCategoryName(category),
+          ));
     }
+  }
+
+  Widget _buildGrid(List<ServiceCategoryData> items, bool isDarkMode, {bool showBreadcrumb = false}) {
+    if (items.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Text(
+            showBreadcrumb ? "No matching services found".tr : "No services available".tr,
+            style: TextStyle(color: AppThemeData.grey500),
+          ),
+        ),
+      );
+    }
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
+      itemCount: items.length,
+      gridDelegate: showBreadcrumb ? _searchGridDelegate : _gridDelegate,
+      itemBuilder: (context, index) {
+        final category = items[index];
+        return ServiceCategoryTile(
+          label: category.libelle,
+          imageUrl: category.image,
+          subtitle: showBreadcrumb ? _breadcrumbLabel(category) : null,
+          isDarkMode: isDarkMode,
+          iconSize: showBreadcrumb ? 52 : 64,
+          onTap: () => _onTapCategory(category),
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final themeChange = Provider.of<DarkThemeProvider>(context);
-    final bool isDarkMode = themeChange.getThem();
+    final isDarkMode = themeChange.getThem();
+    final isSearching = _searchOpen && _searchController.text.trim().isNotEmpty;
 
     return Scaffold(
       backgroundColor: isDarkMode ? AppThemeData.surface50Dark : const Color(0xFFF7F8FA),
@@ -60,55 +149,39 @@ class _AllServicesScreenState extends State<AllServicesScreen> {
         backgroundColor: isDarkMode ? AppThemeData.surface50Dark : Colors.white,
         elevation: 0,
         iconTheme: IconThemeData(color: isDarkMode ? AppThemeData.grey900Dark : Colors.black),
-        title: Text(
-          "All Services".tr,
-          style: TextStyle(fontFamily: AppThemeData.bold, fontSize: 18, color: isDarkMode ? AppThemeData.grey900Dark : Colors.black),
-        ),
+        title: _searchOpen
+            ? TextField(
+                controller: _searchController,
+                autofocus: true,
+                onChanged: _onSearchChanged,
+                style: TextStyle(
+                  fontFamily: AppThemeData.medium,
+                  fontSize: 15,
+                  color: isDarkMode ? AppThemeData.grey900Dark : Colors.black,
+                ),
+                decoration: InputDecoration(
+                  hintText: "Search all services...".tr,
+                  border: InputBorder.none,
+                  hintStyle: TextStyle(color: AppThemeData.grey500, fontFamily: AppThemeData.regular),
+                ),
+              )
+            : Text(
+                "All Services".tr,
+                style: TextStyle(fontFamily: AppThemeData.bold, fontSize: 18, color: isDarkMode ? AppThemeData.grey900Dark : Colors.black),
+              ),
+        actions: [
+          IconButton(
+            icon: Icon(_searchOpen ? Icons.close_rounded : Icons.search_rounded),
+            color: isDarkMode ? AppThemeData.grey900Dark : Colors.black,
+            onPressed: _toggleSearch,
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _categories.isEmpty
-              ? Center(child: Text("No services available".tr, style: TextStyle(color: AppThemeData.grey500)))
-              : GridView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _categories.length,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    mainAxisSpacing: 14,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 0.85,
-                  ),
-                  itemBuilder: (context, index) {
-                    final category = _categories[index];
-                    final style = categoryStyleFor(category.libelle);
-                    return InkWell(
-                      borderRadius: BorderRadius.circular(14),
-                      onTap: () => _onTapCategory(category),
-                      child: Column(
-                        children: [
-                          Container(
-                            width: 56,
-                            height: 56,
-                            decoration: BoxDecoration(color: style.bg, borderRadius: BorderRadius.circular(14)),
-                            child: Icon(style.icon, color: style.color, size: 28),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            _cleanServiceName(category.libelle).tr,
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontFamily: AppThemeData.medium,
-                              fontSize: 11.5,
-                              color: isDarkMode ? AppThemeData.grey900Dark : AppThemeData.grey900,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
+          : isSearching
+              ? (_searchLoading ? const Center(child: CircularProgressIndicator()) : _buildGrid(_searchResults, isDarkMode, showBreadcrumb: true))
+              : _buildGrid(_categories, isDarkMode),
     );
   }
 }

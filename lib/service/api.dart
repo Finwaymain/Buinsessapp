@@ -156,6 +156,7 @@ class API {
 
   // Smart Value
   static const accountDetails = "${baseUrl}get_profile/smart-value";
+  static const showWalletAmount = "${baseUrl}show_wallet_amount/smart-value";
   static const getAddUser = "${baseUrl}showadduser/smart-value";
   static const addUser = "${baseUrl}adduser/smart-value";
   static const transferToWallet = "${baseUrl}transfer_to_wallet/smart-value";
@@ -183,9 +184,14 @@ class API {
   // New Live Features API Endpoints
   static const unifiedTimelineHistory = "${baseUrl}history/timeline-full";
   static const referralStats = "${baseUrl}referral/stats";
+  static const referralHistory = "${baseUrl}referral/history";
   static const businessPlansActive = "${baseUrl}business-plans/active";
 
   // All Services catalog ("More" section)
   static const getServiceCategories = "${baseUrl}service-categories";
   static const bookService = "${baseUrl}book-service";
+
+  // My Booking console
+  static const driverBookings = "${baseUrl}driver/bookings";
+  static const driverServiceBookingStatus = "${baseUrl}driver/bookings/service-status";
 }

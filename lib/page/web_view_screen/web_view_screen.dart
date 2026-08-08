@@ -7,6 +7,9 @@ import 'package:cabme_driver/utils/dark_theme_provider.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'package:cabme_driver/utils/Preferences.dart';
+import 'package:cabme_driver/page/auth_screens/phone_entry_screen.dart';
+
 class WebViewScreen extends StatefulWidget {
   final String url;
   final String title;
@@ -90,6 +93,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
     controller
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0x00000000))
+      ..clearCache()
       ..addJavaScriptChannel(
         'AppBridge',
         onMessageReceived: (JavaScriptMessage message) {

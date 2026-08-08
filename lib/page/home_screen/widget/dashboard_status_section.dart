@@ -6,6 +6,7 @@ import '../../../constant/show_toast_dialog.dart';
 import '../../../controller/dash_board_controller.dart';
 import '../../../themes/constant_colors.dart';
 import '../../../utils/Preferences.dart';
+import '../../../utils/onboarding_url.dart';
 import '../../features/Taxi/taxi_dashboard/taxi_dashboard.dart';
 import '../../web_view_screen/web_view_screen.dart';
 
@@ -36,9 +37,7 @@ class _DashboardStatusSectionState extends State<DashboardStatusSection> {
     }
     final userData = controller.userModel.value.userData!;
     if (userData.onboardingCompleted != "yes") {
-      String token = userData.accesstoken ?? "";
-      String driverId = userData.id ?? "";
-      String finalUrl = 'https://fiinway.online/onboarding?accesstoken=$token&driver_id=$driverId';
+      final finalUrl = OnboardingUrl.build('/onboarding');
       Get.to(() => WebViewScreen(url: finalUrl, title: 'Complete Onboarding'))?.then((_) => controller.getUsrData());
       return;
     }
@@ -121,7 +120,7 @@ class _DashboardStatusSectionState extends State<DashboardStatusSection> {
               children: [
                 Expanded(
                   child: _StatCard(
-                    icon: Icons.account_balance_wallet_outlined,
+                  icon: Icons.payments_outlined,
                     label: "Today's Earnings",
                     value: Obx(() => Text(
                           Constant().amountShow(amount: controller.todayEarnings.value),
@@ -148,7 +147,7 @@ class _DashboardStatusSectionState extends State<DashboardStatusSection> {
                       if (!Preferences.getBoolean(Preferences.isLogin)) return;
                     },
                     child: _StatCard(
-                      icon: Icons.savings_outlined,
+                    icon: Icons.account_balance_wallet_outlined,
                       label: "Wallet Balance",
                       value: Obx(() => Text(
                             Constant().amountShow(amount: controller.userModel.value.userData?.amount?.toString() ?? "0"),

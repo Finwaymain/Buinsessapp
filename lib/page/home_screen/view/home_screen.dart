@@ -6,6 +6,7 @@ import '../../../constant/constant.dart';
 import '../../../constant/show_toast_dialog.dart';
 import '../../../controller/dash_board_controller.dart';
 import '../../../utils/Preferences.dart';
+import '../../../utils/onboarding_url.dart';
 import '../../auth_screens/phone_entry_screen.dart';
 import '../../../controller/new_ride_controller.dart';
 import '../../../controller/payStackURLModel.dart';
@@ -26,6 +27,7 @@ import '../../features/SmartValue/Payout/view/payout_screen.dart';
 import '../../features/SmartValue/ScanAndTransfer/view/scanner_and_transfer_screen.dart';
 import '../../in_progress_screen.dart';
 import '../../parcel_service/parcel_console_screen.dart';
+import '../../booking/my_booking_screen.dart';
 import '../../features/SmartValue/AccountDetails/view/account_details.dart';
 import '../../features/SmartValue/AddPerson/view/add_user_screen.dart';
 import '../../referral/referral_earn_screen.dart';
@@ -232,9 +234,7 @@ class MainHomeScreen extends StatelessWidget {
                                           const SizedBox(height: 6),
                                           GestureDetector(
                                             onTap: () {
-                                              String token = controller.userModel.value.userData?.accesstoken ?? "";
-                                              String driverId = controller.userModel.value.userData?.id ?? "";
-                                              String finalUrl = 'https://fiinway.online/onboarding?accesstoken=$token&driver_id=$driverId';
+                                              final finalUrl = OnboardingUrl.build('/onboarding');
                                               Get.to(() => WebViewScreen(url: finalUrl, title: 'Complete Onboarding'))?.then((value) {
                                                 controller.getUsrData();
                                               });
@@ -278,9 +278,10 @@ class MainHomeScreen extends StatelessWidget {
                                               const SizedBox(width: 8),
                                               GestureDetector(
                                                 onTap: () {
-                                                  String token = controller.userModel.value.userData?.accesstoken ?? "";
-                                                  String driverId = controller.userModel.value.userData?.id ?? "";
-                                                  String finalUrl = 'https://fiinway.online/onboarding?accesstoken=$token&driver_id=$driverId';
+                                                  final finalUrl = OnboardingUrl.build(
+                                                    '/onboarding',
+                                                    extra: const {'mode': 'edit_category'},
+                                                  );
                                                   Get.to(() => WebViewScreen(url: finalUrl, title: 'Edit Categories'))?.then((value) {
                                                     controller.getUsrData();
                                                   });
@@ -402,13 +403,13 @@ class MainHomeScreen extends StatelessWidget {
 
                             const DashboardStatusSection(),
 
-                            // Primary Hero Action CTA for receiving rides
+                            // Primary hero action — all-purpose booking console
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                               child: GestureDetector(
                                 onTap: () {
                                   if (homeController.getLoginStatus(inProgress: false)) {
-                                    Get.to(() => TaxiDashBoard(), transition: Transition.rightToLeftWithFade);
+                                    Get.to(() => const MyBookingScreen(), transition: Transition.rightToLeftWithFade);
                                   }
                                 },
                                 child: Container(
@@ -444,7 +445,7 @@ class MainHomeScreen extends StatelessWidget {
                                           shape: BoxShape.circle,
                                         ),
                                         child: Icon(
-                                          Icons.directions_car_filled_rounded,
+                                          Icons.event_available_rounded,
                                           color: AppThemeData.primary200,
                                           size: 32,
                                         ),
@@ -455,7 +456,7 @@ class MainHomeScreen extends StatelessWidget {
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              "Ride Console".tr,
+                                              "My Booking".tr,
                                               style: TextStyle(
                                                 fontSize: 18,
                                                 fontFamily: AppThemeData.bold,
@@ -464,7 +465,7 @@ class MainHomeScreen extends StatelessWidget {
                                             ),
                                             const SizedBox(height: 4),
                                             Text(
-                                              "Go online, view requests, and track active bookings in real time.".tr,
+                                              "View incoming requests, active jobs, and booking history.".tr,
                                               style: TextStyle(
                                                 fontSize: 12,
                                                 fontFamily: AppThemeData.regular,
@@ -484,7 +485,6 @@ class MainHomeScreen extends StatelessWidget {
                                 ),
                               ),
                             ),
-
 
                             // Asymmetrical grid/row of actions and value programs
                             Padding(

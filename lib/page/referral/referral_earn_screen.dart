@@ -8,6 +8,7 @@ import '../../../service/api.dart';
 import '../../../themes/constant_colors.dart';
 import '../../../utils/Preferences.dart';
 import '../../../utils/dark_theme_provider.dart';
+import 'referral_history_screen.dart';
 
 class ReferralEarnScreen extends StatefulWidget {
   const ReferralEarnScreen({super.key});
@@ -17,13 +18,13 @@ class ReferralEarnScreen extends StatefulWidget {
 }
 
 class _ReferralEarnScreenState extends State<ReferralEarnScreen> {
-  // Live Dynamic Data from API
   String referralCode = 'FIIN8829';
   String referralLink = 'https://fiinway.online/r/FIIN8829';
   String totalReferrals = '0';
-  String totalEarnings = '₹0.00';
   String walletBalance = '₹0.00';
   String activeUsers = '0';
+  String appInstalled = '0';
+  String registered = '0';
 
   @override
   void initState() {
@@ -48,9 +49,10 @@ class _ReferralEarnScreenState extends State<ReferralEarnScreen> {
               referralCode = data['referral_code'] ?? referralCode;
               referralLink = data['referral_link'] ?? referralLink;
               totalReferrals = data['total_referrals']?.toString() ?? totalReferrals;
-              totalEarnings = data['earnings'] ?? totalEarnings;
               walletBalance = data['wallet_balance'] ?? walletBalance;
               activeUsers = data['active_users']?.toString() ?? activeUsers;
+              appInstalled = data['app_installed']?.toString() ?? '0';
+              registered = data['registered']?.toString() ?? '0';
             });
           }
         }
@@ -58,6 +60,13 @@ class _ReferralEarnScreenState extends State<ReferralEarnScreen> {
     } catch (e) {
       debugPrint('Error fetching referral stats: $e');
     }
+  }
+
+  void _openHistory() {
+    Get.to(
+      () => const ReferralHistoryScreen(),
+      transition: Transition.rightToLeftWithFade,
+    );
   }
 
   void _copyToClipboard(String text, String label) {
@@ -82,15 +91,15 @@ class _ReferralEarnScreenState extends State<ReferralEarnScreen> {
       backgroundColor: isDark ? AppThemeData.surface50Dark : AppThemeData.surface50,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: isDark ? const Color(0xFF1E1C15) : Colors.white,
+        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: isDark ? Colors.white : Colors.black87, size: 20),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: isDark ? Colors.white : AppThemeData.grey900, size: 20),
           onPressed: () => Get.back(),
         ),
         title: Text(
           'Refer & Earn'.tr,
           style: TextStyle(
-            color: isDark ? Colors.white : Colors.black87,
+            color: isDark ? Colors.white : AppThemeData.grey900,
             fontFamily: AppThemeData.bold,
             fontSize: 18,
           ),
@@ -101,239 +110,19 @@ class _ReferralEarnScreenState extends State<ReferralEarnScreen> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. App-Themed Banner Card
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  gradient: LinearGradient(
-                    colors: [
-                      AppThemeData.primary200,
-                      AppThemeData.primary200.withValues(alpha: 0.85),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppThemeData.primary200.withValues(alpha: 0.25),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    const Text('🎁', style: TextStyle(fontSize: 40)),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Refer & Earn'.tr,
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontFamily: AppThemeData.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Share. Connect. Earn Together'.tr,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontFamily: AppThemeData.medium,
-                              color: Colors.white.withValues(alpha: 0.9),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              _buildBanner(),
               const SizedBox(height: 16),
-
-              // 2. Main Referral Code & Link Container (Using App Theme Cards)
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E1C15) : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: isDark ? const Color(0xFF2C2A26) : const Color(0xFFEFECE4)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    // Your Referral Code Section
-                    Text(
-                      'Your Referral Code'.tr,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontFamily: AppThemeData.bold,
-                        color: isDark ? AppThemeData.grey900Dark : AppThemeData.grey900,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: AppThemeData.success50,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppThemeData.success300.withValues(alpha: 0.5)),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            referralCode,
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontFamily: AppThemeData.bold,
-                              color: AppThemeData.primary200,
-                              letterSpacing: 1.5,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          GestureDetector(
-                            onTap: () => _copyToClipboard(referralCode, 'Referral Code'),
-                            child: Icon(Icons.copy_rounded, color: AppThemeData.primary200, size: 18),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Your Referral Link Section
-                    Text(
-                      'Your Referral Link'.tr,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontFamily: AppThemeData.bold,
-                        color: isDark ? AppThemeData.grey900Dark : AppThemeData.grey900,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: AppThemeData.success50,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppThemeData.success300.withValues(alpha: 0.5)),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              referralLink,
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontFamily: AppThemeData.medium,
-                                color: AppThemeData.primary200,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          GestureDetector(
-                            onTap: () => _copyToClipboard(referralLink, 'Referral Link'),
-                            child: Icon(Icons.copy_rounded, color: AppThemeData.primary200, size: 18),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Primary App-Themed Share Button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: () => _copyToClipboard(referralLink, 'Referral Link'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppThemeData.primary200,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          elevation: 2,
-                        ),
-                        icon: const Icon(Icons.share_rounded, color: Colors.white, size: 18),
-                        label: Text(
-                          'Share Now'.tr,
-                          style: const TextStyle(fontSize: 15, fontFamily: AppThemeData.bold, color: Colors.white),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // 3. 4 Stat Cards Row (App Theme Colors)
-              Row(
-                children: [
-                  _buildStatCard('Total Referrals', totalReferrals, Icons.groups_rounded, isDark),
-                  const SizedBox(width: 8),
-                  _buildStatCard('Earnings', totalEarnings, Icons.stars_rounded, isDark),
-                  const SizedBox(width: 8),
-                  _buildStatCard('Wallet Balance', walletBalance, Icons.account_balance_wallet_rounded, isDark),
-                  const SizedBox(width: 8),
-                  _buildStatCard('Active Users', activeUsers, Icons.insights_rounded, isDark),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // 4. Quick Share Bar (App Theme Styling)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E1C15) : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: isDark ? const Color(0xFF2C2A26) : const Color(0xFFEFECE4)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Quick Share'.tr,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontFamily: AppThemeData.bold,
-                        color: isDark ? AppThemeData.grey900Dark : AppThemeData.grey900,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildSocialIcon('WhatsApp', const Color(0xFF25D366), Icons.message_rounded, () {
-                          _copyToClipboard(referralLink, 'Referral Link');
-                        }),
-                        _buildSocialIcon('Telegram', const Color(0xFF0088CC), Icons.send_rounded, () {
-                          _copyToClipboard(referralLink, 'Referral Link');
-                        }),
-                        _buildSocialIcon('Facebook', const Color(0xFF1877F2), Icons.facebook_rounded, () {
-                          _copyToClipboard(referralLink, 'Referral Link');
-                        }),
-                        _buildSocialIcon('Instagram', const Color(0xFFE4405F), Icons.camera_alt_rounded, () {
-                          _copyToClipboard(referralLink, 'Referral Link');
-                        }),
-                        _buildSocialIcon('More', isDark ? AppThemeData.grey400Dark : AppThemeData.grey500, Icons.more_horiz_rounded, () {
-                          _copyToClipboard(referralLink, 'Referral Link');
-                        }),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+              _buildReferralShareCard(isDark),
+              const SizedBox(height: 20),
+              _sectionTitle('Your Referral Stats'.tr, isDark),
+              const SizedBox(height: 12),
+              _buildStatsRow(isDark),
+              const SizedBox(height: 20),
+              _sectionTitle('Your Earnings'.tr, isDark),
+              const SizedBox(height: 12),
+              _buildEarningsCard(isDark),
             ],
           ),
         ),
@@ -341,76 +130,317 @@ class _ReferralEarnScreenState extends State<ReferralEarnScreen> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, bool isDark) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E1C15) : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: isDark ? const Color(0xFF2C2A26) : const Color(0xFFEFECE4)),
-        ),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: AppThemeData.primary200.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: AppThemeData.primary200, size: 16),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              title.tr,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 9,
-                fontFamily: AppThemeData.medium,
-                color: isDark ? AppThemeData.grey500Dark : AppThemeData.grey500,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
-                fontFamily: AppThemeData.bold,
-                color: isDark ? AppThemeData.grey900Dark : AppThemeData.grey900,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
+  Widget _sectionTitle(String title, bool isDark) {
+    return Text(
+      title,
+      style: TextStyle(
+        fontSize: 16,
+        fontFamily: AppThemeData.bold,
+        color: isDark ? AppThemeData.grey900Dark : const Color(0xFF0F172A),
       ),
     );
   }
 
-  Widget _buildSocialIcon(String label, Color color, IconData icon, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
+  Widget _buildBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          colors: [
+            AppThemeData.primary200,
+            AppThemeData.primary200.withValues(alpha: 0.85),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppThemeData.primary200.withValues(alpha: 0.25),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          const Text('🎁', style: TextStyle(fontSize: 40)),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Refer & Earn'.tr,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontFamily: AppThemeData.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Share. Connect. Earn Together'.tr,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontFamily: AppThemeData.medium,
+                    color: Colors.white.withValues(alpha: 0.9),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReferralShareCard(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isDark ? AppThemeData.grey100Dark : AppThemeData.grey200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Text(
+            'Your Referral Code'.tr,
+            style: TextStyle(
+              fontSize: 13,
+              fontFamily: AppThemeData.bold,
+              color: isDark ? AppThemeData.grey900Dark : AppThemeData.grey900,
+            ),
+          ),
+          const SizedBox(height: 8),
+          _buildCopyField(referralCode, isDark, center: true),
+          const SizedBox(height: 14),
+          Text(
+            'Your Referral Link'.tr,
+            style: TextStyle(
+              fontSize: 13,
+              fontFamily: AppThemeData.bold,
+              color: isDark ? AppThemeData.grey900Dark : AppThemeData.grey900,
+            ),
+          ),
+          const SizedBox(height: 8),
+          _buildCopyField(referralLink, isDark),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => _copyToClipboard(referralLink, 'Referral Link'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppThemeData.primary200,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 2,
+              ),
+              icon: const Icon(Icons.share_rounded, color: Colors.white, size: 18),
+              label: Text(
+                'Share Now'.tr,
+                style: const TextStyle(fontSize: 15, fontFamily: AppThemeData.bold, color: Colors.white),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCopyField(String text, bool isDark, {bool center = false}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppThemeData.primary50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppThemeData.primary200.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisAlignment: center ? MainAxisAlignment.center : MainAxisAlignment.start,
+        children: [
+          if (!center)
+            Expanded(
+              child: Text(
+                text,
+                style: TextStyle(fontSize: 12, fontFamily: AppThemeData.medium, color: AppThemeData.primary200),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          if (center)
+            Text(
+              text,
+              style: TextStyle(
+                fontSize: 18,
+                fontFamily: AppThemeData.bold,
+                color: AppThemeData.primary200,
+                letterSpacing: 1.5,
+              ),
+            ),
+          const SizedBox(width: 10),
+          GestureDetector(
+            onTap: () => _copyToClipboard(text, center ? 'Referral Code' : 'Referral Link'),
+            child: Icon(Icons.copy_rounded, color: AppThemeData.primary200, size: 18),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatsRow(bool isDark) {
+    final stats = [
+      {'label': 'Total Referrals', 'value': totalReferrals, 'icon': Icons.person_add_alt_1_rounded},
+      {'label': 'App Installed', 'value': appInstalled, 'icon': Icons.install_mobile_rounded},
+      {'label': 'Registered', 'value': registered, 'icon': Icons.assignment_ind_rounded},
+      {'label': 'Active Users', 'value': activeUsers, 'icon': Icons.shield_outlined},
+    ];
+
+    return Row(
+      children: [
+        for (int i = 0; i < stats.length; i++) ...[
+          if (i > 0) const SizedBox(width: 8),
+          Expanded(child: _buildStatCard(stats[i], isDark)),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildStatCard(Map<String, dynamic> stat, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: isDark ? AppThemeData.grey100Dark : const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Column(
         children: [
           Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
+            padding: const EdgeInsets.all(8),
+            decoration: const BoxDecoration(
+              color: Color(0xFFDCFCE7),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: color, size: 22),
+            child: Icon(stat['icon'] as IconData, color: const Color(0xFF16A34A), size: 20),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           Text(
-            label.tr,
+            stat['value'] as String,
+            style: TextStyle(
+              fontSize: 17,
+              fontFamily: AppThemeData.bold,
+              color: isDark ? AppThemeData.grey900Dark : const Color(0xFF0F172A),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            (stat['label'] as String).tr,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 10,
               fontFamily: AppThemeData.medium,
-              color: color,
+              color: isDark ? AppThemeData.grey500Dark : const Color(0xFF475569),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEarningsCard(bool isDark) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF0FDF4),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isDark ? AppThemeData.grey100Dark : const Color(0xFFBBF7D0)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFEDD5),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(Icons.account_balance_wallet_rounded, color: Color(0xFFEA580C), size: 26),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Referral Wallet Balance'.tr,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontFamily: AppThemeData.medium,
+                    color: isDark ? AppThemeData.grey500Dark : const Color(0xFF1E293B),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  walletBalance,
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontFamily: AppThemeData.bold,
+                    color: isDark ? AppThemeData.grey900Dark : const Color(0xFF0F172A),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF059669), Color(0xFF10B981)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF059669).withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: ElevatedButton(
+              onPressed: _openHistory,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              ),
+              child: Text(
+                'View History'.tr,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontFamily: AppThemeData.bold,
+                  color: Colors.white,
+                ),
+              ),
             ),
           ),
         ],

@@ -12,6 +12,7 @@ import 'package:cabme_driver/page/web_view_screen/web_view_screen.dart';
 import 'package:cabme_driver/themes/constant_colors.dart';
 import 'package:cabme_driver/themes/responsive.dart';
 import 'package:cabme_driver/utils/Preferences.dart';
+import 'package:cabme_driver/utils/onboarding_url.dart';
 import 'package:cabme_driver/utils/dark_theme_provider.dart';
 import 'package:cabme_driver/utils/network_image_widget.dart';
 import 'package:cabme_driver/widget/round_button_fill.dart';
@@ -463,9 +464,7 @@ Future<void> showAlertDialog(BuildContext context, String type) async {
               ),
               onPressed: () {
                 Get.back();
-                String token = Preferences.getString(Preferences.accesstoken);
-                String driverId = Preferences.getInt(Preferences.userId).toString();
-                String finalUrl = 'https://fiinway.online/onboarding?accesstoken=$token&driver_id=$driverId';
+                final finalUrl = OnboardingUrl.build('/onboarding');
                 Get.to(() => WebViewScreen(url: finalUrl, title: 'Complete Onboarding'));
               },
             ),

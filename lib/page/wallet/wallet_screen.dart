@@ -9,7 +9,6 @@ import 'package:cabme_driver/constant/show_toast_dialog.dart';
 import 'package:cabme_driver/controller/dash_board_controller.dart';
 import 'package:cabme_driver/controller/payStackURLModel.dart';
 import 'package:cabme_driver/controller/wallet_controller.dart';
-import 'package:cabme_driver/controller/withdrawals_controller.dart';
 import 'package:cabme_driver/model/parcel_model.dart';
 import 'package:cabme_driver/model/payment_setting_model.dart';
 import 'package:cabme_driver/model/razorpay_gen_userid_model.dart';
@@ -28,6 +27,7 @@ import 'package:cabme_driver/page/wallet/orangePayScreen.dart';
 import 'package:cabme_driver/page/wallet/payStackScreen.dart';
 import 'package:cabme_driver/page/wallet/payfast_screen.dart';
 import 'package:cabme_driver/page/wallet/paystack_url_generator.dart';
+import 'package:cabme_driver/page/wallet/widgets/wallet_main_content.dart';
 import 'package:cabme_driver/page/wallet/xenditScreen.dart';
 import 'package:cabme_driver/service/api.dart';
 import 'package:cabme_driver/themes/app_bar_custom.dart';
@@ -35,7 +35,6 @@ import 'package:cabme_driver/themes/button_them.dart';
 import 'package:cabme_driver/themes/constant_colors.dart';
 import 'package:cabme_driver/themes/custom_widget.dart';
 import 'package:cabme_driver/themes/radio_button.dart';
-import 'package:cabme_driver/themes/responsive.dart';
 import 'package:cabme_driver/themes/text_field_them.dart';
 import 'package:cabme_driver/utils/Preferences.dart';
 import 'package:cabme_driver/utils/dark_theme_provider.dart';
@@ -61,346 +60,57 @@ class WalletScreen extends StatelessWidget {
   final controllerDashBoard = Get.put(DashBoardController());
   final walletController = Get.put(WalletController());
 
+  Future<void> _refreshAPI() async {
+    await walletController.getAmount();
+    await walletController.getTrancation(showLoader: false);
+    walletController.amountController.value.clear();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return GetX<WalletController>(
-        init: WalletController(),
-        initState: (state) {
-          if (Preferences.getBoolean(Preferences.isLogin)) {
-            walletController.getTrancation();
-            walletController.getAmount();
-          }
-        },
-        builder: (walletController) {
-          final themeChange = Provider.of<DarkThemeProvider>(context);
-          return Scaffold(
-            appBar: isTab
-                ? null
-                : AppbarCustom(
-                    title: 'My Earnings'.tr,
-                    elevation: 0,
-                  ),
-            backgroundColor: themeChange.getThem() ? AppThemeData.surface50Dark : AppThemeData.surface50,
-            body: RefreshIndicator(
-              onRefresh: () => walletController.getTrancation(),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Container(
-                      alignment: Alignment.center,
-                      height: 190,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          gradient: const LinearGradient(
-                            colors: [
-                              Color(0XFF2F89FC), // Blueish
-                              Color(0XFF50DAF2), // Lighter Blue
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          )),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'Total Earnings'.tr,
-                                textAlign: TextAlign.start,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: AppThemeData.grey50,
-                                  fontFamily: AppThemeData.regular,
-                                ),
-                              ),
-                              Text(
-                                Constant().amountShow(amount: walletController.totalEarn.toString()),
-                                style: TextStyle(
-                                  fontSize: 36,
-                                  color: AppThemeData.grey50,
-                                  fontFamily: AppThemeData.semiBold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(
-                            height: 18,
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              GestureDetector(
-                                onTap: () {
-                                  if (!Preferences.getBoolean(Preferences.isLogin)) {
-                                    Get.to(() => PhoneEntryScreen(mode: 'signup'));
-                                  } else {
-                                    walletController.amountController.value.clear();
-                                    addToWalletAmount(context, walletController, themeChange.getThem());
-                                  }
-                                },
-                                child: Container(
-                                  height: 50,
-                                  width: Responsive.width(35, context),
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                                  decoration: BoxDecoration(
-                                    color: AppThemeData.surface50,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      "TOPUP".tr,
-                                      style: TextStyle(
-                                        color: AppThemeData.primary200,
-                                        fontSize: 16,
-                                        fontFamily: AppThemeData.medium,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              GestureDetector(
-                                onTap: () {
-                                  if (!Preferences.getBoolean(Preferences.isLogin)) {
-                                    Get.to(() => PhoneEntryScreen(mode: 'signup'));
-                                  } else {
-                                    walletController.getBankDetails().then((value) {
-                                      if (value == null) {
-                                        ShowToastDialog.showToast('Please Update bank Details');
-                                      } else {
-                                        buildShowBottomSheet(context, walletController, themeChange.getThem());
-                                      }
-                                    });
-                                  }
-                                },
-                                child: Container(
-                                  height: 50,
-                                  width: Responsive.width(35, context),
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                                  decoration: BoxDecoration(
-                                    color: AppThemeData.surface50,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      "Withdrawal".tr,
-                                      style: TextStyle(
-                                        color: AppThemeData.grey800,
-                                        fontFamily: AppThemeData.medium,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Expanded(
-                      child: Container(
-                        color: themeChange.getThem() ? AppThemeData.surface50Dark : AppThemeData.surface50,
-                        child: Theme(
-                          data: ThemeData(
-                            tabBarTheme: TabBarThemeData(
-                              indicatorColor: AppThemeData.primary200,
-                            ),
-                          ),
-                          child: DefaultTabController(
-                            length: 3,
-                            child: Column(children: [
-                              TabBar(
-                                controller: walletController.tabController,
-                                isScrollable: false,
-                                indicatorSize: TabBarIndicatorSize.tab,
-                                indicatorColor: AppThemeData.secondary200,
-                                indicatorWeight: 1.0,
-                                dividerColor: Colors.transparent,
-                                labelColor: AppThemeData.secondary200,
-                                automaticIndicatorColorAdjustment: true,
-                                labelStyle: const TextStyle(fontFamily: AppThemeData.medium, fontSize: 16),
-                                unselectedLabelStyle:
-                                    TextStyle(fontFamily: AppThemeData.regular, fontSize: 16, color: themeChange.getThem() ? AppThemeData.grey500Dark : AppThemeData.grey500),
-                                tabs: [
-                                  Tab(
-                                    text: 'Transaction History'.tr,
-                                  ),
-                                  Tab(
-                                    text: 'Withdrawal History'.tr,
-                                  )
-                                ],
-                              ),
-                              Expanded(
-                                child: TabBarView(controller: walletController.tabController, children: [
-                                  RefreshIndicator(
-                                    onRefresh: () => walletController.getTrancation(),
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(top: 8.0),
-                                      child: walletController.isLoading.value
-                                          ? SizedBox()
-                                          : walletController.transactionList.isEmpty
-                                              ? Constant.emptyView("No transaction found")
-                                              : ListView.builder(
-                                                  physics: const BouncingScrollPhysics(),
-                                                  padding: EdgeInsets.only(bottom: isTab ? 100 : 0),
-                                                  shrinkWrap: true,
-                                                  itemCount: walletController.transactionList.length,
-                                                  itemBuilder: (context, index) {
-                                                    return showRideTransaction(walletController.transactionList[index], themeChange.getThem());
-                                                  },
-                                                ),
-                                    ),
-                                  ),
-                                  GetX<WithdrawalsController>(
-                                      init: WithdrawalsController(),
-                                      builder: (controller) {
-                                        return RefreshIndicator(
-                                          onRefresh: () => controller.getWithdrawals(),
-                                          child: controller.isLoading.value
-                                              ? SizedBox()
-                                              : controller.rideList.isEmpty
-                                                  ? Padding(
-                                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                                                      child: Constant.emptyView("Your don't have any Withdrawals request".tr),
-                                                    )
-                                                  : Padding(
-                                                      padding: const EdgeInsets.only(top: 16),
-                                                      child: ListView.builder(
-                                                          padding: EdgeInsets.only(bottom: isTab ? 100 : 0),
-                                                          itemCount: controller.rideList.length,
-                                                          shrinkWrap: true,
-                                                          itemBuilder: (context, index) {
-                                                            return Padding(
-                                                              padding: const EdgeInsets.only(top: 20, left: 4, right: 4),
-                                                              child: Container(
-                                                                decoration: BoxDecoration(
-                                                                    shape: BoxShape.rectangle,
-                                                                    color: themeChange.getThem() ? AppThemeData.surface50Dark : AppThemeData.surface50,
-                                                                    borderRadius: BorderRadius.circular(12),
-                                                                    boxShadow: [BoxShadow(color: Colors.white.withAlpha(30), offset: const Offset(2, 2), blurRadius: 8)]),
-                                                                child: Padding(
-                                                                  padding: const EdgeInsets.all(12.0),
-                                                                  child: Row(
-                                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                                    children: [
-                                                                      SvgPicture.asset(
-                                                                        'assets/icons/ic_wallet.svg',
-                                                                        width: 25,
-                                                                        height: 25,
-                                                                        color: themeChange.getThem() ? AppThemeData.grey900Dark : AppThemeData.grey900,
-                                                                      ),
-                                                                      Expanded(
-                                                                          child: Padding(
-                                                                        padding: const EdgeInsets.only(left: 10),
-                                                                        child: Column(
-                                                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                                                          children: [
-                                                                            Row(
-                                                                              children: [
-                                                                                Expanded(
-                                                                                  child: Text(
-                                                                                    controller.rideList[index].creer.toString(),
-                                                                                    style: TextStyle(
-                                                                                      color: themeChange.getThem() ? AppThemeData.grey900Dark : AppThemeData.grey900,
-                                                                                      fontFamily: AppThemeData.medium,
-                                                                                    ),
-                                                                                  ),
-                                                                                ),
-                                                                                Text(
-                                                                                  Constant().amountShow(amount: controller.rideList[index].amount.toString()),
-                                                                                  style: TextStyle(
-                                                                                    color: controller.rideList[index].statut.toString() == "success" ? Colors.green : Colors.red,
-                                                                                    fontSize: 16,
-                                                                                    fontFamily: AppThemeData.medium,
-                                                                                  ),
-                                                                                ),
-                                                                              ],
-                                                                            ),
-                                                                            Text(
-                                                                              controller.rideList[index].statut.toString(),
-                                                                              style: TextStyle(
-                                                                                color: controller.rideList[index].statut.toString() == "success" ? Colors.green : Colors.red,
-                                                                                fontSize: 16,
-                                                                                fontFamily: AppThemeData.medium,
-                                                                              ),
-                                                                            ),
-                                                                            Padding(
-                                                                              padding: const EdgeInsets.symmetric(vertical: 8),
-                                                                              child: dividerCust(isDarkMode: themeChange.getThem()),
-                                                                            ),
-                                                                            Text(
-                                                                              controller.rideList[index].bankName.toString(),
-                                                                              style: TextStyle(
-                                                                                color: themeChange.getThem() ? AppThemeData.grey900Dark : AppThemeData.grey900,
-                                                                                fontFamily: AppThemeData.regular,
-                                                                              ),
-                                                                            ),
-                                                                            const SizedBox(
-                                                                              height: 2,
-                                                                            ),
-                                                                            Text(
-                                                                              controller.rideList[index].accountNo.toString(),
-                                                                              style: TextStyle(
-                                                                                color: themeChange.getThem() ? AppThemeData.grey900Dark : AppThemeData.grey900,
-                                                                                fontFamily: AppThemeData.regular,
-                                                                              ),
-                                                                            ),
-                                                                            Padding(
-                                                                              padding: const EdgeInsets.symmetric(vertical: 8),
-                                                                              child: dividerCust(isDarkMode: themeChange.getThem()),
-                                                                            ),
-                                                                            Text(
-                                                                              "Note".tr,
-                                                                              style: TextStyle(
-                                                                                color: themeChange.getThem() ? AppThemeData.grey900Dark : AppThemeData.grey900,
-                                                                                fontFamily: AppThemeData.regular,
-                                                                              ),
-                                                                            ),
-                                                                            const SizedBox(
-                                                                              height: 2,
-                                                                            ),
-                                                                            Text(
-                                                                              controller.rideList[index].note.toString(),
-                                                                              style: TextStyle(
-                                                                                color: themeChange.getThem() ? AppThemeData.grey900Dark : AppThemeData.grey900,
-                                                                                fontFamily: AppThemeData.medium,
-                                                                              ),
-                                                                            ),
-                                                                          ],
-                                                                        ),
-                                                                      )),
-                                                                    ],
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                            );
-                                                          }),
-                                                    ),
-                                        );
-                                      }),
-                                ]),
-                              )
-                            ]),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+    final themeChange = Provider.of<DarkThemeProvider>(context);
+
+    return Scaffold(
+      appBar: isTab
+          ? null
+          : AppbarCustom(
+              title: 'My Earnings'.tr,
+              elevation: 0,
             ),
-          );
-        });
+      backgroundColor: themeChange.getThem() ? AppThemeData.grey50Dark : AppThemeData.grey50,
+      body: SafeArea(
+        top: !isTab,
+        child: WalletMainContent(
+          walletController: walletController,
+          isTab: isTab,
+          onTopUp: () {
+            if (!Preferences.getBoolean(Preferences.isLogin)) {
+              Get.to(() => PhoneEntryScreen(mode: 'signup'));
+            } else {
+              walletController.amountController.value.clear();
+              addToWalletAmount(context, walletController, themeChange.getThem());
+            }
+          },
+          onWithdraw: () {
+            if (!Preferences.getBoolean(Preferences.isLogin)) {
+              Get.to(() => PhoneEntryScreen(mode: 'signup'));
+            } else {
+              walletController.getBankDetails().then((value) {
+                if (value == null) {
+                  ShowToastDialog.showToast('Please Update bank Details');
+                } else {
+                  buildShowBottomSheet(context, walletController, themeChange.getThem());
+                }
+              });
+            }
+          },
+          onRefresh: _refreshAPI,
+          transactionBuilder: showRideTransaction,
+        ),
+      ),
+    );
   }
+
 
   InkWell showRideTransaction(TansactionData data, bool isDarkMode) {
     return InkWell(
@@ -1053,11 +763,6 @@ class WalletScreen extends StatelessWidget {
       backgroundColor: color,
       duration: const Duration(seconds: 8),
     ));
-  }
-
-  Future<void> _refreshAPI() async {
-    walletController.getTrancation();
-    walletController.amountController.value.clear();
   }
 
   void _handlePaymentError(PaymentFailureResponse response) {

@@ -26,6 +26,7 @@ import '../page/terms_of_service/terms_of_service_screen.dart';
 import '../page/wallet/wallet_screen.dart';
 import '../service/api.dart';
 import '../utils/Preferences.dart';
+import '../utils/onboarding_url.dart';
 import '../widget/permission_dialog.dart';
 import '../page/marketplace/view/marketplace_home_screen.dart';
 
@@ -256,7 +257,34 @@ class DashBoardController extends GetxController {
     log("Constant.parcelActive :: ${Constant.parcelActive.toString() == "yes"}  || ${userModel.value.userData?.parcelDelivery.toString() == "yes"}");
     getDrawerItems();
     updateToken();
+    // Fetch latest wallet balance
+    await getWalletBalance();
     return refreshed;
+  }
+
+  Future<void> getWalletBalance() async {
+    try {
+      final response = await http.get(
+        Uri.parse("${API.wallet}?id_user=${Preferences.getInt(Preferences.userId)}&user_cat=driver"),
+        headers: API.header,
+      );
+      showLog("API :: URL :: ${API.wallet}?id_user=${Preferences.getInt(Preferences.userId)}&user_cat=driver");
+      showLog("API :: responseStatus :: ${response.statusCode} ");
+      showLog("API :: responseBody :: ${response.body} ");
+      Map<String, dynamic> responseBody = json.decode(response.body);
+
+      if (response.statusCode == 200 && responseBody['success'] == "success") {
+        // Update wallet amount in user model
+        if (userModel.value.userData != null) {
+          userModel.value.userData!.amount = responseBody['data']['amount']?.toString() ?? userModel.value.userData!.amount;
+          userModel.value.userData!.earnAmount = responseBody['data']['earn_amount']?.toString() ?? userModel.value.userData!.earnAmount;
+          // Save updated user data
+          await Preferences.setString(Preferences.user, jsonEncode(userModel.value));
+        }
+      }
+    } catch (e) {
+      log("Error in getWalletBalance: $e");
+    }
   }
 
   RxString todayEarnings = "0".obs;
@@ -510,9 +538,6 @@ class DashBoardController extends GetxController {
   }
 
   Future<dynamic> getPaymentSettingData() async {
-    if (!Preferences.getBoolean(Preferences.isLogin)) {
-      return null;
-    }
     try {
       final response = await http.get(Uri.parse(API.paymentSetting), headers: API.header);
       showLog("API :: URL :: ${API.paymentSetting} ");
@@ -559,12 +584,13 @@ class DashBoardController extends GetxController {
       }
       Get.to(() => const MarketplaceHomeScreen());
     } else if (item.title == 'Join as Partner'.tr) {
-      String finalUrl = 'https://fiinway.online/onboarding/join-fiinway';
+      final finalUrl = OnboardingUrl.build('/onboarding/join-fiinway');
       Get.to(() => WebViewScreen(url: finalUrl, title: 'Join Fiinway'));
     } else if (item.title == 'Update Categories'.tr) {
-      String token = Preferences.getString(Preferences.accesstoken);
-      String driverId = Preferences.getInt(Preferences.userId).toString();
-      String finalUrl = 'https://fiinway.online/onboarding?accesstoken=$token&driver_id=$driverId';
+      final finalUrl = OnboardingUrl.build(
+        '/onboarding',
+        extra: const {'mode': 'edit_category'},
+      );
       Get.to(() => WebViewScreen(url: finalUrl, title: 'Update Categories'));
     } else if (item.title == 'Change Password'.tr) {
       Get.to(ChangePasswordScreen());

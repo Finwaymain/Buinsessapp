@@ -24,6 +24,21 @@ class AllServicesController extends GetxController {
     }
   }
 
+  Future<List<ServiceCategoryData>> searchCategories(String query) async {
+    if (query.trim().isEmpty) return [];
+    try {
+      final uri = Uri.parse(API.getServiceCategories).replace(queryParameters: {'search': query.trim()});
+      final response = await http.get(uri, headers: API.header);
+      final body = json.decode(response.body);
+      if (response.statusCode == 200 && body['success'] == 'success') {
+        return (body['data'] as List).map((e) => ServiceCategoryData.fromJson(e)).toList();
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
   Future<bool> bookService(Map<String, dynamic> bodyParams) async {
     try {
       ShowToastDialog.showLoader("Submitting request...".tr);

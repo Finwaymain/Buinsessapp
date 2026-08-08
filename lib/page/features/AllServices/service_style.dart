@@ -49,15 +49,141 @@ const ServiceCategoryStyle kDefaultCategoryStyle =
     ServiceCategoryStyle(Icons.miscellaneous_services_rounded, Color(0xFF5A6178), Color(0xFFECEEF4));
 
 // Remove emojis from service name for lookup
-String _cleanNameForLookup(String? name) {
+String cleanServiceName(String? name) {
   if (name == null) return '';
   return name.replaceAll(RegExp(r'[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]', unicode: true), '').trim();
 }
 
-ServiceCategoryStyle categoryStyleFor(String? name) {
-  final cleanName = _cleanNameForLookup(name);
-  return kCategoryStyles[cleanName] ?? kDefaultCategoryStyle;
+String _cleanNameForLookup(String? name) => cleanServiceName(name);
+
+const List<Color> _stylePalette = [
+  Color(0xFF1E88E5), Color(0xFFFB8C00), Color(0xFF43A047), Color(0xFF8E24AA),
+  Color(0xFFE53935), Color(0xFF00897B), Color(0xFF5E35B1), Color(0xFFD81B60),
+  Color(0xFF039BE5), Color(0xFF455A64),
+];
+
+Color _accentFromName(String name) => _stylePalette[name.hashCode.abs() % _stylePalette.length];
+
+final List<MapEntry<String, IconData>> _keywordIconRules = [
+  MapEntry('electric', Icons.electrical_services_rounded),
+  MapEntry('plumb', Icons.plumbing_rounded),
+  MapEntry('carpent', Icons.carpenter_rounded),
+  MapEntry('paint', Icons.format_paint_rounded),
+  MapEntry('clean', Icons.cleaning_services_rounded),
+  MapEntry('ac ', Icons.ac_unit_rounded),
+  MapEntry('air condition', Icons.ac_unit_rounded),
+  MapEntry('fridge', Icons.kitchen_rounded),
+  MapEntry('refrigerator', Icons.kitchen_rounded),
+  MapEntry('wash', Icons.local_laundry_service_rounded),
+  MapEntry('laundry', Icons.local_laundry_service_rounded),
+  MapEntry('pet', Icons.pets_rounded),
+  MapEntry('doctor', Icons.medical_services_rounded),
+  MapEntry('nurse', Icons.local_hospital_rounded),
+  MapEntry('ambul', Icons.emergency_rounded),
+  MapEntry('physio', Icons.accessibility_new_rounded),
+  MapEntry('lab ', Icons.biotech_rounded),
+  MapEntry('tutor', Icons.menu_book_rounded),
+  MapEntry('yoga', Icons.self_improvement_rounded),
+  MapEntry('gym', Icons.fitness_center_rounded),
+  MapEntry('music', Icons.music_note_rounded),
+  MapEntry('dance', Icons.emoji_people_rounded),
+  MapEntry('massage', Icons.spa_rounded),
+  MapEntry('salon', Icons.content_cut_rounded),
+  MapEntry('barber', Icons.content_cut_rounded),
+  MapEntry('garden', Icons.local_florist_rounded),
+  MapEntry('lawn', Icons.grass_rounded),
+  MapEntry('pest', Icons.pest_control_rounded),
+  MapEntry('cctv', Icons.videocam_rounded),
+  MapEntry('security', Icons.security_rounded),
+  MapEntry('wifi', Icons.wifi_rounded),
+  MapEntry('smart', Icons.settings_remote_rounded),
+  MapEntry('water', Icons.water_drop_rounded),
+  MapEntry('construct', Icons.construction_rounded),
+  MapEntry('renovat', Icons.home_repair_service_rounded),
+  MapEntry('furniture', Icons.chair_rounded),
+  MapEntry('shift', Icons.local_shipping_rounded),
+  MapEntry('mov', Icons.local_shipping_rounded),
+  MapEntry('pack', Icons.inventory_2_rounded),
+  MapEntry('maid', Icons.cleaning_services_rounded),
+  MapEntry('cook', Icons.restaurant_rounded),
+  MapEntry('baby', Icons.child_care_rounded),
+  MapEntry('elder', Icons.elderly_rounded),
+  MapEntry('scrap', Icons.recycling_rounded),
+  MapEntry('gas', Icons.propane_tank_rounded),
+  MapEntry('decor', Icons.celebration_rounded),
+  MapEntry('tent', Icons.other_houses_rounded),
+  MapEntry('inspect', Icons.search_rounded),
+  MapEntry('tv', Icons.tv_rounded),
+  MapEntry('laptop', Icons.laptop_rounded),
+  MapEntry('computer', Icons.computer_rounded),
+  MapEntry('printer', Icons.print_rounded),
+  MapEntry('inverter', Icons.battery_charging_full_rounded),
+  MapEntry('generator', Icons.electric_bolt_rounded),
+  MapEntry('microwave', Icons.microwave_rounded),
+  MapEntry('geyser', Icons.hot_tub_rounded),
+  MapEntry('chimney', Icons.blur_on_rounded),
+  MapEntry('dishwasher', Icons.local_dining_rounded),
+  MapEntry('fan', Icons.mode_fan_off_rounded),
+  MapEntry('cooler', Icons.ac_unit_rounded),
+  MapEntry('roof', Icons.roofing_rounded),
+  MapEntry('tile', Icons.grid_view_rounded),
+  MapEntry('wallpaper', Icons.wallpaper_rounded),
+  MapEntry('floor', Icons.grid_on_rounded),
+  MapEntry('curtain', Icons.curtains_rounded),
+  MapEntry('modular', Icons.kitchen_rounded),
+  MapEntry('ceiling', Icons.dashboard_rounded),
+  MapEntry('weld', Icons.whatshot_rounded),
+  MapEntry('mason', Icons.foundation_rounded),
+  MapEntry('handyman', Icons.handyman_rounded),
+  MapEntry('door', Icons.sensor_door_rounded),
+  MapEntry('window', Icons.window_rounded),
+  MapEntry('vet', Icons.pets_rounded),
+  MapEntry('groom', Icons.pets_rounded),
+  MapEntry('iron', Icons.iron_rounded),
+  MapEntry('driver', Icons.drive_eta_rounded),
+  MapEntry('cab', Icons.local_taxi_rounded),
+  MapEntry('delivery', Icons.delivery_dining_rounded),
+  MapEntry('food', Icons.restaurant_rounded),
+  MapEntry('health', Icons.favorite_rounded),
+  MapEntry('educat', Icons.school_rounded),
+  MapEntry('repair', Icons.build_rounded),
+  MapEntry('install', Icons.handyman_rounded),
+  MapEntry('transport', Icons.directions_car_rounded),
+  MapEntry('travel', Icons.flight_rounded),
+  MapEntry('market', Icons.store_rounded),
+];
+
+IconData? _keywordIconFor(String lower) {
+  for (final rule in _keywordIconRules) {
+    if (lower.contains(rule.key)) return rule.value;
+  }
+  return null;
 }
+
+ServiceCategoryStyle resolveServiceStyle(String? name, {ServiceCategoryStyle? parentStyle}) {
+  final clean = _cleanNameForLookup(name);
+  if (clean.isEmpty) return parentStyle ?? kDefaultCategoryStyle;
+  if (kCategoryStyles.containsKey(clean)) return kCategoryStyles[clean]!;
+  final lower = clean.toLowerCase();
+  for (final entry in kCategoryStyles.entries) {
+    final key = entry.key.toLowerCase();
+    if (lower.contains(key) || key.contains(lower)) return entry.value;
+  }
+  final icon = leafIconFor(clean, fallback: kDefaultCategoryStyle.icon);
+  if (icon != kDefaultCategoryStyle.icon) {
+    final color = _accentFromName(clean);
+    return ServiceCategoryStyle(icon, color, color.withValues(alpha: 0.12));
+  }
+  return parentStyle ?? kDefaultCategoryStyle;
+}
+
+ServiceCategoryStyle styleForServiceItem(String? name, {ServiceCategoryStyle? parentStyle}) {
+  final base = resolveServiceStyle(name, parentStyle: parentStyle);
+  final icon = leafIconFor(name, fallback: base.icon);
+  return ServiceCategoryStyle(icon, base.color, base.bg);
+}
+
+ServiceCategoryStyle categoryStyleFor(String? name) => resolveServiceStyle(name);
 
 final Map<String, IconData> _leafIconOverrides = {
   'Cleaner': Icons.cleaning_services_rounded,
@@ -193,7 +319,17 @@ final Map<String, IconData> _leafIconOverrides = {
   'Home Inspection': Icons.search_rounded,
 };
 
-IconData leafIconFor(String name, {IconData fallback = Icons.build_circle_outlined}) {
-  final cleanName = _cleanNameForLookup(name);
-  return _leafIconOverrides[cleanName] ?? fallback;
+IconData leafIconFor(String? name, {IconData fallback = Icons.build_circle_outlined}) {
+  final clean = _cleanNameForLookup(name);
+  if (clean.isEmpty) return fallback;
+  if (_leafIconOverrides.containsKey(clean)) return _leafIconOverrides[clean]!;
+  final lower = clean.toLowerCase();
+  for (final entry in _leafIconOverrides.entries) {
+    if (lower == entry.key.toLowerCase()) return entry.value;
+  }
+  for (final entry in _leafIconOverrides.entries) {
+    final key = entry.key.toLowerCase();
+    if (lower.contains(key) || key.contains(lower)) return entry.value;
+  }
+  return _keywordIconFor(lower) ?? fallback;
 }

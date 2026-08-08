@@ -18,7 +18,22 @@ class SettingsController extends GetxController {
   void onInit() {
     API.header['accesstoken'] = Preferences.getString(Preferences.accesstoken);
     getSettingsData();
+    fetchPaymentSettings();
     super.onInit();
+  }
+
+  Future<void> fetchPaymentSettings() async {
+    try {
+      final response = await http
+          .get(Uri.parse(API.paymentSetting), headers: API.header)
+          .timeout(const Duration(seconds: 15));
+      if (response.statusCode == 200) {
+        final body = json.decode(response.body);
+        if (body['success'] == 'success') {
+          Preferences.setString(Preferences.paymentSetting, jsonEncode(body));
+        }
+      }
+    } catch (_) {}
   }
 
   RxBool isLoading = true.obs;

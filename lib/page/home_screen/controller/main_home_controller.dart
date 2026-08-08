@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../utils/Preferences.dart';
+import '../../../utils/onboarding_url.dart';
 import '../../auth_screens/phone_entry_screen.dart';
 import '../../features/SmartValue/ScanAndTransfer/view/scanner_and_transfer_screen.dart';
 import '../../features/SmartValue/Payout/view/payout_screen.dart';
@@ -145,9 +146,7 @@ class MainHomeController extends GetxController
       Get.to(() => PhoneEntryScreen(mode: 'signup'),
           transition: Transition.rightToLeftWithFade);
     } else if (routeName == '/smartValue') {
-      String token = Preferences.getString(Preferences.accesstoken);
-      String userId = Preferences.getInt(Preferences.userId).toString();
-      String finalUrl = 'https://fiinway.online/onboarding/smartvalue?accesstoken=$token&driver_id=$userId';
+      final finalUrl = OnboardingUrl.build('/onboarding/smartvalue');
       Get.to(() => WebViewScreen(url: finalUrl, title: 'Smart Value'),
           transition: Transition.rightToLeftWithFade);
     } else if (routeName == '/referralProgram') {

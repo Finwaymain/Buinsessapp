@@ -9,9 +9,9 @@ import 'package:cabme_driver/page/search_location_screen.dart';
 import 'package:cabme_driver/themes/button_them.dart';
 import 'package:cabme_driver/themes/constant_colors.dart';
 import 'package:cabme_driver/utils/dark_theme_provider.dart';
+import 'service_booking_mode.dart';
 import 'service_style.dart';
 
-/// Generic request/management form for any leaf service in the "All Services" catalog
 class ServiceRequestScreen extends StatefulWidget {
   final String serviceName;
   final String categoryName;
@@ -27,12 +27,23 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
   final _descriptionController = TextEditingController();
   final _addressController = TextEditingController();
 
+  late final ServiceBookingMode _bookingMode;
+  late final bool _requiresHomeVisit;
+
   double? _lat;
   double? _lng;
   String _addressType = 'Home';
+  String _contactMethod = 'Online';
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
   bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _bookingMode = bookingModeFor(serviceName: widget.serviceName, categoryName: widget.categoryName);
+    _requiresHomeVisit = _bookingMode == ServiceBookingMode.homeVisit;
+  }
 
   @override
   void dispose() {
@@ -68,7 +79,7 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
   }
 
   Future<void> _submit() async {
-    if (_addressController.text.isEmpty || _lat == null) {
+    if (_requiresHomeVisit && (_addressController.text.isEmpty || _lat == null)) {
       ShowToastDialog.showToast("Please select your service address".tr);
       return;
     }
@@ -85,16 +96,28 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
     final success = await _controller.bookService({
       'user_id': _controller.currentUserId?.toString() ?? '',
       'service_name': widget.serviceName,
-      'address_type': _addressType,
-      'lat': _lat.toString(),
-      'lng': _lng.toString(),
+      'address_type': _requiresHomeVisit ? _addressType : _contactMethod,
+      'lat': _requiresHomeVisit ? _lat.toString() : '',
+      'lng': _requiresHomeVisit ? _lng.toString() : '',
       'date': dateStr,
       'time': timeStr,
       'description': _descriptionController.text,
+      'booking_mode': _requiresHomeVisit ? 'home_visit' : 'remote',
     });
 
     if (mounted) setState(() => _isSubmitting = false);
     if (success && mounted) Get.back();
+  }
+
+  Widget _sectionTitle(String text, bool isDarkMode) {
+    return Text(
+      text,
+      style: TextStyle(
+        fontFamily: AppThemeData.semiBold,
+        fontSize: 13,
+        color: isDarkMode ? AppThemeData.grey900Dark : AppThemeData.grey900,
+      ),
+    );
   }
 
   @override
@@ -127,64 +150,99 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
                   Icon(leafIconFor(widget.serviceName, fallback: style.icon), color: style.color, size: 28),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      widget.serviceName,
-                      style: TextStyle(fontFamily: AppThemeData.bold, fontSize: 16, color: style.color),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          cleanServiceName(widget.serviceName).tr,
+                          style: TextStyle(fontFamily: AppThemeData.bold, fontSize: 16, color: style.color),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _requiresHomeVisit
+                              ? "A professional will visit your location".tr
+                              : "This service can be done online — no address needed".tr,
+                          style: TextStyle(
+                            fontFamily: AppThemeData.regular,
+                            fontSize: 11.5,
+                            color: style.color.withValues(alpha: 0.85),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 20),
-            Text("Service Address".tr, style: TextStyle(fontFamily: AppThemeData.semiBold, fontSize: 13, color: isDarkMode ? AppThemeData.grey900Dark : AppThemeData.grey900)),
-            const SizedBox(height: 8),
-            InkWell(
-              onTap: _pickAddress,
-              child: Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: isDarkMode ? AppThemeData.grey100Dark : Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.location_on_outlined, color: AppThemeData.primary200, size: 20),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        _addressController.text.isEmpty ? "Select address".tr : _addressController.text,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontFamily: AppThemeData.regular,
-                          fontSize: 13,
-                          color: _addressController.text.isEmpty ? Colors.grey : (isDarkMode ? AppThemeData.grey900Dark : AppThemeData.grey900),
+            if (_requiresHomeVisit) ...[
+              _sectionTitle("Service Address".tr, isDarkMode),
+              const SizedBox(height: 8),
+              InkWell(
+                onTap: _pickAddress,
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: isDarkMode ? AppThemeData.grey100Dark : Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.location_on_outlined, color: AppThemeData.primary200, size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          _addressController.text.isEmpty ? "Select address".tr : _addressController.text,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: AppThemeData.regular,
+                            fontSize: 13,
+                            color: _addressController.text.isEmpty ? Colors.grey : (isDarkMode ? AppThemeData.grey900Dark : AppThemeData.grey900),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: ['Home', 'Work', 'Other'].map((type) {
-                final selected = _addressType == type;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: ChoiceChip(
-                    label: Text(type.tr),
+              const SizedBox(height: 12),
+              Row(
+                children: ['Home', 'Work', 'Other'].map((type) {
+                  final selected = _addressType == type;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      label: Text(type.tr),
+                      selected: selected,
+                      onSelected: (_) => setState(() => _addressType = type),
+                      selectedColor: style.color.withValues(alpha: 0.15),
+                      labelStyle: TextStyle(color: selected ? style.color : Colors.grey, fontFamily: AppThemeData.medium, fontSize: 12),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ] else ...[
+              _sectionTitle("How would you like to connect?".tr, isDarkMode),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: ['Online', 'Video Call', 'Phone Call'].map((method) {
+                  final selected = _contactMethod == method;
+                  return ChoiceChip(
+                    label: Text(method.tr),
                     selected: selected,
-                    onSelected: (_) => setState(() => _addressType = type),
+                    onSelected: (_) => setState(() => _contactMethod = method),
                     selectedColor: style.color.withValues(alpha: 0.15),
                     labelStyle: TextStyle(color: selected ? style.color : Colors.grey, fontFamily: AppThemeData.medium, fontSize: 12),
-                  ),
-                );
-              }).toList(),
-            ),
+                  );
+                }).toList(),
+              ),
+            ],
             const SizedBox(height: 20),
-            Text("Preferred Date & Time".tr, style: TextStyle(fontFamily: AppThemeData.semiBold, fontSize: 13, color: isDarkMode ? AppThemeData.grey900Dark : AppThemeData.grey900)),
+            _sectionTitle("Preferred Date & Time".tr, isDarkMode),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -238,7 +296,7 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
               ],
             ),
             const SizedBox(height: 20),
-            Text("Description (Optional)".tr, style: TextStyle(fontFamily: AppThemeData.semiBold, fontSize: 13, color: isDarkMode ? AppThemeData.grey900Dark : AppThemeData.grey900)),
+            _sectionTitle("Remarks (Optional)".tr, isDarkMode),
             const SizedBox(height: 8),
             Container(
               decoration: BoxDecoration(
@@ -251,7 +309,9 @@ class _ServiceRequestScreenState extends State<ServiceRequestScreen> {
                 maxLines: 3,
                 style: TextStyle(fontSize: 13, color: isDarkMode ? AppThemeData.grey900Dark : AppThemeData.grey900),
                 decoration: InputDecoration(
-                  hintText: "Any specific requirements...".tr,
+                  hintText: _requiresHomeVisit
+                      ? "Any specific requirements for the visit...".tr
+                      : "Share topic, goals, or how to reach you...".tr,
                   hintStyle: const TextStyle(color: Colors.grey, fontSize: 12),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.all(14),

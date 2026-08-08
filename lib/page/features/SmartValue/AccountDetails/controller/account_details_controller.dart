@@ -10,20 +10,31 @@ import 'package:http/http.dart' as http;
 import '../../../../../constant/constant.dart';
 import '../../../../../constant/logdata.dart';
 import '../../../../../constant/show_toast_dialog.dart';
+import '../../../../../model/user_model.dart';
 import '../../../../../service/api.dart';
 import '../model/account_details_model.dart';
 
 class AccountDetailsController extends GetxController with GetTickerProviderStateMixin {
-  // Observable variables
+  AccountDetailsController({this.popOnError = true});
+
+  final bool popOnError;
+
   var isFront = true.obs;
   var isLoading = false.obs;
   Rx<AccountDetailsModel?> accountDetailsModel = Rx<AccountDetailsModel?>(null);
 
-  // Animation controllers
   late AnimationController flipController;
   late AnimationController shimmerController;
   late Animation<double> flipAnimation;
   late Animation<double> shimmerAnimation;
+
+  void resetCardState() {
+    isFront.value = true;
+    if (flipController.isAnimating) {
+      flipController.stop();
+    }
+    flipController.value = 0;
+  }
 
   @override
   void onInit() {
@@ -31,12 +42,12 @@ class AccountDetailsController extends GetxController with GetTickerProviderStat
 
     flipController = AnimationController(
       vsync: this,
-      duration: Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 800),
     );
 
     shimmerController = AnimationController(
       vsync: this,
-      duration: Duration(milliseconds: 2000),
+      duration: const Duration(milliseconds: 2000),
     )..repeat();
 
     flipAnimation = Tween<double>(begin: 0, end: pi).animate(
@@ -47,13 +58,17 @@ class AccountDetailsController extends GetxController with GetTickerProviderStat
       CurvedAnimation(parent: shimmerController, curve: Curves.easeInOut),
     );
 
-    // Set loading true before API call
-    isLoading.value = true;
+    resetCardState();
+    _applyCachedProfile();
+    isLoading.value = accountDetailsModel.value == null;
 
-    // Load account details when controller initializes
-    getAccountDetails("${Constant.getUserData().userData?.acNo}");
+    final acNo = Constant.getUserData().userData?.acNo;
+    if (acNo != null && acNo.isNotEmpty) {
+      getAccountDetails(acNo);
+    } else {
+      isLoading.value = false;
+    }
   }
-
 
   void flipCard() {
     if (isFront.value) {
@@ -64,105 +79,131 @@ class AccountDetailsController extends GetxController with GetTickerProviderStat
     isFront.value = !isFront.value;
   }
 
-  // Get data from model for display
-  String get digitalPocket => accountDetailsModel.value?.data?.acNo ?? '000000000';
+  String get holderName {
+    final name = _profile()?.getFullName() ?? '';
+    if (name.isNotEmpty) return name;
 
-  String get holderName => accountDetailsModel.value?.data?.getFullName() ?? "N/A";
-
-  String get mobile => accountDetailsModel.value?.data?.phone ?? "N/A";
-
-  String get accountNumber => accountDetailsModel.value?.data?.acNo ?? "N/A";
-
-  String get expDays => accountDetailsModel.value?.data?.getDaysToStart()?.toString() ?? "0";
-
-  String get expDate => accountDetailsModel.value?.data?.getFormattedStartDate() ?? "00/00";
-
-  String get accountType {
-    final status = accountDetailsModel.value?.data?.statut;
-    return status == "yes" ? "Active Account" : "Inactive Account";
+    final user = Constant.getUserData().userData;
+    final fallback = '${user?.prenom ?? ''} ${user?.nom ?? ''}'.trim();
+    return fallback.isNotEmpty ? fallback : 'N/A';
   }
 
-  String get cardType => "PLATINUM";
+  String get mobile => _profile()?.phone ?? 'N/A';
+  String get accountNumber => _profile()?.acNo ?? 'N/A';
+  String get expDays => _profile()?.getDaysToStart()?.toString() ?? '0';
+  String get expDate => _profile()?.getFormattedStartDate() ?? '00/00';
 
-  String get bank => "Smart Value";
+  String get accountType {
+    final status = _profile()?.statut;
+    return status == 'yes' ? 'Active Account' : 'Inactive Account';
+  }
 
-  String get cvv => accountDetailsModel.value?.data?.mPin ?? "00/00";
+  String get cardType => 'PLATINUM';
+  String get bank => 'Smart Value';
+  String get cvv => _profile()?.mPin ?? '00/00';
+  String get amount => _profile()?.amount ?? '0.00';
+  String get earnAmount => _profile()?.earnAmount ?? '0.00';
 
-  String get amount => accountDetailsModel.value?.data?.amount ?? "0.00";
-
-  String get earnAmount => accountDetailsModel.value?.data?.earnAmount ?? "0.00";
-
-
-  Future<AccountDetailsModel?> getAccountDetails(String accountNumber) async {
-    try {
-      Map bodyParams = {
-        "ac_no": accountNumber
+  Map<String, dynamic> _userJson(UserData user) => {
+        'id': user.id,
+        'ac_no': user.acNo,
+        'nom': user.nom,
+        'prenom': user.prenom,
+        'holder_name': '${user.prenom ?? ''} ${user.nom ?? ''}'.trim(),
+        'phone': user.phone,
+        'm_pin': user.mPin,
+        'statut': user.statut,
+        'amount': user.amount,
+        'earn_amount': user.earnAmount,
+        'start_date': user.startDate,
       };
 
-      final response = await http.post(
-        Uri.parse(API.accountDetails),
-        headers: API.header,
-        body: jsonEncode(bodyParams),
-      ).timeout(const Duration(seconds: 30));
+  AccountData? _profile() {
+    if (accountDetailsModel.value?.data != null) {
+      return accountDetailsModel.value!.data;
+    }
+    final user = Constant.getUserData().userData;
+    if (user == null) return null;
+    return AccountData.fromJson(_userJson(user));
+  }
 
-      showLog("getAccountDetails => API :: URL :: ${API.accountDetails}");
-      showLog("getAccountDetails => API :: Request Body :: ${jsonEncode(bodyParams)}");
-      showLog("getAccountDetails => API :: Headers :: ${API.header}");
-      showLog("getAccountDetails => API :: Response Status :: ${response.statusCode}");
-      showLog("getAccountDetails => API :: Response Body :: ${response.body}");
+  void _applyCachedProfile() {
+    final user = Constant.getUserData().userData;
+    if (user == null) return;
+
+    accountDetailsModel.value = AccountDetailsModel(
+      res: 'success',
+      msg: 'Cached profile',
+      data: AccountData.fromJson(_userJson(user)),
+    );
+  }
+
+  Future<AccountDetailsModel?> getAccountDetails(String accountNumber) async {
+    final showBlockingLoader = accountDetailsModel.value == null;
+    if (showBlockingLoader) {
+      isLoading.value = true;
+    }
+
+    try {
+      final response = await http
+          .post(
+            Uri.parse(API.accountDetails),
+            headers: API.header,
+            body: jsonEncode({'ac_no': accountNumber}),
+          )
+          .timeout(const Duration(seconds: 30));
+
+      showLog('getAccountDetails => ${response.body}');
 
       if (response.statusCode == 200) {
-        Map<String, dynamic> responseBody = json.decode(response.body);
-        AccountDetailsModel model = AccountDetailsModel.fromJson(responseBody);
-
+        final model = AccountDetailsModel.fromJson(json.decode(response.body));
         if (model.res == 'success') {
           accountDetailsModel.value = model;
-          // IMPORTANT: Set loading false AFTER data is set
-          await Future.delayed(Duration(milliseconds: 100)); // Small delay for smooth transition
           isLoading.value = false;
           return model;
-        } else {
-          isLoading.value = false;
+        }
+
+        _applyCachedProfile();
+        isLoading.value = false;
+        if (popOnError) {
           Get.back();
           ShowToastDialog.showToast(model.msg ?? 'Account not found', isError: true);
-          return null;
         }
-      } else {
-        isLoading.value = false;
-        ShowToastDialog.showToast('Server error. Please try again.');
-        return null;
+        return accountDetailsModel.value;
       }
+
+      _applyCachedProfile();
+      isLoading.value = false;
+      if (popOnError) ShowToastDialog.showToast('Server error. Please try again.');
+      return accountDetailsModel.value;
     } on TimeoutException catch (e) {
+      _applyCachedProfile();
       isLoading.value = false;
-      showLog("getAccountDetails => TimeoutException :: $e");
-      ShowToastDialog.showToast('Request timeout. Please try again.');
-      return null;
+      showLog('getAccountDetails timeout :: $e');
+      if (popOnError) ShowToastDialog.showToast('Request timeout. Please try again.');
+      return accountDetailsModel.value;
     } on SocketException catch (e) {
+      _applyCachedProfile();
       isLoading.value = false;
-      showLog("getAccountDetails => SocketException :: $e");
-      ShowToastDialog.showToast('Network error. Please check your connection.');
-      return null;
-    } on FormatException catch (e) {
-      isLoading.value = false;
-      showLog("getAccountDetails => FormatException :: $e");
-      ShowToastDialog.showToast('Invalid response format.');
-      return null;
+      showLog('getAccountDetails socket :: $e');
+      if (popOnError) ShowToastDialog.showToast('Network error. Please check your connection.');
+      return accountDetailsModel.value;
     } catch (e) {
+      _applyCachedProfile();
       isLoading.value = false;
-      showLog("getAccountDetails => Exception :: $e");
-      ShowToastDialog.showToast('Failed to fetch account details. Please try again.');
-      return null;
+      showLog('getAccountDetails error :: $e');
+      if (popOnError) ShowToastDialog.showToast('Failed to fetch account details. Please try again.');
+      return accountDetailsModel.value;
     }
   }
 
   String get totalAmount {
     try {
-      double amt = double.parse(amount);
-      double earned = double.parse(earnAmount);
-      double total = amt + earned;
-      return total.toStringAsFixed(2);
-    } catch (e) {
-      return "0.00";
+      final amt = double.parse(amount);
+      final earned = double.parse(earnAmount);
+      return (amt + earned).toStringAsFixed(2);
+    } catch (_) {
+      return '0.00';
     }
   }
 
@@ -173,73 +214,3 @@ class AccountDetailsController extends GetxController with GetTickerProviderStat
     super.onClose();
   }
 }
-
-
-// import 'dart:math';
-//
-// import 'package:flutter/material.dart';
-// import 'package:get/get.dart';
-//
-// class AccountDetailsController extends GetxController with GetTickerProviderStateMixin {
-//   // Observable variables
-//   var isFront = true.obs;
-//
-//   // Animation controllers
-//   late AnimationController flipController;
-//   late AnimationController shimmerController;
-//   late Animation<double> flipAnimation;
-//   late Animation<double> shimmerAnimation;
-//
-//   // Card data
-//   final Map<String, String> cardData = {
-//     "digitalPocket": "DP987654321",
-//     "holderName": "Aditya Kumar",
-//     "mobile": "+91 9876543210",
-//     "code": "PREMIUM",
-//     "expDays": "32",
-//     "expDate": "12/28",
-//     "cardType": "PLATINUM",
-//     "bank": "Smart Value",
-//     "cvv": "456",
-//     "accountType": "Premium Account"
-//   };
-//
-//   @override
-//   void onInit() {
-//     super.onInit();
-//
-//     flipController = AnimationController(
-//       vsync: this,
-//       duration: Duration(milliseconds: 800),
-//     );
-//
-//     shimmerController = AnimationController(
-//       vsync: this,
-//       duration: Duration(milliseconds: 2000),
-//     )..repeat();
-//
-//     flipAnimation = Tween<double>(begin: 0, end: pi).animate(
-//       CurvedAnimation(parent: flipController, curve: Curves.easeInOut),
-//     );
-//
-//     shimmerAnimation = Tween<double>(begin: -1, end: 2).animate(
-//       CurvedAnimation(parent: shimmerController, curve: Curves.easeInOut),
-//     );
-//   }
-//
-//   void flipCard() {
-//     if (isFront.value) {
-//       flipController.forward();
-//     } else {
-//       flipController.reverse();
-//     }
-//     isFront.value = !isFront.value;
-//   }
-//
-//   @override
-//   void onClose() {
-//     flipController.dispose();
-//     shimmerController.dispose();
-//     super.onClose();
-//   }
-// }
