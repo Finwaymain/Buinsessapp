@@ -49,6 +49,8 @@ class _AllServicesScreenState extends State<AllServicesScreen> {
   @override
   void initState() {
     super.initState();
+    _categories = _controller.fallbackHomeCategories();
+    _isLoading = _categories.isEmpty;
     _load();
   }
 
@@ -61,7 +63,12 @@ class _AllServicesScreenState extends State<AllServicesScreen> {
 
   Future<void> _load() async {
     final data = await _controller.fetchCategories();
-    if (mounted) setState(() { _categories = data; _isLoading = false; });
+    if (mounted) {
+      setState(() {
+        _categories = data;
+        _isLoading = false;
+      });
+    }
   }
 
   void _toggleSearch() {
