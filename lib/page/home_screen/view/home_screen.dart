@@ -43,6 +43,8 @@ import '../../features/Taxi/taxi_dashboard/taxi_dashboard.dart';
 import '../../wallet/xenditScreen.dart';
 import '../../web_view_screen/web_view_screen.dart';
 import '../../features/AllServices/all_services_screen.dart';
+import '../../features/AllServices/service_history_screen.dart';
+import '../../marketplace/view/marketplace_home_screen.dart';
 import '../controller/main_home_controller.dart';
 import '../widget/dashboard_status_section.dart';
 import '../widget/vertical_icon_with_text.dart';
@@ -187,7 +189,7 @@ class MainHomeScreen extends StatelessWidget {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          "Welcome back, Captain".tr,
+                                          "Welcome back".tr,
                                           style: TextStyle(
                                             fontSize: 12,
                                             fontFamily: AppThemeData.medium,
@@ -408,9 +410,15 @@ class MainHomeScreen extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                               child: GestureDetector(
                                 onTap: () {
-                                  if (homeController.getLoginStatus(inProgress: false)) {
-                                    Get.to(() => const MyBookingScreen(), transition: Transition.rightToLeftWithFade);
+                                  if (!homeController.getLoginStatus(inProgress: false)) return;
+                                  if (controller.userModel.value.userData?.onboardingCompleted != 'yes') {
+                                    final finalUrl = OnboardingUrl.build('/onboarding');
+                                    Get.to(() => WebViewScreen(url: finalUrl, title: 'Complete Onboarding'))?.then((_) {
+                                      controller.getUsrData();
+                                    });
+                                    return;
                                   }
+                                  Get.to(() => const MyBookingScreen(), transition: Transition.rightToLeftWithFade);
                                 },
                                 child: Container(
                                   width: double.infinity,
@@ -666,14 +674,31 @@ class MainHomeScreen extends StatelessWidget {
                                       },
                                     ),
                                   VerticalIconWithText(
-                                    icon: Icons.groups_outlined,
-                                    text: 'Shared Ride',
+                                    icon: Icons.home_repair_service_outlined,
+                                    text: 'Service History',
                                     onTap: () {
                                       if (!Preferences.getBoolean(Preferences.isLogin)) {
                                         Get.to(() => PhoneEntryScreen(mode: 'signup'), transition: Transition.rightToLeftWithFade);
                                         return;
                                       }
-                                      Get.to(() => const InProgressScreen(),
+                                      Get.to(() => const ServiceHistoryScreen(),
+                                          transition: Transition.rightToLeftWithFade);
+                                    },
+                                  ),
+                                  VerticalIconWithText(
+                                    icon: Icons.storefront_outlined,
+                                    text: 'Marketplace',
+                                    onTap: () {
+                                      if (!Preferences.getBoolean(Preferences.isLogin)) {
+                                        Get.to(() => PhoneEntryScreen(mode: 'signup'), transition: Transition.rightToLeftWithFade);
+                                        return;
+                                      }
+                                      bool isMarketplaceEnabled = (Constant.getUserData().userData?.marketplaceEnabled == '1');
+                                      if (!isMarketplaceEnabled) {
+                                        ShowToastDialog.showToast("Marketplace is disabled. Please enable it in your profile.".tr);
+                                        return;
+                                      }
+                                      Get.to(() => const MarketplaceHomeScreen(),
                                           transition: Transition.rightToLeftWithFade);
                                     },
                                   ),
