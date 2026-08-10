@@ -5,10 +5,10 @@ import 'package:provider/provider.dart';
 import '../../../constant/constant.dart';
 import '../../../constant/show_toast_dialog.dart';
 import '../../../controller/dash_board_controller.dart';
-import '../../../controller/new_ride_controller.dart';
 import '../../../model/user_model.dart';
 import '../../../themes/constant_colors.dart';
 import '../../../utils/Preferences.dart';
+import '../../../utils/driver_dashboard_route.dart';
 import '../../../utils/dark_theme_provider.dart';
 import 'package:get/get.dart';
 
@@ -62,60 +62,56 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           ),
           Spacer(),
 
-          GetX<NewRideController>(
-            init: NewRideController(),
-            builder: (controller) {
-              if (controller.userModel.value.userData == null) {
-                return SizedBox(); // Return empty widget if data is not ready
-              }
-              return Obx(() {
-                return GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () async {
-                    final refreshed = await controllerDashBoard.getUsrData();
-                    if (!refreshed) {
-                      ShowToastDialog.showToast("Couldn't refresh your status. Please check your connection and try again.".tr);
-                      return;
-                    }
-                    final userData = controllerDashBoard.userModel.value.userData!;
-                    if (userData.statutVehicule == "no") {
-                      showAlertDialog(context, "vehicleInformation");
-                    } else if (userData.isVerified != "yes") {
-                      showAlertDialog(context, "pendingApproval");
-                    } else {
-                      showActiveServicesDialog(context, controllerDashBoard, isDarkMode);
-                    }
-                  },
-                  child: Row(
-                    children: [
-                      Text(
-                        "Status".tr,
-                        style: TextStyle(
-                          color: themeChange.getThem()
-                              ? AppThemeData.grey500Dark
-                              : AppThemeData.grey500,
-                          fontFamily: AppThemeData.regular,
-                          fontSize: 16,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      IgnorePointer(
-                        child: Transform.scale(
-                          scale: 0.8,
-                          child: Switch(
-                            value: controllerDashBoard.isActive.value,
-                            activeThumbColor: AppThemeData.success300,
-                            inactiveTrackColor: AppThemeData.warning200,
-                            onChanged: (value) {},
-                          ),
-                        ),
-                      ),
-                    ],
+          Obx(() {
+            final userData = controllerDashBoard.userModel.value.userData;
+            if (!shouldShowOnlineStatus(userData)) {
+              return const SizedBox.shrink();
+            }
+            return GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () async {
+                final refreshed = await controllerDashBoard.getUsrData();
+                if (!refreshed) {
+                  ShowToastDialog.showToast("Couldn't refresh your status. Please check your connection and try again.".tr);
+                  return;
+                }
+                final refreshedUserData = controllerDashBoard.userModel.value.userData!;
+                if (refreshedUserData.statutVehicule == "no") {
+                  showAlertDialog(context, "vehicleInformation");
+                } else if (refreshedUserData.isVerified != "yes") {
+                  showAlertDialog(context, "pendingApproval");
+                } else {
+                  showActiveServicesDialog(context, controllerDashBoard, isDarkMode);
+                }
+              },
+              child: Row(
+                children: [
+                  Text(
+                    "Status".tr,
+                    style: TextStyle(
+                      color: themeChange.getThem()
+                          ? AppThemeData.grey500Dark
+                          : AppThemeData.grey500,
+                      fontFamily: AppThemeData.regular,
+                      fontSize: 16,
+                    ),
                   ),
-                );
-              });
-            },
-          ),
+                  const SizedBox(width: 4),
+                  IgnorePointer(
+                    child: Transform.scale(
+                      scale: 0.8,
+                      child: Switch(
+                        value: controllerDashBoard.isActive.value,
+                        activeThumbColor: AppThemeData.success300,
+                        inactiveTrackColor: AppThemeData.warning200,
+                        onChanged: (value) {},
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
         ],
       ),
     );

@@ -213,20 +213,25 @@ class Constant {
   }
 
   static Future<void> launchMapURl(String? latitude, String? longLatitude) async {
-    String appleUrl = 'https://maps.apple.com/?saddr=&daddr=$latitude,$longLatitude&directionsmode=driving';
-    String googleUrl = 'https://www.google.com/maps/search/?api=1&query=$latitude,$longLatitude';
-
-    if (Platform.isIOS) {
-      if (await canLaunchUrl(Uri.parse(appleUrl))) {
-        await canLaunchUrl(Uri.parse(appleUrl));
-      }
-    } else {
-      if (await canLaunchUrl(Uri.parse(googleUrl))) {
-        await canLaunchUrl(Uri.parse(googleUrl));
-      } else {
-        throw 'Could not open the map.';
-      }
+    if (latitude == null || longLatitude == null || latitude.trim().isEmpty || longLatitude.trim().isEmpty) {
+      throw 'Location not available';
     }
+
+    final googleUrl = Uri.parse('https://www.google.com/maps/search/?api=1&query=$latitude,$longLatitude');
+    final appleUrl = Uri.parse('https://maps.apple.com/?daddr=$latitude,$longLatitude&directionsmode=driving');
+    final uri = Platform.isIOS ? appleUrl : googleUrl;
+
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      return;
+    }
+
+    if (!Platform.isIOS && await canLaunchUrl(appleUrl)) {
+      await launchUrl(appleUrl, mode: LaunchMode.externalApplication);
+      return;
+    }
+
+    throw 'Could not open the map.';
   }
 
   static Future<Url> uploadChatImageToFireStorage(File image) async {

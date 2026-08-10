@@ -191,6 +191,7 @@ class API {
   // All Services catalog ("More" section)
   static const getServiceCategories = "${baseUrl}service-categories";
   static const bookService = "${baseUrl}book-service";
+  static const serviceHistory = "${baseUrl}service-history";
 
   // My Booking console
   static const driverBookings = "${baseUrl}driver/bookings";

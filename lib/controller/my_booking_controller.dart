@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:cabme_driver/controller/service_booking_flow_controller.dart';
 import 'package:cabme_driver/constant/show_toast_dialog.dart';
+import 'package:cabme_driver/controller/dash_board_controller.dart';
 import 'package:cabme_driver/model/driver_booking_model.dart';
 import 'package:cabme_driver/service/api.dart';
 import 'package:cabme_driver/utils/Preferences.dart';
@@ -14,6 +17,14 @@ class MyBookingController extends GetxController {
   final incomingCount = 0.obs;
   final activeCount = 0.obs;
   final historyCount = 0.obs;
+  final onboardingRequired = false.obs;
+  final locationRequired = false.obs;
+  final driverOnline = false.obs;
+  final hasDriverLocation = false.obs;
+  final locationMessage = ''.obs;
+  final profession = ''.obs;
+
+  Timer? _pollTimer;
 
   String get _statusParam {
     switch (selectedTab.value) {
@@ -30,23 +41,58 @@ class MyBookingController extends GetxController {
   void onInit() {
     super.onInit();
     fetchBookings();
+    _pollTimer = Timer.periodic(const Duration(seconds: 8), (_) {
+      if (!isLoading.value) fetchBookings();
+    });
+  }
+
+  @override
+  void onClose() {
+    _pollTimer?.cancel();
+    super.onClose();
   }
 
   Future<void> fetchBookings({bool showLoader = false}) async {
     try {
       if (showLoader) ShowToastDialog.showLoader('Please wait'.tr);
       isLoading.value = true;
+      onboardingRequired.value = false;
+      locationRequired.value = false;
+      locationMessage.value = '';
 
       final driverId = Preferences.getInt(Preferences.userId);
-      final uri = Uri.parse(API.driverBookings).replace(queryParameters: {
+      final params = <String, String>{
         'id_driver': driverId.toString(),
         'status': _statusParam,
-      });
+      };
 
+      final uri = Uri.parse(API.driverBookings).replace(queryParameters: params);
       final response = await http.get(uri, headers: API.header);
       final body = json.decode(response.body);
 
+      if (body['onboarding_required'] == true) {
+        onboardingRequired.value = true;
+        bookings.clear();
+        incomingCount.value = 0;
+        activeCount.value = 0;
+        historyCount.value = 0;
+        return;
+      }
+
+      if (body['location_required'] == true) {
+        locationRequired.value = true;
+        driverOnline.value = body['driver_online'] == true;
+        hasDriverLocation.value = body['has_location'] == true;
+        locationMessage.value = body['message']?.toString() ?? 'Please turn on your status and enable GPS to capture your location'.tr;
+        bookings.clear();
+        incomingCount.value = 0;
+        activeCount.value = 0;
+        historyCount.value = 0;
+        return;
+      }
+
       if (response.statusCode == 200 && body['success'] == 'success') {
+        profession.value = body['profession']?.toString() ?? '';
         final list = (body['data'] as List? ?? [])
             .map((e) => DriverBookingItem.fromJson(Map<String, dynamic>.from(e)))
             .toList();
@@ -73,32 +119,77 @@ class MyBookingController extends GetxController {
     fetchBookings();
   }
 
-  Future<bool> updateServiceStatus(String bookingId, String status) async {
+  Future<bool> updateServiceStatus(
+    String bookingId,
+    String status, {
+    String? otp,
+    Map<String, dynamic>? billPayload,
+  }) async {
     try {
       ShowToastDialog.showLoader('Please wait'.tr);
       final driverId = Preferences.getInt(Preferences.userId);
+      final body = <String, dynamic>{
+        'id_driver': driverId,
+        'booking_id': bookingId,
+        'status': status,
+      };
+      if (otp != null && otp.trim().isNotEmpty) {
+        body['otp'] = ServiceBookingFlowController.normalizeOtp(otp);
+      }
+      if (billPayload != null && billPayload.isNotEmpty) {
+        body.addAll(billPayload);
+      }
+
       final response = await http.post(
         Uri.parse(API.driverServiceBookingStatus),
         headers: API.header,
-        body: json.encode({
-          'id_driver': driverId,
-          'booking_id': bookingId,
-          'status': status,
-        }),
+        body: json.encode(body),
       );
       ShowToastDialog.closeLoader();
-      final body = json.decode(response.body);
-      if (response.statusCode == 200 && body['success'] == 'success') {
-        ShowToastDialog.showToast(body['message']?.toString() ?? 'Updated'.tr);
+      final responseBody = json.decode(response.body);
+      final isSuccess = response.statusCode == 200 &&
+          (responseBody['success'] == 'success' || responseBody['success'] == true);
+      if (isSuccess) {
+        ShowToastDialog.showToast(responseBody['message']?.toString() ?? 'Updated'.tr);
         await fetchBookings();
         return true;
       }
-      ShowToastDialog.showToast(body['message']?.toString() ?? 'Failed to update'.tr);
+      ShowToastDialog.showToast(responseBody['message']?.toString() ?? 'Failed to update'.tr);
       return false;
     } catch (e) {
       ShowToastDialog.closeLoader();
       ShowToastDialog.showToast(e.toString());
       return false;
+    }
+  }
+
+  Future<void> enableLocationAndRefresh() async {
+    try {
+      ShowToastDialog.showLoader('Capturing your location...'.tr);
+      final dashController = Get.isRegistered<DashBoardController>()
+          ? Get.find<DashBoardController>()
+          : Get.put(DashBoardController());
+
+      if (!dashController.isActive.value) {
+        final res = await dashController.changeOnlineStatus({
+          'id_driver': Preferences.getInt(Preferences.userId),
+          'online': 'yes',
+        });
+        if (res == null || res['success'] != 'success') {
+          ShowToastDialog.closeLoader();
+          ShowToastDialog.showToast(res?['error']?.toString() ?? 'Could not turn on status'.tr);
+          return;
+        }
+        dashController.isActive.value = true;
+      }
+
+      await dashController.updateCurrentLocation();
+      await Future.delayed(const Duration(seconds: 2));
+      ShowToastDialog.closeLoader();
+      await fetchBookings();
+    } catch (e) {
+      ShowToastDialog.closeLoader();
+      ShowToastDialog.showToast(e.toString());
     }
   }
 }

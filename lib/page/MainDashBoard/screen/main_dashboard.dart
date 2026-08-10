@@ -14,7 +14,8 @@ import '../widget/custom_drawer.dart';
 import '../../home_screen/view/home_screen.dart';
 import '../../wallet/wallet_screen.dart';
 import '../../search_location_screen.dart';
-import '../../new_ride_screens/new_ride_screen.dart';
+import '../../features/AllServices/service_history_screen.dart';
+import '../../../controller/service_history_controller.dart';
 import '../../../controller/dash_board_controller.dart';
 import '../../../utils/Preferences.dart';
 import '../../../utils/onboarding_url.dart';
@@ -68,7 +69,7 @@ class _MainDashboardState extends State<MainDashboard> {
     MainHomeScreen(),
     const AddressSearchScreen(isTab: true),
     const InProgressScreen(),
-    NewRideScreen(isTab: true),
+    const ServiceHistoryScreen(showScaffold: false),
     WalletScreen(isTab: true),
   ];
 
@@ -77,6 +78,12 @@ class _MainDashboardState extends State<MainDashboard> {
       if (!(Preferences.getBoolean(Preferences.isLogin) ?? false)) {
         Get.to(() => PhoneEntryScreen(mode: 'signup'), transition: Transition.rightToLeftWithFade);
         return;
+      }
+    }
+    if (index == 3) {
+      const tag = 'service_history_false';
+      if (Get.isRegistered<ServiceHistoryController>(tag: tag)) {
+        Get.find<ServiceHistoryController>(tag: tag).fetchHistory();
       }
     }
     setState(() => currentIndex = index);

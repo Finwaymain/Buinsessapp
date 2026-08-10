@@ -6,9 +6,8 @@ import 'package:cabme_driver/controller/all_services_controller.dart';
 import 'package:cabme_driver/model/service_category_model.dart';
 import 'package:cabme_driver/themes/constant_colors.dart';
 import 'package:cabme_driver/utils/dark_theme_provider.dart';
-import 'lab_sample_selection_screen.dart';
 import 'service_category_tile.dart';
-import 'service_request_screen.dart';
+import 'service_flow.dart';
 import 'service_style.dart';
 
 const Map<String, String> _kSubtitles = {
@@ -71,24 +70,11 @@ class _ServiceCategoryDetailScreenState extends State<ServiceCategoryDetailScree
   }
 
   void _onTapChild(ServiceCategoryData child) {
-    final rawName = child.libelle ?? '';
-    final cleanName = cleanServiceName(rawName);
-    final lower = cleanName.toLowerCase();
-
-    if (lower.contains('lab sample') || lower.contains('lab collection')) {
-      Get.to(() => LabSampleSelectionScreen(categoryName: cleanServiceName(widget.categoryName)));
-      return;
-    }
-
-    if (isParentServiceCategory(rawName)) {
-      Get.to(() => ServiceCategoryDetailScreen(categoryId: child.id ?? 0, categoryName: rawName));
-      return;
-    }
-
-    Get.to(() => ServiceRequestScreen(
-          serviceName: rawName,
-          categoryName: cleanServiceName(widget.categoryName),
-        ));
+    openServiceFlow(
+      child,
+      parentCategoryName: widget.categoryName,
+      controller: _controller,
+    );
   }
 
   @override

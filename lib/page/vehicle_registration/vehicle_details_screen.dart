@@ -13,7 +13,6 @@ import 'vehicle_documents_screen.dart';
 import 'vehicle_registration_style.dart';
 import 'widgets/step_progress.dart';
 
-/// Step 2: Profession & Service Details
 class VehicleDetailsScreen extends StatefulWidget {
   final String vehicleTypeId;
   final String vehicleTypeName;
@@ -55,7 +54,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
 
   Future<void> _next() async {
     if (_numberPlateController.text.trim().isEmpty) {
-      Get.snackbar('', 'Please enter your vehicle / registration number'.tr, snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar('', 'Please enter your vehicle number', snackPosition: SnackPosition.BOTTOM);
       return;
     }
     if (_selectedTypeId == null) return;
@@ -65,7 +64,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
     final zoneId = await _controller.fetchDefaultZoneId();
     if (zoneId == null) {
       setState(() => _isSubmitting = false);
-      Get.snackbar('', 'No operating zone configured yet. Please contact support.'.tr, snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar('', 'No operating zone configured yet. Please contact support.', snackPosition: SnackPosition.BOTTOM);
       return;
     }
 
@@ -77,6 +76,9 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
     );
 
     if (result != null && _vehiclePhoto != null) {
+      // "Vehicle Photo" reuses the same generic document mechanism as
+      // License/RC/Insurance/etc — no dedicated photo column exists on
+      // tj_vehicule, and this keeps upload/status handling in one place.
       final docs = await _controller.fetchDocumentTypes();
       final photoDoc = docs.firstWhere(
         (d) => (d['title'] ?? '').toString() == 'Vehicle Photo',
@@ -109,7 +111,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
         elevation: 0,
         iconTheme: IconThemeData(color: isDarkMode ? AppThemeData.grey900Dark : Colors.black),
         title: Text(
-          "Profession Details".tr,
+          "Register Your Vehicle".tr,
           style: TextStyle(fontFamily: AppThemeData.bold, fontSize: 17, color: isDarkMode ? AppThemeData.grey900Dark : Colors.black),
         ),
       ),
@@ -118,14 +120,14 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const StepProgress(currentStep: 2, totalSteps: 3),
+            const StepProgress(currentStep: 1, totalSteps: 3),
             const SizedBox(height: 20),
             Text(
-              "Profession Information".tr,
+              "Vehicle Details".tr,
               style: TextStyle(fontFamily: AppThemeData.bold, fontSize: 16, color: isDarkMode ? AppThemeData.grey900Dark : AppThemeData.grey900),
             ),
             const SizedBox(height: 16),
-            _fieldLabel("Profession / Service Category".tr, isDarkMode),
+            _fieldLabel("Vehicle Type".tr, isDarkMode),
             const SizedBox(height: 6),
             Obx(() {
               final options = _controller.vehicleTypes;
@@ -134,7 +136,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                 decoration: BoxDecoration(
                   color: isDarkMode ? AppThemeData.grey100Dark : Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                  border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
@@ -157,13 +159,13 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
               );
             }),
             const SizedBox(height: 16),
-            _fieldLabel("Registration / Vehicle Number".tr, isDarkMode),
+            _fieldLabel("Vehicle Number".tr, isDarkMode),
             const SizedBox(height: 6),
             Container(
               decoration: BoxDecoration(
                 color: isDarkMode ? AppThemeData.grey100Dark : Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
               ),
               child: TextField(
                 controller: _numberPlateController,
@@ -177,84 +179,72 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
                 ),
               ),
             ),
-            if (kTruckFamilyTypes.contains(_selectedTypeName)) ...[
+            // Load capacity is only meaningful for the truck-family types —
+            // passenger vehicles (Bike/Sedan/SUV/etc) skip this field entirely
+            // rather than showing an empty/placeholder box.
+            if (kVehicleCapacityLabel.containsKey(_selectedTypeName)) ...[
               const SizedBox(height: 16),
               _fieldLabel("Load Capacity".tr, isDarkMode),
               const SizedBox(height: 6),
               Container(
-                width: double.infinity,
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: isDarkMode ? AppThemeData.grey100Dark : Colors.white,
+                  color: isDarkMode ? AppThemeData.grey100Dark : Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                  border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
                 ),
                 child: Text(
-                  kVehicleCapacityLabel[_selectedTypeName] ?? '',
+                  kVehicleCapacityLabel[_selectedTypeName] ?? '-',
                   style: TextStyle(fontFamily: AppThemeData.medium, fontSize: 13, color: isDarkMode ? AppThemeData.grey900Dark : AppThemeData.grey900),
                 ),
               ),
             ],
             const SizedBox(height: 16),
-            _fieldLabel("Service / Vehicle Photo (Optional)".tr, isDarkMode),
+            _fieldLabel("Vehicle Photo".tr, isDarkMode),
             const SizedBox(height: 6),
-            InkWell(
-              onTap: _pickPhoto,
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isDarkMode ? AppThemeData.grey100Dark : Colors.white,
+            Row(
+              children: [
+                if (_vehiclePhoto != null)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.file(_vehiclePhoto!, width: 90, height: 90, fit: BoxFit.cover),
+                  ),
+                if (_vehiclePhoto != null) const SizedBox(width: 12),
+                InkWell(
+                  onTap: _pickPhoto,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.withOpacity(0.25)),
-                ),
-                child: Row(
-                  children: [
-                    if (_vehiclePhoto != null)
-                      ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.file(_vehiclePhoto!, width: 54, height: 54, fit: BoxFit.cover)),
-                    if (_vehiclePhoto != null) const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(_vehiclePhoto != null ? "Photo selected".tr : "Upload photo".tr,
-                              style: TextStyle(fontFamily: AppThemeData.semiBold, fontSize: 13, color: isDarkMode ? AppThemeData.grey900Dark : AppThemeData.grey900)),
-                          Text("Tap to browse from gallery".tr,
-                              style: TextStyle(fontFamily: AppThemeData.regular, fontSize: 11, color: isDarkMode ? AppThemeData.grey400Dark : AppThemeData.grey500)),
-                        ],
-                      ),
+                  child: Container(
+                    width: 90,
+                    height: 90,
+                    decoration: BoxDecoration(
+                      color: isDarkMode ? AppThemeData.grey100Dark : Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
                     ),
-                    Icon(Icons.camera_alt_outlined, color: kVehicleRegAccent, size: 22),
-                  ],
+                    child: const Icon(Icons.add_a_photo_outlined, color: Colors.grey, size: 26),
+                  ),
                 ),
-              ),
+              ],
             ),
             const SizedBox(height: 28),
-            _isSubmitting
-                ? const Center(child: CircularProgressIndicator())
-                : ButtonThem.buildButton(
-                    context,
-                    title: "Next".tr,
-                    txtColor: Colors.white,
-                    btnColor: kVehicleRegAccent,
-                    radius: 10,
-                    onPress: _next,
-                  ),
+            ButtonThem.buildButton(
+              context,
+              title: _isSubmitting ? "Please wait...".tr : "Next".tr,
+              txtColor: Colors.white,
+              btnColor: kVehicleRegAccent,
+              radius: 10,
+              onPress: _isSubmitting ? () {} : _next,
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _fieldLabel(String label, bool isDarkMode) {
+  Widget _fieldLabel(String text, bool isDarkMode) {
     return Text(
-      label,
-      style: TextStyle(
-        fontFamily: AppThemeData.medium,
-        fontSize: 13,
-        color: isDarkMode ? AppThemeData.grey400Dark : AppThemeData.grey800,
-      ),
+      text,
+      style: TextStyle(fontFamily: AppThemeData.medium, fontSize: 12.5, color: isDarkMode ? AppThemeData.grey500Dark : AppThemeData.grey500),
     );
   }
 }

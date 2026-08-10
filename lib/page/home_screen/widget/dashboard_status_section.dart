@@ -6,7 +6,9 @@ import '../../../constant/show_toast_dialog.dart';
 import '../../../controller/dash_board_controller.dart';
 import '../../../themes/constant_colors.dart';
 import '../../../utils/Preferences.dart';
+import '../../../utils/driver_dashboard_route.dart';
 import '../../../utils/onboarding_url.dart';
+import '../../booking/my_booking_screen.dart';
 import '../../features/Taxi/taxi_dashboard/taxi_dashboard.dart';
 import '../../web_view_screen/web_view_screen.dart';
 
@@ -65,55 +67,57 @@ class _DashboardStatusSectionState extends State<DashboardStatusSection> {
     final controller = Get.find<DashBoardController>();
 
     return Obx(() {
+      final userData = controller.userModel.value.userData;
+      final showOnlineStatus = shouldShowOnlineStatus(userData);
       final isOnline = controller.isActive.value;
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Online/Offline toggle pill
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: isOnline ? AppThemeData.success300.withValues(alpha: 0.12) : AppThemeData.warning200.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: isOnline ? AppThemeData.success300 : AppThemeData.warning200),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: isOnline ? AppThemeData.success300 : AppThemeData.warning200,
+            if (showOnlineStatus) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: isOnline ? AppThemeData.success300.withValues(alpha: 0.12) : AppThemeData.warning200.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: isOnline ? AppThemeData.success300 : AppThemeData.warning200),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: isOnline ? AppThemeData.success300 : AppThemeData.warning200,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        (isOnline ? "You are Online" : "You are Offline").tr,
-                        style: TextStyle(
-                          fontFamily: AppThemeData.semiBold,
-                          fontSize: 14,
-                          color: isOnline ? AppThemeData.success300 : AppThemeData.warning200,
+                        const SizedBox(width: 8),
+                        Text(
+                          (isOnline ? "You are Online" : "You are Offline").tr,
+                          style: TextStyle(
+                            fontFamily: AppThemeData.semiBold,
+                            fontSize: 14,
+                            color: isOnline ? AppThemeData.success300 : AppThemeData.warning200,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  Switch(
-                    value: isOnline,
-                    activeThumbColor: AppThemeData.success300,
-                    inactiveTrackColor: AppThemeData.warning200.withValues(alpha: 0.4),
-                    onChanged: (value) => _toggleOnline(controller, value),
-                  ),
-                ],
+                      ],
+                    ),
+                    Switch(
+                      value: isOnline,
+                      activeThumbColor: AppThemeData.success300,
+                      inactiveTrackColor: AppThemeData.warning200.withValues(alpha: 0.4),
+                      onChanged: (value) => _toggleOnline(controller, value),
+                    ),
+                  ],
+                ),
               ),
-            ),
-
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
+            ],
 
             // 2x2 stat grid
             Row(
@@ -182,7 +186,10 @@ class _DashboardStatusSectionState extends State<DashboardStatusSection> {
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: InkWell(
-                  onTap: () => Get.to(() => TaxiDashBoard(), transition: Transition.rightToLeftWithFade),
+                  onTap: () {
+                    if (!Preferences.getBoolean(Preferences.isLogin)) return;
+                    Get.to(() => const MyBookingScreen(), transition: Transition.rightToLeftWithFade);
+                  },
                   child: Row(
                     children: [
                       Container(

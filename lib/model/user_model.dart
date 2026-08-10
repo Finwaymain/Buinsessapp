@@ -1,6 +1,16 @@
 import 'package:cabme_driver/model/settings_model.dart';
 import 'package:cabme_driver/model/subscription_plan_model.dart';
 
+bool? parseProfileBool(dynamic value) {
+  if (value == null) return null;
+  if (value is bool) return value;
+  if (value is num) return value != 0;
+  final normalized = value.toString().toLowerCase().trim();
+  if (normalized == 'true' || normalized == '1' || normalized == 'yes') return true;
+  if (normalized == 'false' || normalized == '0' || normalized == 'no') return false;
+  return null;
+}
+
 class UserModel {
   String? success;
   String? error;
@@ -118,6 +128,7 @@ class UserData {
   List<String>? selectedCategories;
   String? onboardingCompleted; // 'yes' or 'no' — set by backend based on tj_conducteur_categories
   bool? isTransportCategory; // false = driver's selected categories are all non-vehicle (e.g. home services)
+  bool? isHomeServiceProvider; // true = painter, plumber, electrician, etc.
   String? alternatePhone;
   String? marketplaceEnabled;
 
@@ -211,6 +222,7 @@ class UserData {
     this.selectedCategories,
     this.onboardingCompleted,
     this.isTransportCategory,
+    this.isHomeServiceProvider,
     this.alternatePhone,
     this.marketplaceEnabled,
   });
@@ -310,7 +322,8 @@ class UserData {
       selectedCategories = List<String>.from(json['selected_categories'].map((x) => x.toString()));
     }
     onboardingCompleted = json['onboarding_completed']?.toString();
-    isTransportCategory = json['is_transport_category'] as bool?;
+    isTransportCategory = parseProfileBool(json['is_transport_category']);
+    isHomeServiceProvider = parseProfileBool(json['is_home_service_provider']);
     alternatePhone = json['alternate_phone']?.toString();
     marketplaceEnabled = json['marketplace_enabled']?.toString();
   }
@@ -412,6 +425,7 @@ class UserData {
     }
     data['onboarding_completed'] = onboardingCompleted;
     data['is_transport_category'] = isTransportCategory;
+    data['is_home_service_provider'] = isHomeServiceProvider;
     data['alternate_phone'] = alternatePhone;
     data['marketplace_enabled'] = marketplaceEnabled;
     return data;
