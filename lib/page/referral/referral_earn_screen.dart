@@ -4,11 +4,12 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import '../../../constant/constant.dart';
 import '../../../service/api.dart';
 import '../../../themes/constant_colors.dart';
 import '../../../utils/Preferences.dart';
 import '../../../utils/dark_theme_provider.dart';
-import 'referral_history_screen.dart';
+import 'partner_webview_screen.dart';
 
 class ReferralEarnScreen extends StatefulWidget {
   const ReferralEarnScreen({super.key});
@@ -34,7 +35,19 @@ class _ReferralEarnScreenState extends State<ReferralEarnScreen> {
 
   Future<void> _fetchReferralStats() async {
     try {
-      final driverId = Preferences.getString(Preferences.userId);
+      String driverId = Preferences.getString(Preferences.userId);
+      if (driverId.isEmpty) {
+        final intId = Preferences.getInt(Preferences.userId);
+        if (intId > 0) {
+          driverId = intId.toString();
+        }
+      }
+      if (driverId.isEmpty) {
+        final userObj = Constant.getUserData();
+        if (userObj.userData?.id != null) {
+          driverId = userObj.userData!.id.toString();
+        }
+      }
       final response = await http.get(
         Uri.parse('${API.referralStats}?driver_id=$driverId'),
         headers: API.header,
@@ -44,6 +57,10 @@ class _ReferralEarnScreenState extends State<ReferralEarnScreen> {
         final resData = json.decode(response.body);
         if (resData['success'] == 'success' && resData['data'] != null) {
           final data = resData['data'];
+          if (data['aadhar_number'] != null && (data['aadhar_number'].toString()).isNotEmpty) {
+            await Preferences.setString('user_aadhar_number', data['aadhar_number'].toString());
+            await Preferences.setString('driver_aadhar_number', data['aadhar_number'].toString());
+          }
           if (mounted) {
             setState(() {
               referralCode = data['referral_code'] ?? referralCode;
@@ -64,7 +81,11 @@ class _ReferralEarnScreenState extends State<ReferralEarnScreen> {
 
   void _openHistory() {
     Get.to(
-      () => const ReferralHistoryScreen(),
+      () => const PartnerWebViewScreen(
+        title: 'Referral History',
+        urlPath: 'referral-history',
+        userType: 'driver',
+      ),
       transition: Transition.rightToLeftWithFade,
     );
   }
@@ -97,7 +118,7 @@ class _ReferralEarnScreenState extends State<ReferralEarnScreen> {
           onPressed: () => Get.back(),
         ),
         title: Text(
-          'Refer & Earn'.tr,
+          'Partner Dashboard'.tr,
           style: TextStyle(
             color: isDark ? Colors.white : AppThemeData.grey900,
             fontFamily: AppThemeData.bold,
@@ -136,7 +157,7 @@ class _ReferralEarnScreenState extends State<ReferralEarnScreen> {
       style: TextStyle(
         fontSize: 16,
         fontFamily: AppThemeData.bold,
-        color: isDark ? AppThemeData.grey900Dark : const Color(0xFF0F172A),
+        color: isDark ? AppThemeData.grey900Dark : AppThemeData.primary200,
       ),
     );
   }
@@ -172,7 +193,7 @@ class _ReferralEarnScreenState extends State<ReferralEarnScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Refer & Earn'.tr,
+                  'Partner Program'.tr,
                   style: const TextStyle(
                     fontSize: 22,
                     fontFamily: AppThemeData.bold,
