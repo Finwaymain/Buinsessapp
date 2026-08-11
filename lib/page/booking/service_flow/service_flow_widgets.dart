@@ -102,6 +102,10 @@ class CustomerHeaderCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(booking.customerName, style: const TextStyle(fontFamily: AppThemeData.bold, fontSize: 16)),
+                if (booking.customerPhone.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(booking.customerPhone, style: TextStyle(fontSize: 13, color: AppThemeData.grey500, fontFamily: AppThemeData.medium)),
+                ],
                 const SizedBox(height: 4),
                 Row(
                   children: [

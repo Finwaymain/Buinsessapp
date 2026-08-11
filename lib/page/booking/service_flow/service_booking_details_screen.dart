@@ -1,4 +1,5 @@
 import 'package:cabme_driver/constant/constant.dart';
+import 'package:cabme_driver/controller/my_booking_controller.dart';
 import 'package:cabme_driver/controller/service_booking_flow_controller.dart';
 import 'package:cabme_driver/page/booking/service_flow/service_booking_flow.dart';
 import 'package:cabme_driver/page/booking/service_flow/service_flow_widgets.dart';
@@ -22,9 +23,13 @@ class ServiceBookingDetailsScreen extends StatelessWidget {
       final items = flow.serviceItems.toList();
       return ServiceFlowScaffold(
         title: 'Booking Details'.tr,
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
+        body: RefreshIndicator(
+          color: AppThemeData.primary200,
+          onRefresh: () => flow.refreshCurrent(),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16),
+            child: Column(
             children: [
               ServiceFlowCard(
                 child: Row(
@@ -127,20 +132,74 @@ class ServiceBookingDetailsScreen extends StatelessWidget {
             ],
           ),
         ),
+        ),
         bottomBar: SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: FlowPrimaryButton(
-              label: 'Start Navigation'.tr,
-              icon: Icons.navigation_rounded,
-              onPressed: () async {
-                await flow.openNavigation();
-                Get.to(() => ServiceReachedLocationScreen(tag: tag));
-              },
+            child: Row(
+              children: [
+                Expanded(
+                  child: FlowPrimaryButton(
+                    label: 'Cancel Job'.tr,
+                    outlined: true,
+                    color: AppThemeData.error200,
+                    icon: Icons.cancel_outlined,
+                    onPressed: () => _confirmCancelBooking(context, flow, tag),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FlowPrimaryButton(
+                    label: 'Start Navigation'.tr,
+                    icon: Icons.navigation_rounded,
+                    onPressed: () async {
+                      await flow.openNavigation();
+                      Get.to(() => ServiceReachedLocationScreen(tag: tag));
+                    },
+                  ),
+                ),
+              ],
             ),
           ),
         ),
       );
     });
+  }
+
+  void _confirmCancelBooking(BuildContext context, ServiceBookingFlowController flow, String tag) {
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Cancel Booking?'.tr, style: const TextStyle(fontSize: 16)),
+        content: Text('Are you sure you want to cancel this booking? It will be released back to other experts.'.tr),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text('No, Keep'.tr),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppThemeData.error200,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () async {
+              Get.back();
+              final ok = await flow.cancelBooking();
+              if (ok) {
+                closeServiceFlow(tag);
+                if (Get.isRegistered<MyBookingController>()) {
+                  final ctrl = Get.find<MyBookingController>();
+                  ctrl.markLocallyRejected(flow.booking.id);
+                  ctrl.fetchBookings(showLoader: false);
+                }
+                Get.back();
+              }
+            },
+            child: Text('Yes, Cancel'.tr),
+          ),
+        ],
+      ),
+    );
   }
 }

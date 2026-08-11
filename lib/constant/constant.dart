@@ -189,6 +189,23 @@ class Constant {
     }
   }
 
+  String amountShowWithoutSymbol({required String? amount}) {
+    String amountdata = (amount == 'null' || amount == '' || amount == null || amount == '0') ? '0' : amount;
+    amountdata = amountdata.replaceAll(RegExp(r'[^0-9.]'), '');
+    if (amountdata.isEmpty || amountdata == '0') {
+      return "0.00";
+    }
+    double? val = double.tryParse(amountdata);
+    if (val == null) return amountdata;
+    int decimal = 2;
+    try {
+      if (Constant.decimal != null) {
+        decimal = int.parse(Constant.decimal!);
+      }
+    } catch (_) {}
+    return val.toStringAsFixed(decimal);
+  }
+
   static Widget loader(context, {required bool isDarkMode, Color? loadingcolor, Color? bgColor}) {
     return Center(
       child: Container(
@@ -205,11 +222,21 @@ class Constant {
   }
 
   static Future<void> makePhoneCall(String phoneNumber) async {
-    final Uri launchUri = Uri(
-      scheme: 'tel',
-      path: phoneNumber,
-    );
-    await launchUrl(launchUri);
+    final cleanPhone = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
+    if (cleanPhone.isEmpty) {
+      ShowToastDialog.showToast("Phone number not available");
+      return;
+    }
+    final Uri launchUri = Uri(scheme: 'tel', path: cleanPhone);
+    try {
+      if (await canLaunchUrl(launchUri)) {
+        await launchUrl(launchUri, mode: LaunchMode.externalApplication);
+      } else {
+        await launchUrl(launchUri);
+      }
+    } catch (e) {
+      ShowToastDialog.showToast("Could not launch phone dialer");
+    }
   }
 
   static Future<void> launchMapURl(String? latitude, String? longLatitude) async {

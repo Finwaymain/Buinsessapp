@@ -93,6 +93,23 @@ class DriverBookingItem {
     this.serviceItems = const [],
   });
 
+  factory DriverBookingItem.empty(String id) {
+    return DriverBookingItem(
+      id: id,
+      type: 'service',
+      title: 'Service Booking',
+      subtitle: '',
+      status: 'rejected',
+      statusGroup: 'history',
+      customerName: 'Customer',
+      customerPhone: '',
+      amount: 0,
+      date: '',
+      pickup: '',
+      drop: '',
+    );
+  }
+
   factory DriverBookingItem.fromJson(Map<String, dynamic> json) {
     final desc = json['description']?.toString() ?? '';
     final items = <ServiceLineItem>[];
@@ -108,6 +125,36 @@ class DriverBookingItem {
       items.addAll(_parseServiceItemsFromName(json['service_name']?.toString() ?? json['title']?.toString() ?? ''));
     }
 
+    final customerObj = json['customer'] is Map ? Map<String, dynamic>.from(json['customer']) : null;
+    final userObj = json['user'] is Map ? Map<String, dynamic>.from(json['user']) : null;
+
+    var customerName = json['customer_name']?.toString() ??
+        customerObj?['name']?.toString() ??
+        userObj?['name']?.toString() ??
+        '';
+
+    if (customerName.trim().isEmpty || customerName.trim() == 'Customer') {
+      final prenom = json['prenom']?.toString() ?? customerObj?['prenom']?.toString() ?? userObj?['prenom']?.toString() ?? '';
+      final nom = json['nom']?.toString() ?? customerObj?['nom']?.toString() ?? userObj?['nom']?.toString() ?? '';
+      final full = '$prenom $nom'.trim();
+      if (full.isNotEmpty) {
+        customerName = full;
+      }
+    }
+    if (customerName.trim().isEmpty) {
+      customerName = 'Customer';
+    }
+
+    var customerPhone = json['customer_phone']?.toString() ??
+        json['phone']?.toString() ??
+        json['user_phone']?.toString() ??
+        json['phone_number']?.toString() ??
+        customerObj?['phone']?.toString() ??
+        userObj?['phone']?.toString() ??
+        '';
+    customerPhone = customerPhone.trim();
+    if (customerPhone == 'null') customerPhone = '';
+
     return DriverBookingItem(
       id: json['id']?.toString() ?? '',
       type: json['type']?.toString() ?? 'service',
@@ -115,9 +162,9 @@ class DriverBookingItem {
       subtitle: json['subtitle']?.toString() ?? '',
       status: json['status']?.toString() ?? '',
       statusGroup: json['status_group']?.toString() ?? 'incoming',
-      customerName: json['customer_name']?.toString() ?? 'Customer',
-      customerPhone: json['customer_phone']?.toString() ?? '',
-      customerPhoto: json['customer_photo']?.toString() ?? '',
+      customerName: customerName,
+      customerPhone: customerPhone,
+      customerPhoto: json['customer_photo']?.toString() ?? customerObj?['photo']?.toString() ?? userObj?['photo']?.toString() ?? '',
       customerRating: double.tryParse(json['customer_rating']?.toString() ?? '4.7') ?? 4.7,
       reviewCount: int.tryParse(json['review_count']?.toString() ?? '0') ?? 0,
       amount: double.tryParse(json['amount']?.toString() ?? '0') ?? 0,

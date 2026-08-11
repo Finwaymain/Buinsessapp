@@ -116,10 +116,14 @@ class _ServiceActiveJobScreenState extends State<ServiceActiveJobScreen> {
               ),
             ),
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
+              child: RefreshIndicator(
+                color: AppThemeData.primary200,
+                onRefresh: () => flow.refreshCurrent(),
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
                     ServiceFlowCard(child: CustomerHeaderCard(booking: booking, onCall: flow.callCustomer)),
                     ServiceFlowCard(
                       child: Column(
@@ -247,6 +251,7 @@ class _ServiceActiveJobScreenState extends State<ServiceActiveJobScreen> {
                   ],
                 ),
               ),
+            ),
             ),
           ],
         ),
