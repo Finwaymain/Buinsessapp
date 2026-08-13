@@ -6,9 +6,10 @@ import 'package:cabme_driver/controller/all_services_controller.dart';
 import 'package:cabme_driver/model/service_category_model.dart';
 import 'package:cabme_driver/themes/constant_colors.dart';
 import 'package:cabme_driver/utils/dark_theme_provider.dart';
+import 'service_category_icon.dart';
 import 'service_category_tile.dart';
 import 'service_flow.dart';
-import 'service_style.dart';
+import 'service_style.dart'; 
 
 const Map<String, String> _kSubtitles = {
   'Home Services': 'Everyday help for your home',
@@ -53,7 +54,7 @@ class _ServiceCategoryDetailScreenState extends State<ServiceCategoryDetailScree
     crossAxisCount: 4,
     mainAxisSpacing: 12,
     crossAxisSpacing: 10,
-    childAspectRatio: 0.78,
+    childAspectRatio: 0.82,
   );
 
   @override
@@ -92,45 +93,64 @@ class _ServiceCategoryDetailScreenState extends State<ServiceCategoryDetailScree
         iconTheme: IconThemeData(color: isDarkMode ? AppThemeData.grey900Dark : Colors.black),
         title: Text(
           cleanName.tr,
-          style: TextStyle(fontFamily: AppThemeData.bold, fontSize: 18, color: isDarkMode ? AppThemeData.grey900Dark : Colors.black),
+          style: TextStyle(fontFamily: AppThemeData.bold, fontSize: 17, color: isDarkMode ? AppThemeData.grey900Dark : Colors.black),
         ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: style.bg, borderRadius: BorderRadius.circular(18)),
+              child: Row(
                 children: [
-                  Text(
-                    (_kSubtitles[cleanName] ?? "Available Services").tr,
-                    style: TextStyle(fontFamily: AppThemeData.semiBold, fontSize: 14, color: isDarkMode ? AppThemeData.grey900Dark : AppThemeData.grey900),
-                  ),
-                  const SizedBox(height: 12),
-                  _children.isEmpty
-                      ? Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 40),
-                          child: Center(child: Text("No sub-services found".tr, style: TextStyle(color: AppThemeData.grey500))),
-                        )
-                      : GridView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _children.length,
-                          gridDelegate: _gridDelegate,
-                          itemBuilder: (context, index) {
-                            final child = _children[index];
-                            return ServiceCategoryTile(
-                              label: child.libelle,
-                              imageUrl: child.image,
-                              isDarkMode: isDarkMode,
-                              parentStyle: style,
-                              onTap: () => _onTapChild(child),
-                            );
-                          },
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(cleanName.tr, style: TextStyle(fontFamily: 'Switzer-Bold', fontSize: 19, color: style.color)),
+                        const SizedBox(height: 6),
+                        Text(
+                          (_kSubtitles[cleanName] ?? 'Book trusted professionals for your needs').tr,
+                          style: TextStyle(fontFamily: AppThemeData.regular, fontSize: 12.5, color: isDarkMode ? AppThemeData.grey500Dark : AppThemeData.grey500),
                         ),
+                      ],
+                    ),
+                  ),
+                  ServiceCategoryIcon(label: cleanName, size: 60, parentStyle: style),
                 ],
               ),
             ),
+            const SizedBox(height: 16),
+            if (_isLoading)
+              const Center(child: Padding(padding: EdgeInsets.all(30), child: CircularProgressIndicator()))
+            else if (_children.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 30),
+                child: Text("No services available yet".tr, style: TextStyle(color: AppThemeData.grey500)),
+              )
+            else
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _children.length,
+                gridDelegate: _gridDelegate,
+                itemBuilder: (context, index) {
+                  final child = _children[index];
+                  return ServiceCategoryTile(
+                    label: child.libelle,
+                    imageUrl: child.image,
+                    isDarkMode: isDarkMode,
+                    parentStyle: style,
+                    onTap: () => _onTapChild(child),
+                  );
+                },
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

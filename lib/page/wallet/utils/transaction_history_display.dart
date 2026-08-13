@@ -1,5 +1,4 @@
 import 'package:cabme_driver/model/transaction_history_model.dart';
-import 'package:cabme_driver/themes/constant_colors.dart';
 import 'package:flutter/material.dart';
 
 class TransactionHistoryDisplay {
@@ -143,6 +142,8 @@ class TransactionHistoryDisplay {
         return Icons.school_rounded;
       case 'home_service':
         return Icons.home_repair_service_rounded;
+      case 'commission':
+        return Icons.admin_panel_settings_rounded;
       case 'subscription':
         return Icons.workspace_premium_rounded;
       case 'topup':
@@ -173,6 +174,8 @@ class TransactionHistoryDisplay {
         return const Color(0xFFD97706);
       case 'home_service':
         return const Color(0xFF059669);
+      case 'commission':
+        return const Color(0xFFDC2626);
       case 'subscription':
         return const Color(0xFFD97706);
       case 'topup':
@@ -203,6 +206,8 @@ class TransactionHistoryDisplay {
         return const Color(0xFFFEF3C7);
       case 'home_service':
         return const Color(0xFFD1FAE5);
+      case 'commission':
+        return const Color(0xFFFEE2E2);
       case 'subscription':
         return const Color(0xFFFEF9C3);
       case 'topup':

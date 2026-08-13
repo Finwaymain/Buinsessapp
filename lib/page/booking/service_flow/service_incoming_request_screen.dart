@@ -1,7 +1,8 @@
 import 'package:cabme_driver/constant/constant.dart';
-import 'package:cabme_driver/controller/service_booking_flow_controller.dart';
+import 'package:cabme_driver/controller/my_booking_controller.dart';
 import 'package:cabme_driver/page/booking/service_flow/service_booking_flow.dart';
 import 'package:cabme_driver/page/booking/service_flow/service_flow_widgets.dart';
+import 'package:cabme_driver/page/MainDashBoard/screen/main_dashboard.dart';
 import 'package:cabme_driver/themes/constant_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -87,8 +88,25 @@ class ServiceIncomingRequestScreen extends StatelessWidget {
                     color: AppThemeData.error200,
                     icon: Icons.close_rounded,
                     onPressed: () async {
-                      final ok = await flow.rejectBooking();
-                      if (ok) Get.back();
+                      try {
+                        await flow.rejectBooking();
+                      } catch (e) {
+                        debugPrint('Error rejecting booking: $e');
+                      } finally {
+                        closeServiceFlow(tag);
+                        if (Get.isRegistered<MyBookingController>()) {
+                          final ctrl = Get.find<MyBookingController>();
+                          // Mark as locally rejected BEFORE any poll can re-add it
+                          ctrl.markLocallyRejected(booking.id);
+                          ctrl.bookings.removeWhere((e) => e.id == booking.id);
+                          ctrl.fetchBookings(showLoader: false);
+                        }
+                        if (Get.context != null && Navigator.canPop(Get.context!)) {
+                          Get.back();
+                        } else {
+                          Get.offAll(() => const MainDashboard());
+                        }
+                      }
                     },
                   ),
                 ),

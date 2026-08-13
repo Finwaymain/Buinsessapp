@@ -2,7 +2,7 @@ import 'package:cabme_driver/constant/constant.dart';
 import 'package:cabme_driver/utils/Preferences.dart';
 
 class OnboardingUrl {
-  static const String baseHost = 'https://fiinway.online';
+  static const String baseHost = 'https://api.fiinway.com';
 
   static String accessToken() {
     final fromPrefs = Preferences.getString(Preferences.accesstoken);

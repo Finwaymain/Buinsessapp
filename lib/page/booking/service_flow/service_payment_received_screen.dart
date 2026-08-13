@@ -1,4 +1,5 @@
 import 'package:cabme_driver/constant/constant.dart';
+import 'package:cabme_driver/constant/show_toast_dialog.dart';
 import 'package:cabme_driver/controller/service_booking_flow_controller.dart';
 import 'package:cabme_driver/page/booking/my_booking_screen.dart';
 import 'package:cabme_driver/page/booking/service_flow/service_booking_flow.dart';
@@ -45,12 +46,16 @@ class ServicePaymentReceivedScreen extends StatelessWidget {
             const SizedBox(height: 12),
             ServiceFlowCard(
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _row('Service Charge'.tr, flow.labourTotal),
+                  Text('Bill Breakdown'.tr, style: const TextStyle(fontFamily: AppThemeData.semiBold, fontSize: 14)),
+                  const SizedBox(height: 10),
+                  if (flow.itemizedBillItems.isNotEmpty)
+                    ...flow.itemizedBillItems.map((item) => _row(item.name, item.price))
+                  else
+                    _row('Service Charge'.tr, flow.labourTotal),
                   if (flow.visitingCharge.value > 0) _row('Visiting Charge'.tr, flow.visitingCharge.value),
                   if (flow.materialCost.value > 0) _row('Material Cost'.tr, flow.materialCost.value),
-                  _row('Sub Total'.tr, flow.billSubtotal),
-                  if (flow.platformFee > 0) _row('Platform Fee'.tr, -flow.platformFee),
                   const Divider(height: 20),
                   _row('Total Amount'.tr, flow.billTotal, bold: true, color: AppThemeData.success300),
                 ],
@@ -87,25 +92,40 @@ class ServicePaymentReceivedScreen extends StatelessWidget {
       bottomBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              FlowPrimaryButton(
-                label: 'Download Invoice'.tr,
-                outlined: true,
-                icon: Icons.download_rounded,
-                onPressed: () => Get.snackbar('Invoice'.tr, 'Invoice download coming soon'.tr),
-              ),
-              const SizedBox(height: 10),
-              FlowPrimaryButton(
-                label: 'Back to Bookings'.tr,
-                onPressed: () {
-                  Get.delete<ServiceBookingFlowController>(tag: tag);
-                  Get.off(() => const MyBookingScreen());
-                },
-              ),
-            ],
-          ),
+          child: Obx(() {
+            final isCompleted = flow.currentBooking.value.isCompleted;
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FlowPrimaryButton(
+                  label: 'Download Invoice'.tr,
+                  outlined: true,
+                  icon: Icons.download_rounded,
+                  onPressed: () => Get.snackbar('Invoice'.tr, 'Invoice download coming soon'.tr),
+                ),
+                const SizedBox(height: 10),
+                FlowPrimaryButton(
+                  label: isCompleted ? 'Back to Bookings'.tr : 'Complete Job'.tr,
+                  color: isCompleted ? AppThemeData.primary200 : AppThemeData.success300,
+                  onPressed: () async {
+                    if (isCompleted) {
+                      Get.delete<ServiceBookingFlowController>(tag: tag);
+                      Get.off(() => const MyBookingScreen());
+                    } else {
+                      ShowToastDialog.showLoader('Please wait'.tr);
+                      final ok = await flow.completeJob();
+                      ShowToastDialog.closeLoader();
+                      if (ok) {
+                        Get.delete<ServiceBookingFlowController>(tag: tag);
+                        Get.off(() => const MyBookingScreen());
+                        Get.snackbar('Completed'.tr, 'Service marked as completed.'.tr);
+                      }
+                    }
+                  },
+                ),
+              ],
+            );
+          }),
         ),
       ),
     );

@@ -188,7 +188,12 @@ class _DashboardStatusSectionState extends State<DashboardStatusSection> {
                 child: InkWell(
                   onTap: () {
                     if (!Preferences.getBoolean(Preferences.isLogin)) return;
-                    Get.to(() => const MyBookingScreen(), transition: Transition.rightToLeftWithFade);
+                    final userData = controller.userModel.value.userData;
+                    if (shouldShowOnlineStatus(userData)) {
+                      Get.to(() => TaxiDashBoard(), transition: Transition.rightToLeftWithFade);
+                    } else {
+                      Get.to(() => const MyBookingScreen(), transition: Transition.rightToLeftWithFade);
+                    }
                   },
                   child: Row(
                     children: [

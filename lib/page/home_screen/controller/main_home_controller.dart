@@ -9,7 +9,10 @@ import '../../features/SmartValue/ScanAndTransfer/view/scanner_and_transfer_scre
 import '../../features/SmartValue/Payout/view/payout_screen.dart';
 import '../../features/rewards_screen.dart';
 import '../../history/transaction_service_history_screen.dart';
+import '../../features/SmartValue/MyQR/view/my_qr_view.dart';
+import '../../wallet/wallet_screen.dart';
 import '../../referral/referral_earn_screen.dart';
+import '../../referral/submit_aadhar_screen.dart';
 import '../../subscription_plan_screen/business_premium_plan_screen.dart';
 import '../../in_progress_screen.dart';
 import '../view/home_screen.dart';
@@ -20,47 +23,59 @@ class MainHomeController extends GetxController
   late List<AnimationController> controllers;
   late List<Animation<Offset>> slideAnimations;
 
-  final featureCards = [
-    {
-      "routeName": "/history",
-      "icon": Icons.history_rounded,
-      "title": "History & Invoices",
-      "status": 1,
-    },
-    {
-      "routeName": "/referral",
-      "icon": Icons.card_giftcard,
-      "title": "Refer & Earn",
-      "status": 1,
-    },
-    {
-      "routeName": "/premium",
-      "icon": Icons.workspace_premium,
-      "title": "Business Plan",
-      "status": 1,
-    },
-  ];
+  bool get hasAadhar =>
+      (Preferences.getString('user_aadhar_number') ??
+              Preferences.getString('driver_aadhar_number') ??
+              '')
+          .isNotEmpty;
 
-  final serviceCards = [
-    {
-      "routeName": "/travelTransport",
-      "title": "Travel & Transport",
-      "subtitle": "Book cabs, view requests, and track active rides",
-      "status": 1,
-    },
-    {
-      "routeName": "/referralProgram",
-      "title": "Refer & Earn Program",
-      "subtitle": "Share link & earn lifetime cashback on bookings",
-      "status": 1,
-    },
-    {
-      "routeName": "/smartValue",
-      "title": "Smart Value & QR",
-      "subtitle": "Scan QR & transfer Smart Value money instantly",
-      "status": 1,
-    },
-  ];
+  List<Map<String, dynamic>> get featureCards {
+    return [
+      {
+        "routeName": "/history",
+        "icon": Icons.history_rounded,
+        "title": "History & Invoices",
+        "status": 1,
+      },
+      {
+        "routeName": "/referral",
+        "icon": Icons.card_giftcard,
+        "title": hasAadhar ? "Partner Dashboard" : "Join as a Partner",
+        "status": 1,
+      },
+      {
+        "routeName": "/premium",
+        "icon": Icons.workspace_premium,
+        "title": "Business Plan",
+        "status": 1,
+      },
+    ];
+  }
+
+  List<Map<String, dynamic>> get serviceCards {
+    return [
+      {
+        "routeName": "/travelTransport",
+        "title": "Travel & Transport",
+        "subtitle": "Book cabs, view requests, and track active rides",
+        "status": 1,
+      },
+      {
+        "routeName": "/referralProgram",
+        "title": hasAadhar ? "Partner Dashboard" : "Join as a Partner",
+        "subtitle": hasAadhar
+            ? "Manage team, track stats & earn lifetime cashback"
+            : "Submit Aadhaar to become a partner & earn rewards",
+        "status": 1,
+      },
+      {
+        "routeName": "/smartValue",
+        "title": "Smart Value & QR",
+        "subtitle": "Scan QR & transfer Smart Value money instantly",
+        "status": 1,
+      },
+    ];
+  }
 
   bool _isDisposed = false;
 
@@ -110,9 +125,13 @@ class MainHomeController extends GetxController
       Get.to(() => PhoneEntryScreen(mode: 'signup'),
           transition: Transition.rightToLeftWithFade);
     } else if (routeName == '/history') {
-      Get.to(() => const TransactionServiceHistoryScreen(), transition: Transition.rightToLeftWithFade);
+      Get.to(() => WalletScreen(initialIndex: 1), transition: Transition.rightToLeftWithFade);
     } else if (routeName == '/referral') {
-      Get.to(() => const ReferralEarnScreen(), transition: Transition.rightToLeftWithFade);
+      if (hasAadhar) {
+        Get.to(() => const ReferralEarnScreen(), transition: Transition.rightToLeftWithFade);
+      } else {
+        Get.to(() => const SubmitAadharScreen(), transition: Transition.rightToLeftWithFade);
+      }
     } else if (routeName == '/premium') {
       Get.to(() => const BusinessPremiumPlanScreen(), transition: Transition.rightToLeftWithFade);
     } else {
@@ -146,11 +165,13 @@ class MainHomeController extends GetxController
       Get.to(() => PhoneEntryScreen(mode: 'signup'),
           transition: Transition.rightToLeftWithFade);
     } else if (routeName == '/smartValue') {
-      final finalUrl = OnboardingUrl.build('/onboarding/smartvalue');
-      Get.to(() => WebViewScreen(url: finalUrl, title: 'Smart Value'),
-          transition: Transition.rightToLeftWithFade);
+      Get.to(() => MyQRScreen(), transition: Transition.rightToLeftWithFade);
     } else if (routeName == '/referralProgram') {
-      Get.to(() => const ReferralEarnScreen(), transition: Transition.rightToLeftWithFade);
+      if (hasAadhar) {
+        Get.to(() => const ReferralEarnScreen(), transition: Transition.rightToLeftWithFade);
+      } else {
+        Get.to(() => const SubmitAadharScreen(), transition: Transition.rightToLeftWithFade);
+      }
     } else if (index == 0) {
       Get.to(() => TaxiDashBoard(), transition: Transition.rightToLeftWithFade);
     } else {

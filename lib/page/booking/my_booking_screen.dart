@@ -1,9 +1,11 @@
+import 'dart:ui';
 import 'package:cabme_driver/page/booking/service_flow/service_booking_flow.dart';
 import 'package:cabme_driver/constant/constant.dart';
 import 'package:cabme_driver/controller/my_booking_controller.dart';
 import 'package:cabme_driver/model/driver_booking_model.dart';
 import 'package:cabme_driver/page/features/Taxi/taxi_dashboard/taxi_dashboard.dart';
 import 'package:cabme_driver/page/parcel_service/parcel_console_screen.dart';
+import 'package:cabme_driver/page/wallet/wallet_screen.dart';
 import 'package:cabme_driver/page/web_view_screen/web_view_screen.dart';
 import 'package:cabme_driver/themes/constant_colors.dart';
 import 'package:cabme_driver/utils/dark_theme_provider.dart';
@@ -12,17 +14,36 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
-class MyBookingScreen extends StatelessWidget {
-  const MyBookingScreen({super.key});
+class MyBookingScreen extends StatefulWidget {
+  final int initialTab;
+  const MyBookingScreen({super.key, this.initialTab = -1});
+
+  @override
+  State<MyBookingScreen> createState() => _MyBookingScreenState();
+}
+
+class _MyBookingScreenState extends State<MyBookingScreen> {
+  late final MyBookingController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.isRegistered<MyBookingController>()
+        ? Get.find<MyBookingController>()
+        : Get.put(MyBookingController());
+
+    if (widget.initialTab >= 0) {
+      controller.selectedTab.value = widget.initialTab;
+      controller.fetchBookings(showLoader: true);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Provider.of<DarkThemeProvider>(context).getThem();
 
-    return GetX<MyBookingController>(
-      init: MyBookingController(),
-      builder: (controller) {
-        return Scaffold(
+    return Obx(() {
+      return Scaffold(
           backgroundColor: isDark ? AppThemeData.grey50Dark : AppThemeData.grey50,
           appBar: AppBar(
             elevation: 0,
@@ -110,9 +131,13 @@ class MyBookingScreen extends StatelessWidget {
                                 separatorBuilder: (_, __) => const SizedBox(height: 10),
                                 itemBuilder: (context, index) {
                                   final item = controller.bookings[index];
+                                  // Only block incoming bookings when driver has debt
+                                  final isBlocked = item.isIncoming && controller.hasDebt.value;
                                   return _BookingCard(
                                     item: item,
                                     isDark: isDark,
+                                    isBlocked: isBlocked,
+                                    debtAmount: controller.debtAmount.value,
                                     onTap: () => _onTapBooking(item, controller),
                                   );
                                 },
@@ -122,8 +147,7 @@ class MyBookingScreen extends StatelessWidget {
             ],
           ),
         );
-      },
-    );
+      });
   }
 
   Widget _buildTabs(MyBookingController controller, bool isDark) {
@@ -185,6 +209,14 @@ class MyBookingScreen extends StatelessWidget {
   }
 
   void _onTapBooking(DriverBookingItem item, MyBookingController controller) {
+    if (controller.selectedTab.value == 2 || item.isCompleted) {
+      return; // Do nothing for history tab items — cards are unclickable
+    }
+    // Block incoming bookings if driver has wallet debt
+    if (item.isIncoming && controller.hasDebt.value) {
+      _showDebtDialog(controller.debtAmount.value);
+      return;
+    }
     if (item.isRide) {
       Get.to(() => TaxiDashBoard(), transition: Transition.rightToLeftWithFade);
       return;
@@ -196,12 +228,42 @@ class MyBookingScreen extends StatelessWidget {
     openServiceBookingFlow(item, controller);
   }
 
-  Color _statusColorFor(String status) {
-    final s = status.toLowerCase();
-    if (s.contains('complete')) return AppThemeData.success300;
-    if (s.contains('reject') || s.contains('cancel')) return AppThemeData.error200;
-    if (s.contains('pending') || s == 'new') return const Color(0xFFF59E0B);
-    return AppThemeData.primary200;
+  void _showDebtDialog(double amount) {
+    final amountStr = Constant().amountShow(amount: amount.toStringAsFixed(2));
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.account_balance_wallet_rounded, color: AppThemeData.error200),
+            const SizedBox(width: 8),
+            Text('Outstanding Balance'.tr, style: TextStyle(fontSize: 16)),
+          ],
+        ),
+        content: Text(
+          'You have an outstanding commission balance of $amountStr. Please top up your wallet to accept new bookings.'.tr,
+          style: const TextStyle(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text('Later'.tr),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppThemeData.primary200,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () {
+              Get.back();
+              Get.to(() => WalletScreen());
+            },
+            child: Text('Go to Wallet'.tr),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -210,11 +272,15 @@ class _BookingCard extends StatelessWidget {
     required this.item,
     required this.isDark,
     required this.onTap,
+    this.isBlocked = false,
+    this.debtAmount = 0,
   });
 
   final DriverBookingItem item;
   final bool isDark;
   final VoidCallback onTap;
+  final bool isBlocked;
+  final double debtAmount;
 
   Color get _typeColor {
     switch (item.type) {
@@ -248,11 +314,12 @@ class _BookingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
+    final isClickable = !item.isCompleted;
+    final card = Material(
       color: isDark ? AppThemeData.surface50Dark : Colors.white,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
-        onTap: onTap,
+        onTap: isClickable ? onTap : null,
         borderRadius: BorderRadius.circular(16),
         child: Container(
           padding: const EdgeInsets.all(14),
@@ -412,6 +479,52 @@ class _BookingCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+
+    if (!isBlocked) return card;
+
+    // Debt overlay: blur the card and show lock icon + message
+    return Stack(
+      children: [
+        card,
+        Positioned.fill(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+              child: GestureDetector(
+                onTap: onTap, // triggers _showDebtDialog via _onTapBooking
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.35),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppThemeData.error200.withValues(alpha: 0.6),
+                    ),
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.lock_rounded, color: Colors.white, size: 28),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Pay commission to accept'.tr,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

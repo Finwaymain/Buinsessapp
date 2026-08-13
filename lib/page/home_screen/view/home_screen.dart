@@ -7,6 +7,7 @@ import '../../../constant/show_toast_dialog.dart';
 import '../../../controller/dash_board_controller.dart';
 import '../../../utils/Preferences.dart';
 import '../../../utils/onboarding_url.dart';
+import '../../web_view_screen/web_view_screen.dart';
 import '../../auth_screens/phone_entry_screen.dart';
 import '../../../controller/new_ride_controller.dart';
 import '../../../controller/payStackURLModel.dart';
@@ -28,9 +29,11 @@ import '../../features/SmartValue/ScanAndTransfer/view/scanner_and_transfer_scre
 import '../../in_progress_screen.dart';
 import '../../parcel_service/parcel_console_screen.dart';
 import '../../booking/my_booking_screen.dart';
+import '../../contact_us/customer_support_screen.dart';
 import '../../features/SmartValue/AccountDetails/view/account_details.dart';
 import '../../features/SmartValue/AddPerson/view/add_user_screen.dart';
 import '../../referral/referral_earn_screen.dart';
+import '../../referral/submit_aadhar_screen.dart';
 import '../../wallet/mercadopago_screen.dart';
 import '../../wallet/midtrans_screen.dart';
 import '../../wallet/orangePayScreen.dart';
@@ -45,6 +48,8 @@ import '../../web_view_screen/web_view_screen.dart';
 import '../../features/AllServices/all_services_screen.dart';
 import '../../features/AllServices/service_history_screen.dart';
 import '../../marketplace/view/marketplace_home_screen.dart';
+import '../../../utils/onboarding_navigation.dart';
+import '../../../utils/driver_dashboard_route.dart';
 import '../controller/main_home_controller.dart';
 import '../widget/dashboard_status_section.dart';
 import '../widget/vertical_icon_with_text.dart';
@@ -280,13 +285,10 @@ class MainHomeScreen extends StatelessWidget {
                                               const SizedBox(width: 8),
                                               GestureDetector(
                                                 onTap: () {
-                                                  final finalUrl = OnboardingUrl.build(
-                                                    '/onboarding',
-                                                    extra: const {'mode': 'edit_category'},
+                                                  openDriverOnboardingEditor(
+                                                    mode: 'edit_profile',
+                                                    title: 'Edit Profile & Services'.tr,
                                                   );
-                                                  Get.to(() => WebViewScreen(url: finalUrl, title: 'Edit Categories'))?.then((value) {
-                                                    controller.getUsrData();
-                                                  });
                                                 },
                                                 child: Container(
                                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -418,7 +420,12 @@ class MainHomeScreen extends StatelessWidget {
                                     });
                                     return;
                                   }
-                                  Get.to(() => const MyBookingScreen(), transition: Transition.rightToLeftWithFade);
+                                  final userData = controller.userModel.value.userData;
+                                  if (shouldShowOnlineStatus(userData)) {
+                                    Get.to(() => TaxiDashBoard(), transition: Transition.rightToLeftWithFade);
+                                  } else {
+                                    Get.to(() => const MyBookingScreen(), transition: Transition.rightToLeftWithFade);
+                                  }
                                 },
                                 child: Container(
                                   width: double.infinity,
@@ -453,7 +460,9 @@ class MainHomeScreen extends StatelessWidget {
                                           shape: BoxShape.circle,
                                         ),
                                         child: Icon(
-                                          Icons.event_available_rounded,
+                                          shouldShowOnlineStatus(controller.userModel.value.userData)
+                                              ? Icons.directions_car_rounded
+                                              : Icons.event_available_rounded,
                                           color: AppThemeData.primary200,
                                           size: 32,
                                         ),
@@ -464,7 +473,9 @@ class MainHomeScreen extends StatelessWidget {
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              "My Booking".tr,
+                                              shouldShowOnlineStatus(controller.userModel.value.userData)
+                                                  ? "Ride Booking".tr
+                                                  : "My Booking".tr,
                                               style: TextStyle(
                                                 fontSize: 18,
                                                 fontFamily: AppThemeData.bold,
@@ -473,7 +484,9 @@ class MainHomeScreen extends StatelessWidget {
                                             ),
                                             const SizedBox(height: 4),
                                             Text(
-                                              "View incoming requests, active jobs, and booking history.".tr,
+                                              shouldShowOnlineStatus(controller.userModel.value.userData)
+                                                  ? "View incoming ride requests, interactive map, and online status.".tr
+                                                  : "View incoming requests, active jobs, and booking history.".tr,
                                               style: TextStyle(
                                                 fontSize: 12,
                                                 fontFamily: AppThemeData.regular,
@@ -674,6 +687,18 @@ class MainHomeScreen extends StatelessWidget {
                                       },
                                     ),
                                   VerticalIconWithText(
+                                    icon: Icons.share_location_outlined,
+                                    text: 'Shared Ride',
+                                    onTap: () {
+                                      if (!Preferences.getBoolean(Preferences.isLogin)) {
+                                        Get.to(() => PhoneEntryScreen(mode: 'signup'), transition: Transition.rightToLeftWithFade);
+                                        return;
+                                      }
+                                      Get.to(() => const InProgressScreen(),
+                                          transition: Transition.rightToLeftWithFade);
+                                    },
+                                  ),
+                                  VerticalIconWithText(
                                     icon: Icons.home_repair_service_outlined,
                                     text: 'Service History',
                                     onTap: () {
@@ -689,16 +714,29 @@ class MainHomeScreen extends StatelessWidget {
                                     icon: Icons.storefront_outlined,
                                     text: 'Marketplace',
                                     onTap: () {
-                                      if (!Preferences.getBoolean(Preferences.isLogin)) {
-                                        Get.to(() => PhoneEntryScreen(mode: 'signup'), transition: Transition.rightToLeftWithFade);
-                                        return;
-                                      }
-                                      bool isMarketplaceEnabled = (Constant.getUserData().userData?.marketplaceEnabled == '1');
-                                      if (!isMarketplaceEnabled) {
-                                        ShowToastDialog.showToast("Marketplace is disabled. Please enable it in your profile.".tr);
-                                        return;
-                                      }
-                                      Get.to(() => const MarketplaceHomeScreen(),
+                                      final url = OnboardingUrl.build('/onboarding/marketplace.html');
+                                      Get.to(
+                                        () => WebViewScreen(url: url, title: 'Marketplace'.tr),
+                                        transition: Transition.rightToLeftWithFade,
+                                      );
+                                    },
+                                  ),
+                                  VerticalIconWithText(
+                                    icon: Icons.fastfood_outlined,
+                                    text: 'Food Order',
+                                    onTap: () {
+                                      final url = OnboardingUrl.build('/onboarding/food.html');
+                                      Get.to(
+                                        () => WebViewScreen(url: url, title: 'Food Ordering'.tr),
+                                        transition: Transition.rightToLeftWithFade,
+                                      );
+                                    },
+                                  ),
+                                  VerticalIconWithText(
+                                    icon: Icons.headset_mic_outlined,
+                                    text: 'Support',
+                                    onTap: () {
+                                      Get.to(() => const CustomerSupportScreen(),
                                           transition: Transition.rightToLeftWithFade);
                                     },
                                   ),
@@ -785,12 +823,37 @@ class MainHomeScreen extends StatelessWidget {
                                 ),
                                 VerticalIconWithText(
                                   icon: Icons.group_add_outlined,
-                                  text: 'Refer & Earn',
+                                  text: (Preferences.getString('user_aadhar_number') ?? Preferences.getString('driver_aadhar_number') ?? '').isNotEmpty
+                                      ? 'Partner Dashboard'
+                                      : 'Join as a Partner',
                                   onTap: () {
                                     if (homeController.getLoginStatus(inProgress: false)) {
-                                      Get.to(() => const ReferralEarnScreen(),
-                                          transition: Transition.rightToLeftWithFade);
+                                      if ((Preferences.getString('user_aadhar_number') ?? Preferences.getString('driver_aadhar_number') ?? '').isNotEmpty) {
+                                        Get.to(() => const ReferralEarnScreen(),
+                                            transition: Transition.rightToLeftWithFade);
+                                      } else {
+                                        Get.to(() => const SubmitAadharScreen(),
+                                            transition: Transition.rightToLeftWithFade);
+                                      }
                                     }
+                                  },
+                                ),
+                              ],
+                            ),
+
+                            // Medical Cashback Section
+                            VerticalLineSection(
+                              text: "Medical Cashback",
+                              margin: const EdgeInsets.only(top: 25),
+                              cardChildren: [
+                                VerticalIconWithText(
+                                  icon: Icons.medical_services_outlined,
+                                  text: 'Medical Cards',
+                                  onTap: () {
+                                    if (!homeController.getLoginStatus(inProgress: false)) return;
+                                    final finalUrl = OnboardingUrl.build('/onboarding/medical-cashback');
+                                    Get.to(() => WebViewScreen(url: finalUrl, title: 'Medical Cashback'),
+                                        transition: Transition.rightToLeftWithFade);
                                   },
                                 ),
                               ],

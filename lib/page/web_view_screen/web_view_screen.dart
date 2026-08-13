@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:get/get.dart';
@@ -6,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:cabme_driver/utils/dark_theme_provider.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:geolocator/geolocator.dart';
 
 import 'package:cabme_driver/utils/Preferences.dart';
 import 'package:cabme_driver/page/auth_screens/phone_entry_screen.dart';
@@ -14,8 +16,15 @@ class WebViewScreen extends StatefulWidget {
   final String url;
   final String title;
   final bool showAppBar;
+  final void Function(Map<String, dynamic> data)? onBridgeAction;
 
-  const WebViewScreen({super.key, required this.url, required this.title, this.showAppBar = true});
+  const WebViewScreen({
+    super.key,
+    required this.url,
+    required this.title,
+    this.showAppBar = true,
+    this.onBridgeAction,
+  });
 
   @override
   State<WebViewScreen> createState() => _WebViewScreenState();
@@ -100,7 +109,15 @@ class _WebViewScreenState extends State<WebViewScreen> {
           print('WebView :: JavaScript Message :: ${message.message}');
           if (message.message == 'close') {
             Get.back();
+            return;
           }
+          try {
+            final data = jsonDecode(message.message);
+            if (widget.onBridgeAction != null && data is Map<String, dynamic>) {
+              data['_controller'] = controller;
+              widget.onBridgeAction!(data);
+            }
+          } catch (_) {}
         },
       )
       ..setNavigationDelegate(
@@ -120,10 +137,16 @@ class _WebViewScreenState extends State<WebViewScreen> {
           },
           onWebResourceError: (WebResourceError error) {
             print('WebView :: Error :: ${error.description} :: ${error.errorType}');
-            setState(() {
-              isLoading = false;
-              hasError = true;
-            });
+            if (error.isForMainFrame == true) {
+              final desc = error.description.toUpperCase();
+              if (desc.contains('ERR_ABORTED') || desc.contains('CANCELLED') || error.errorCode == -999) {
+                return;
+              }
+              setState(() {
+                isLoading = false;
+                hasError = true;
+              });
+            }
           },
           onNavigationRequest: (NavigationRequest request) {
             print('WebView :: Navigation Request :: ${request.url}');

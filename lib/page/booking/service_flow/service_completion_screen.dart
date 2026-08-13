@@ -5,9 +5,12 @@ import 'package:cabme_driver/controller/service_booking_flow_controller.dart';
 import 'package:cabme_driver/page/booking/my_booking_screen.dart';
 import 'package:cabme_driver/page/booking/service_flow/service_booking_flow.dart';
 import 'package:cabme_driver/page/booking/service_flow/service_flow_widgets.dart';
+import 'package:cabme_driver/page/booking/service_flow/service_payment_received_screen.dart';
 import 'package:cabme_driver/themes/constant_colors.dart';
+import 'package:cabme_driver/utils/Preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 class ServiceCompletionScreen extends StatefulWidget {
   final String tag;
@@ -36,8 +39,7 @@ class _ServiceCompletionScreenState extends State<ServiceCompletionScreen> {
     final booking = flow.currentBooking.value;
     if (!booking.isAwaitingPayment) return;
 
-    await flow.listController.fetchBookings();
-    final updated = flow.listController.bookings.firstWhereOrNull((e) => e.id == flow.booking.id);
+    final updated = await flow.listController.fetchSingleBooking(flow.booking.id);
     if (updated == null || !mounted) return;
 
     flow.currentBooking.value = updated;
@@ -46,6 +48,7 @@ class _ServiceCompletionScreenState extends State<ServiceCompletionScreen> {
     if (updated.isPaid) {
       _pollTimer?.cancel();
       Get.snackbar('Payment Received'.tr, 'You can now complete the job.'.tr);
+      Get.off(() => ServicePaymentReceivedScreen(tag: widget.tag));
     }
   }
 
@@ -62,7 +65,6 @@ class _ServiceCompletionScreenState extends State<ServiceCompletionScreen> {
 
     return Obx(() {
       final booking = flow.currentBooking.value;
-      final afterPhotos = flow.afterPhotos.toList();
       final materialCost = flow.materialCost.value;
       final awaitingPayment = booking.isAwaitingPayment;
       final isPaid = booking.isPaid;
@@ -96,13 +98,59 @@ class _ServiceCompletionScreenState extends State<ServiceCompletionScreen> {
                   ],
                 ),
               ),
+              if (awaitingPayment && !isPaid) ...[
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppThemeData.grey200),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        'Scan to Pay (Wallet)'.tr,
+                        style: TextStyle(
+                          fontFamily: AppThemeData.bold,
+                          fontSize: 15,
+                          color: Colors.black,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Show this QR code to the customer to scan and pay directly from their wallet.'.tr,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 12, color: AppThemeData.grey500),
+                      ),
+                      const SizedBox(height: 16),
+                      Center(
+                        child: QrImageView(
+                          data: '{"type":"service_payment","booking_id":"${booking.id}","driver_id":"${Preferences.getInt(Preferences.userId)}"}',
+                          version: QrVersions.auto,
+                          size: 180.0,
+                          backgroundColor: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 12),
-              PhotoUploadRow(
-                label: 'Upload After Photos'.tr,
-                photos: afterPhotos,
-                onAdd: () => flow.pickPhoto(before: false),
-                onRemove: (path) => flow.removePhoto(path, before: false),
-              ),
+              // PhotoUploadRow(
+              //   label: 'Upload After Photos'.tr,
+              //   photos: afterPhotos,
+              //   onAdd: () => flow.pickPhoto(before: false),
+              //   onRemove: (path) => flow.removePhoto(path, before: false),
+              // ),
               ServiceFlowCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -134,11 +182,16 @@ class _ServiceCompletionScreenState extends State<ServiceCompletionScreen> {
                 ),
               ServiceFlowCard(
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _chargeRow('Labour Charges'.tr, flow.labourTotal),
+                    Text('Bill Summary'.tr, style: const TextStyle(fontFamily: AppThemeData.semiBold, fontSize: 14)),
+                    const SizedBox(height: 10),
+                    if (flow.itemizedBillItems.isNotEmpty)
+                      ...flow.itemizedBillItems.map((item) => _chargeRow(item.name, item.price))
+                    else
+                      _chargeRow('Service Charge'.tr, flow.labourTotal),
                     if (flow.visitingCharge.value > 0) _chargeRow('Visiting Charge'.tr, flow.visitingCharge.value),
                     if (flow.materialCost.value > 0) _chargeRow('Material Cost'.tr, flow.materialCost.value),
-                    if (flow.platformFeeStored.value > 0) _chargeRow('Platform Fee'.tr, flow.platformFeeStored.value),
                     const Divider(height: 20),
                     _chargeRow('Total Bill'.tr, flow.billTotal, bold: true, color: AppThemeData.success300),
                   ],
@@ -169,36 +222,90 @@ class _ServiceCompletionScreenState extends State<ServiceCompletionScreen> {
                           },
                   ),
                 if (awaitingPayment && !isPaid) ...[
+                  FlowPrimaryButton(
+                    label: _submitting ? 'Completing...'.tr : 'Received Cash & Complete Job'.tr,
+                    color: AppThemeData.success300,
+                    icon: Icons.payments_outlined,
+                    onPressed: _submitting
+                        ? null
+                        : () => _confirmCashReceived(context, flow),
+                  ),
                   const SizedBox(height: 8),
                   Text(
-                    'Complete Job will unlock after customer pays.'.tr,
+                    'Or ask customer to scan QR code / pay online in app.'.tr,
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 12, color: AppThemeData.grey500),
                   ),
                 ],
-                const SizedBox(height: 10),
-                FlowPrimaryButton(
-                  label: _submitting ? 'Completing...'.tr : 'Complete Job'.tr,
-                  color: AppThemeData.success300,
-                  onPressed: (_submitting || !isPaid)
-                      ? null
-                      : () async {
-                          setState(() => _submitting = true);
-                          final ok = await flow.completeJob();
-                          setState(() => _submitting = false);
-                          if (ok) {
-                            Get.delete<ServiceBookingFlowController>(tag: widget.tag);
-                            Get.off(() => const MyBookingScreen());
-                            Get.snackbar('Completed'.tr, 'Service marked as completed.'.tr);
-                          }
-                        },
-                ),
+                if (isPaid)
+                  FlowPrimaryButton(
+                    label: _submitting ? 'Completing...'.tr : 'Complete Job'.tr,
+                    color: AppThemeData.success300,
+                    onPressed: _submitting
+                        ? null
+                        : () async {
+                            setState(() => _submitting = true);
+                            final ok = await flow.completeJob();
+                            setState(() => _submitting = false);
+                            if (ok) {
+                              Get.delete<ServiceBookingFlowController>(tag: widget.tag);
+                              Get.off(() => const MyBookingScreen());
+                              Get.snackbar('Completed'.tr, 'Service marked as completed.'.tr);
+                            }
+                          },
+                  ),
               ],
             ),
           ),
         ),
       );
     });
+  }
+
+  void _confirmCashReceived(BuildContext context, ServiceBookingFlowController flow) {
+    final amountStr = Constant().amountShow(amount: flow.billTotal.toStringAsFixed(0));
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.payments_rounded, color: AppThemeData.success300),
+            const SizedBox(width: 8),
+            Text('Confirm Cash Payment'.tr, style: const TextStyle(fontSize: 16)),
+          ],
+        ),
+        content: Text(
+          'Did you receive $amountStr in cash directly from the customer?'.tr,
+          style: const TextStyle(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text('Cancel'.tr),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppThemeData.success300,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () async {
+              Get.back();
+              setState(() => _submitting = true);
+              final ok = await flow.completeJobWithCash();
+              setState(() => _submitting = false);
+              if (ok) {
+                _pollTimer?.cancel();
+                Get.delete<ServiceBookingFlowController>(tag: widget.tag);
+                Get.off(() => const MyBookingScreen());
+                Get.snackbar('Job Completed'.tr, 'Service completed via Cash payment.'.tr);
+              }
+            },
+            child: Text('Yes, Received Cash'.tr),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _chargeRow(String label, double amount, {bool bold = false, Color? color}) {

@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 
 import 'package:cabme_driver/constant/show_toast_dialog.dart';
 import 'package:cabme_driver/model/service_category_model.dart';
-import 'package:cabme_driver/page/features/AllServices/service_option_selection_screen.dart';
+import 'package:cabme_driver/model/service_option_item_model.dart';
 import 'package:cabme_driver/page/features/AllServices/service_style.dart';
 import 'package:cabme_driver/service/api.dart';
 import 'package:cabme_driver/utils/Preferences.dart';
@@ -31,11 +31,6 @@ class AllServicesController extends GetxController {
     'Personal Services',
     'Education Services',
     'Healthcare Services',
-    'Doctor Home Visit',
-    'Physiotherapy',
-    'Lab Sample Collection',
-    'Nursing Care',
-    'Ambulance Booking',
   ];
 
   static const Map<String, List<String>> subCategoryCatalog = {
@@ -329,7 +324,7 @@ class AllServicesController extends GetxController {
   int? get currentUserId => Preferences.getInt(Preferences.userId);
 
   List<ServiceOptionItem> labTestOptions() {
-    return const [
+    return [
       ServiceOptionItem(
         id: 'cbc',
         title: 'Complete Blood Count (CBC)',

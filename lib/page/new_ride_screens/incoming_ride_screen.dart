@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cabme_driver/page/MainDashBoard/screen/main_dashboard.dart';
 import 'package:cabme_driver/page/route_view_screen/route_view_screen.dart';
 import 'package:cabme_driver/page/route_view_screen/route_osm_view_screen.dart';
 import 'package:http/http.dart' as http;
@@ -158,20 +159,41 @@ class _IncomingRideScreenState extends State<IncomingRideScreen> with TickerProv
     }
   }
 
-  void _declineRide({String reason = "Rejected by driver"}) {
+  void _declineRide({String reason = "Rejected by driver"}) async {
+    _timer?.cancel();
+    _pulseController.stop();
+    _countdownController.stop();
+
+    try {
+      const MethodChannel('com.fiinwaybusiness/ride_overlay')
+          .invokeMethod('dismissRideOverlay');
+    } catch (_) {}
+
+    final driverId = Preferences.getInt(Preferences.userId).toString();
+    final driverName = '${widget.rideData.prenomConducteur ?? ''} ${widget.rideData.nomConducteur ?? ''}'.trim();
+
     Map<String, String> bodyParams = {
-      'id_ride': widget.rideData.id.toString(),
-      'id_user': widget.rideData.idUserApp.toString(),
-      'name': '${widget.rideData.prenomConducteur ?? ''} ${widget.rideData.nomConducteur ?? ''}',
-      'from_id': Preferences.getInt(Preferences.userId).toString(),
+      'id_ride': widget.rideData.id?.toString() ?? '',
+      'id_user': widget.rideData.idUserApp?.toString() ?? '',
+      'name': driverName.isNotEmpty ? driverName : 'Driver',
+      'from_id': driverId,
       'user_cat': 'driver',
       'reason': reason,
     };
-    
-    controller.canceledRide(bodyParams).then((value) {
-      controller.getNewRide();
+
+    try {
+      await controller.canceledRide(bodyParams);
+    } catch (e) {
+      log('Error declining ride: $e');
+    }
+
+    controller.getNewRide();
+
+    if (Get.context != null && Navigator.canPop(Get.context!)) {
       Get.back();
-    });
+    } else {
+      Get.offAll(() => const MainDashboard());
+    }
   }
 
   void _acceptRide() {
@@ -196,7 +218,7 @@ class _IncomingRideScreenState extends State<IncomingRideScreen> with TickerProv
     };
 
     controller.confirmedRide(bodyParams).then((value) {
-      if (value != null) {
+      if (value != null && mounted) {
         showDialog(
           context: context,
           barrierDismissible: false,

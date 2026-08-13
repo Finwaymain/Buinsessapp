@@ -66,7 +66,7 @@ class WithdrawalsScreen extends StatelessWidget {
                                                       ),
                                                     ),
                                                     Text(
-                                                      Constant().amountShow(amount: controller.rideList[index].amount.toString()),
+                                                      Constant().amountShowWithoutSymbol(amount: controller.rideList[index].amount.toString()),
                                                       style: TextStyle(
                                                           color: controller.rideList[index].statut.toString() == "success" ? Colors.green : Colors.red,
                                                           fontSize: 16,

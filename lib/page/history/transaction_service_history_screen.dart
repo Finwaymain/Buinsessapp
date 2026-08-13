@@ -34,9 +34,9 @@ class _TransactionServiceHistoryScreenState extends State<TransactionServiceHist
         'Customer': 'Rahul Sharma (+91 9876543210)',
         'Address': 'Flat 402, Green Valley Apartments, Sector 62',
         'Payment Mode': 'Fiinway Wallet',
-        'Provider Share (90%)': '₹765.00',
-        'Platform Fee (10%)': '₹85.00',
-        'Cashback Earned': '₹17.00',
+        'Provider Share (90%)': '765.00',
+        'Platform Fee (10%)': '85.00',
+        'Cashback Earned': '17.00',
       }
     },
     {
@@ -54,7 +54,7 @@ class _TransactionServiceHistoryScreenState extends State<TransactionServiceHist
       'details': {
         'Source': 'Fiinway Wallet Growth Engine',
         'Growth Rate': '0.10% Daily',
-        'Base Balance': '₹24,500.00',
+        'Base Balance': '24,500.00',
       }
     },
     {
@@ -70,9 +70,9 @@ class _TransactionServiceHistoryScreenState extends State<TransactionServiceHist
       'statusColor': Colors.blue,
       'icon': Icons.workspace_premium_rounded,
       'details': {
-        'Plan': 'Professional Plan (₹2,500/Year)',
+        'Plan': 'Professional Plan (2,500/Year)',
         'Free Ride Quota': '150 Bookings',
-        'Loan Eligibility': '₹50,000 Interest-Free',
+        'Loan Eligibility': '50,000 Interest-Free',
         'Cashback Boost': '2% Extra Cashback',
       }
     },
@@ -91,7 +91,7 @@ class _TransactionServiceHistoryScreenState extends State<TransactionServiceHist
       'details': {
         'Item': 'Fiinway Verified Driver Safety Helmet',
         'Shipping': 'FREE (Premium Member Benefit)',
-        'Discount Applied': '30% Member Discount (-₹360)',
+        'Discount Applied': '30% Member Discount (-360)',
       }
     },
     {
@@ -126,8 +126,8 @@ class _TransactionServiceHistoryScreenState extends State<TransactionServiceHist
       'icon': Icons.medical_services_rounded,
       'details': {
         'Card Type': 'MediCash Shield OPD + Hospitalization',
-        'Coverage Limit': '₹50,000 OPD Discounts',
-        'Cashback Received': '₹25.00',
+        'Coverage Limit': '50,000 OPD Discounts',
+        'Cashback Received': '25.00',
       }
     },
   ];

@@ -86,7 +86,7 @@ class WalletWithdrawalsTab extends StatelessWidget {
                                     ),
                                   ),
                                   Text(
-                                    Constant().amountShow(amount: item.amount.toString()),
+                                    Constant().amountShowWithoutSymbol(amount: item.amount.toString()),
                                     style: TextStyle(
                                       color: statusColor,
                                       fontSize: 16,

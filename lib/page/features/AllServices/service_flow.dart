@@ -105,6 +105,7 @@ Future<void> openServiceFlow(
       Get.to(() => ServiceRequestScreen(
             serviceName: rawName,
             categoryName: categoryLabel,
+            selectedServices: [cleanServiceName(rawName)],
           ));
       return;
   }

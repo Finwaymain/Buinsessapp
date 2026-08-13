@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:cabme_driver/utils/Preferences.dart';
 
 class API {
-  static const baseUrl = "https://fiinway.online/api/v1/"; // Live VPS
+  static const baseUrl = "https://api.fiinway.com/api/v1/"; // Live Production Server
   static const apiKey = "base64:nTfofcBByTDenJQYlsRbH0JjeVFW5lWsIIyXtq8/9sU=";
 
   static Map<String, String> get authheader => {
@@ -24,7 +24,10 @@ class API {
   static const authVerifyOtp = "${baseUrl}auth/verify-otp";
   static const authLoginMpin = "${baseUrl}auth/login-by-mpin";
   static const authResetMpin = "${baseUrl}auth/reset-mpin";
+  static const verifyMpin = "${baseUrl}verify-mpin";
   static const authRegisterSimple = "${baseUrl}auth/register-simple";
+  static const authApplyReferral = "${baseUrl}auth/apply-referral";
+
   static const authLoginByPhone = "${baseUrl}auth/login-by-phone";
   static const authVerifyLoginEmailOtp = "${baseUrl}auth/verify-login-email-otp";
   static const authCheckUser = "${baseUrl}auth/check-user";
@@ -186,14 +189,20 @@ class API {
   static const unifiedTimelineHistory = "${baseUrl}history/timeline-full";
   static const referralStats = "${baseUrl}referral/stats";
   static const referralHistory = "${baseUrl}referral/history";
+  static const submitAadhar = "${baseUrl}user/submit-aadhar";
   static const businessPlansActive = "${baseUrl}business-plans/active";
 
   // All Services catalog ("More" section)
   static const getServiceCategories = "${baseUrl}service-categories";
   static const bookService = "${baseUrl}book-service";
   static const serviceHistory = "${baseUrl}service-history";
+  static const servicePriceEstimate = "${baseUrl}service-price-estimate";
+  static const serviceBookingDetail = "${baseUrl}service-booking/";
+  static const cancelServiceBooking = "${baseUrl}cancel-service-booking";
+  static const payServiceBooking = "${baseUrl}pay-service-booking";
 
   // My Booking console
   static const driverBookings = "${baseUrl}driver/bookings";
   static const driverServiceBookingStatus = "${baseUrl}driver/bookings/service-status";
+  static const driverWalletStatus = "${baseUrl}driver/wallet-status";
 }

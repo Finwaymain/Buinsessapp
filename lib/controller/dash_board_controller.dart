@@ -17,11 +17,13 @@ import '../model/user_model.dart';
 import '../page/auth_screens/phone_entry_screen.dart';
 import '../page/features/Taxi/taxi_dashboard/taxi_dashboard.dart';
 import '../page/my_profile/change_password_screen.dart';
+import '../utils/onboarding_navigation.dart';
 import '../page/my_profile/my_profile_screen.dart';
 import '../page/web_view_screen/web_view_screen.dart';
 
 import '../page/privacy_policy/privacy_policy_screen.dart';
 import '../page/referral/referral_earn_screen.dart';
+import '../page/referral/submit_aadhar_screen.dart';
 import '../page/terms_of_service/terms_of_service_screen.dart';
 import '../page/wallet/wallet_screen.dart';
 import '../service/api.dart';
@@ -566,7 +568,10 @@ class DashBoardController extends GetxController {
     Get.back();
     if (index >= drawerItems.length) return;
     var item = drawerItems[index];
-    if (item.title == 'Wallet'.tr || item.title == 'Smart Value'.tr || item.title == 'My Profile'.tr || item.title == 'Update Categories'.tr || item.title == 'Join as Partner'.tr || item.title == 'Change Password'.tr || item.title == 'Refer a Friend'.tr || item.title == 'Marketplace'.tr) {
+    final bool hasAadhar = (Preferences.getString('user_aadhar_number') ?? Preferences.getString('driver_aadhar_number') ?? '').isNotEmpty;
+    final String partnerTitle = hasAadhar ? 'Partner Dashboard'.tr : 'Join as a Partner'.tr;
+
+    if (item.title == 'Wallet'.tr || item.title == 'Smart Value'.tr || item.title == 'My Profile'.tr || item.title == 'Update Categories'.tr || item.title == 'Join as Partner'.tr || item.title == 'Join as a Partner'.tr || item.title == 'Partner Dashboard'.tr || item.title == 'Change Password'.tr || item.title == 'Refer a Friend'.tr || item.title == 'Marketplace'.tr) {
       if (!isLogin) {
         Get.to(PhoneEntryScreen(mode: 'signup'));
         return;
@@ -577,25 +582,24 @@ class DashBoardController extends GetxController {
     } else if (item.title == 'My Profile'.tr) {
       Get.to(MyProfileScreen());
     } else if (item.title == 'Marketplace'.tr) {
-      bool isMarketplaceEnabled = (Constant.getUserData().userData?.marketplaceEnabled == '1');
-      if (!isMarketplaceEnabled) {
-        ShowToastDialog.showToast("Marketplace is disabled. Please enable it in your profile.".tr);
-        return;
-      }
-      Get.to(() => const MarketplaceHomeScreen());
-    } else if (item.title == 'Join as Partner'.tr) {
-      final finalUrl = OnboardingUrl.build('/onboarding/join-fiinway');
-      Get.to(() => WebViewScreen(url: finalUrl, title: 'Join Fiinway'));
+      final url = OnboardingUrl.build('/onboarding/marketplace.html');
+      Get.to(() => WebViewScreen(url: url, title: 'Marketplace'.tr));
+    } else if (item.title == 'Food Ordering'.tr || item.title == 'Food Order'.tr) {
+      final url = OnboardingUrl.build('/onboarding/food.html');
+      Get.to(() => WebViewScreen(url: url, title: 'Food Ordering'.tr));
     } else if (item.title == 'Update Categories'.tr) {
-      final finalUrl = OnboardingUrl.build(
-        '/onboarding',
-        extra: const {'mode': 'edit_category'},
+      openDriverOnboardingEditor(
+        mode: 'edit_profile',
+        title: 'Edit Profile & Services'.tr,
       );
-      Get.to(() => WebViewScreen(url: finalUrl, title: 'Update Categories'));
     } else if (item.title == 'Change Password'.tr) {
       Get.to(ChangePasswordScreen());
-    } else if (item.title == 'Refer a Friend'.tr) {
-      Get.to(() => const ReferralEarnScreen());
+    } else if (item.title == 'Refer a Friend'.tr || item.title == 'Join as a Partner'.tr || item.title == 'Join as Partner'.tr || item.title == 'Partner Dashboard'.tr || item.title == partnerTitle) {
+      if (hasAadhar) {
+        Get.to(() => const ReferralEarnScreen());
+      } else {
+        Get.to(() => const SubmitAadharScreen());
+      }
     } else if (item.title == 'Terms & Conditions'.tr) {
       Get.to(const TermsOfServiceScreen());
     } else if (item.title == 'Privacy & Policy'.tr) {
@@ -625,6 +629,12 @@ class DashBoardController extends GetxController {
   }
 
   void getDrawerItems() {
+    final bool hasAadhar = (Preferences.getString('user_aadhar_number') ?? Preferences.getString('driver_aadhar_number') ?? '').isNotEmpty;
+    final String partnerTitle = hasAadhar ? 'Partner Dashboard'.tr : 'Join as a Partner'.tr;
+    final String partnerDesc = hasAadhar 
+        ? 'Manage your partner team, view earnings and rewards'.tr 
+        : 'Submit Aadhaar to become a partner and earn rewards'.tr;
+
     drawerItems = [
       DrawerItem(
         title: 'Home'.tr,
@@ -649,20 +659,14 @@ class DashBoardController extends GetxController {
         icon: 'assets/icons/ic_profile.svg',
       ),
       DrawerItem(
-        title: 'Join as Partner'.tr,
-        description: 'Become a partner with Fiinway',
-        icon: 'assets/icons/ic_user.svg',
+        title: partnerTitle,
+        description: partnerDesc,
+        icon: 'assets/icons/ic_refer.svg',
       ),
-
       DrawerItem(
         title: 'Change Password'.tr,
         description: 'Update your password for better account security',
         icon: 'assets/icons/ic_lock.svg',
-      ),
-      DrawerItem(
-        title: 'Refer a Friend'.tr,
-        description: 'Share app link and earn referral rewards',
-        icon: 'assets/icons/ic_refer.svg',
       ),
       DrawerItem(
         title: 'Terms & Conditions'.tr,

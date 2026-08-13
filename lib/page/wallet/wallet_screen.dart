@@ -50,25 +50,42 @@ import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_stripe/flutter_stripe.dart' as stripe1;
 
+import 'package:webview_flutter/webview_flutter.dart';
+import 'package:cabme_driver/utils/onboarding_url.dart';
+import 'package:cabme_driver/page/web_view_screen/web_view_screen.dart';
+import 'package:cabme_driver/page/features/SmartValue/AccountDetails/view/account_details.dart';
+import 'package:cabme_driver/page/features/SmartValue/MyQR/view/my_qr_view.dart';
+import 'package:cabme_driver/page/features/SmartValue/Payout/view/payout_screen.dart';
+import 'package:cabme_driver/page/features/SmartValue/ScanAndTransfer/view/scanner_and_transfer_screen.dart';
+import 'package:cabme_driver/page/subscription_plan_screen/business_premium_plan_screen.dart';
+
 class WalletScreen extends StatelessWidget {
   final bool isTab;
-  WalletScreen({super.key, this.isTab = false});
+  final int initialIndex;
+  WalletScreen({super.key, this.isTab = false, this.initialIndex = 0});
 
   final Razorpay razorPayController = Razorpay();
 
   static final GlobalKey<FormState> _walletFormKey = GlobalKey<FormState>();
   final controllerDashBoard = Get.put(DashBoardController());
   final walletController = Get.put(WalletController());
+  WebViewController? activeWebViewController;
 
-  Future<void> _refreshAPI() async {
-    await walletController.getAmount();
-    await walletController.getTrancation(showLoader: false);
-    walletController.amountController.value.clear();
+  _refreshAPI() {
+    walletController.getAmount();
+    if (activeWebViewController != null) {
+      activeWebViewController!.runJavaScript("if (window.refreshWalletData) { window.refreshWalletData(); } else { location.reload(); }");
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final themeChange = Provider.of<DarkThemeProvider>(context);
+    final isDark = themeChange.getThem();
+    final String walletUrl = OnboardingUrl.build('/wallet', extra: {
+      'user_type': 'driver',
+      'theme': isDark ? 'dark' : 'light',
+    });
 
     return Scaffold(
       appBar: isTab
@@ -76,35 +93,70 @@ class WalletScreen extends StatelessWidget {
           : AppbarCustom(
               title: 'Smart Value'.tr,
               elevation: 0,
+              actions: [
+                IconButton(
+                  icon: Icon(
+                    Icons.refresh_rounded,
+                    color: themeChange.getThem() ? Colors.white : AppThemeData.grey900,
+                  ),
+                  onPressed: () {
+                    _refreshAPI();
+                    ShowToastDialog.showToast('Refreshing...'.tr);
+                  },
+                ),
+              ],
             ),
       backgroundColor: themeChange.getThem() ? AppThemeData.grey50Dark : AppThemeData.grey50,
       body: SafeArea(
         top: !isTab,
-        child: WalletMainContent(
-          walletController: walletController,
-          isTab: isTab,
-          onTopUp: () {
-            if (!Preferences.getBoolean(Preferences.isLogin)) {
-              Get.to(() => PhoneEntryScreen(mode: 'signup'));
-            } else {
-              walletController.amountController.value.clear();
-              addToWalletAmount(context, walletController, themeChange.getThem());
+        child: WebViewScreen(
+          url: walletUrl,
+          title: 'Smart Value',
+          showAppBar: false,
+          onBridgeAction: (data) {
+            if (data['_controller'] is WebViewController) {
+              activeWebViewController = data['_controller'] as WebViewController;
+            }
+            final action = data['action'];
+            if (action == 'topup') {
+              if (!Preferences.getBoolean(Preferences.isLogin)) {
+                Get.to(() => PhoneEntryScreen(mode: 'signup'));
+              } else {
+                walletController.amountController.value.clear();
+                addToWalletAmount(context, walletController, themeChange.getThem());
+              }
+            } else if (action == 'withdraw') {
+              if (!Preferences.getBoolean(Preferences.isLogin)) {
+                Get.to(() => PhoneEntryScreen(mode: 'signup'));
+              } else {
+                walletController.getBankDetails().then((value) {
+                  if (value == null) {
+                    ShowToastDialog.showToast('Please Update bank Details');
+                  } else {
+                    buildShowBottomSheet(context, walletController, themeChange.getThem());
+                  }
+                });
+              }
+            } else if (action == 'bank') {
+              showModalBottomSheet(
+                isDismissible: true,
+                isScrollControlled: true,
+                context: context,
+                backgroundColor: themeChange.getThem() ? AppThemeData.grey50Dark : AppThemeData.grey50,
+                builder: (context) => const AddBankAccount(),
+              );
+            } else if (action == 'transfer' || action == 'scan') {
+              Get.to(() => ScannerAndTransferScreen());
+            } else if (action == 'payout') {
+              Get.to(() => PayoutScreen());
+            } else if (action == 'my_qr') {
+              Get.to(() => MyQRScreen());
+            } else if (action == 'account_details') {
+              Get.to(() => AccountDetails());
+            } else if (action == 'upgrade_plan') {
+              Get.to(() => const BusinessPremiumPlanScreen());
             }
           },
-          onWithdraw: () {
-            if (!Preferences.getBoolean(Preferences.isLogin)) {
-              Get.to(() => PhoneEntryScreen(mode: 'signup'));
-            } else {
-              walletController.getBankDetails().then((value) {
-                if (value == null) {
-                  ShowToastDialog.showToast('Please Update bank Details');
-                } else {
-                  buildShowBottomSheet(context, walletController, themeChange.getThem());
-                }
-              });
-            }
-          },
-          onRefresh: _refreshAPI,
         ),
       ),
     );
@@ -196,7 +248,7 @@ class WalletScreen extends StatelessWidget {
                 ? Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4.0),
                     child: Text(
-                      "-${Constant().amountShow(amount: data.amount!.toString())}",
+                      "-${Constant().amountShowWithoutSymbol(amount: data.amount!.toString())}",
                       style: TextStyle(fontFamily: AppThemeData.medium, fontSize: 16, color: AppThemeData.error50),
                     ),
                   )
@@ -205,9 +257,9 @@ class WalletScreen extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 4.0),
                         child: Text(
                           data.amount!.toString().contains('-')
-                              ? "-${Constant().amountShow(amount: data.amount!.split("-").last.toString())}"
+                              ? "-${Constant().amountShowWithoutSymbol(amount: data.amount!.split("-").last.toString())}"
                               : data.amount!.isNotEmpty
-                                  ? Constant().amountShow(
+                                  ? Constant().amountShowWithoutSymbol(
                                       amount:
                                           "${double.parse(data.amount!.toString()) + double.parse(data.adminCommission!.isNotEmpty ? data.adminCommission!.toString() : "0.0")}")
                                   : "",
@@ -220,9 +272,9 @@ class WalletScreen extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(horizontal: 4.0),
                             child: Text(
                               data.transactionAmount!.toString().contains('-')
-                                  ? "-${Constant().amountShow(amount: data.transactionAmount!.split("-").last.toString())}"
+                                  ? "-${Constant().amountShowWithoutSymbol(amount: data.transactionAmount!.split("-").last.toString())}"
                                   : data.transactionAmount!.isNotEmpty
-                                      ? Constant().amountShow(
+                                      ? Constant().amountShowWithoutSymbol(
                                           amount:
                                               "${double.parse(data.transactionAmount!.toString()) + double.parse(data.adminCommission!.isNotEmpty ? data.adminCommission!.toString() : "0.0")}")
                                       : "",
@@ -235,7 +287,7 @@ class WalletScreen extends StatelessWidget {
                         : Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 4.0),
                             child: Text(
-                              Constant().amountShow(amount: "+${double.parse(data.amount!.toString())}"),
+                              Constant().amountShowWithoutSymbol(amount: double.parse(data.amount!.toString()).toString()),
                               style: TextStyle(fontFamily: AppThemeData.medium, fontSize: 16, color: AppThemeData.success300),
                             ),
                           ),
@@ -527,6 +579,7 @@ class WalletScreen extends StatelessWidget {
           return GetX<WalletController>(
               init: WalletController(),
               initState: (controller) {
+                razorPayController.clear();
                 razorPayController.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
                 razorPayController.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWaller);
                 razorPayController.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
@@ -676,7 +729,7 @@ class WalletScreen extends StatelessWidget {
                                       return;
                                     } else {
                                       Get.back();
-                                      showLoadingAlert(context, isDarkMode);
+                                      
 
                                       if (walletController.selectedRadioTile!.value == "Stripe") {
                                         stripe1.Stripe.publishableKey = controller.paymentSettingModel.value.strip?.key ?? '';
@@ -735,7 +788,11 @@ class WalletScreen extends StatelessWidget {
   }
 
   void _handleExternalWaller(ExternalWalletResponse response) {
-    Get.back();
+    razorPayController.clear();
+    ShowToastDialog.closeLoader();
+    while (Get.isDialogOpen == true || Get.isBottomSheetOpen == true) {
+      Get.back();
+    }
     showSnackBarAlert(
       message: "${"Payment Processing Via".tr} \n${response.walletName!}",
       color: Colors.blue.shade400,
@@ -743,8 +800,13 @@ class WalletScreen extends StatelessWidget {
   }
 
   void _handlePaymentSuccess(PaymentSuccessResponse response) {
-    Get.back();
+    razorPayController.clear();
+    ShowToastDialog.closeLoader();
+    while (Get.isDialogOpen == true || Get.isBottomSheetOpen == true) {
+      Get.back();
+    }
     walletController.setAmount(walletController.amountController.value.text).then((value) {
+      ShowToastDialog.closeLoader();
       if (value != null) {
         showSnackBarAlert(
           message: "Payment Successful!!".tr,
@@ -760,12 +822,16 @@ class WalletScreen extends StatelessWidget {
       isDismissible: true,
       message: message,
       backgroundColor: color,
-      duration: const Duration(seconds: 8),
+      duration: const Duration(seconds: 2),
     ));
   }
 
   void _handlePaymentError(PaymentFailureResponse response) {
-    Get.back();
+    razorPayController.clear();
+    ShowToastDialog.closeLoader();
+    while (Get.isDialogOpen == true || Get.isBottomSheetOpen == true) {
+      Get.back();
+    }
     showSnackBarAlert(
       message: "${"Payment Failed!!".tr}${jsonDecode(response.message!)['error']['description']}",
       color: Colors.red.shade400,

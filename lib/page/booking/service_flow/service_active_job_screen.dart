@@ -66,64 +66,14 @@ class _ServiceActiveJobScreenState extends State<ServiceActiveJobScreen> {
         subtitle: flow.startedAt.value != null ? _formatTime(flow.startedAt.value!) : booking.scheduleLabel,
         headerColor: AppThemeData.primary200,
         showBack: false,
-        body: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 18),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppThemeData.primary200, AppThemeData.primary200.withValues(alpha: 0.85)],
-                ),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Elapsed Time'.tr, style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                        const SizedBox(height: 4),
-                        Text(
-                          flow.elapsedLabel,
-                          style: const TextStyle(color: Colors.white, fontFamily: AppThemeData.bold, fontSize: 28),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Material(
-                    color: Colors.white.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(12),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(12),
-                      onTap: flow.togglePause,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        child: Row(
-                          children: [
-                            Icon(isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded, color: Colors.white),
-                            const SizedBox(width: 6),
-                            Text(
-                              isPaused ? 'Resume'.tr : 'Pause'.tr,
-                              style: const TextStyle(color: Colors.white, fontFamily: AppThemeData.semiBold),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: RefreshIndicator(
-                color: AppThemeData.primary200,
-                onRefresh: () => flow.refreshCurrent(),
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
+        body: RefreshIndicator(
+          color: AppThemeData.primary200,
+          onRefresh: () => flow.refreshCurrent(),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
                     ServiceFlowCard(child: CustomerHeaderCard(booking: booking, onCall: flow.callCustomer)),
                     ServiceFlowCard(
                       child: Column(
@@ -157,6 +107,7 @@ class _ServiceActiveJobScreenState extends State<ServiceActiveJobScreen> {
                               showPrices: true,
                               showCheckmarks: true,
                               onToggle: flow.toggleServiceDone,
+                              isExtraCheck: flow.isExtraService,
                             ),
                         ],
                       ),
@@ -188,7 +139,7 @@ class _ServiceActiveJobScreenState extends State<ServiceActiveJobScreen> {
                             controller: _extraPriceController,
                             keyboardType: TextInputType.number,
                             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                            decoration: _fieldDecoration('Price in ₹'.tr, Icons.currency_rupee_rounded),
+                            decoration: _fieldDecoration('Price'.tr, Icons.currency_rupee_rounded),
                           ),
                           const SizedBox(height: 12),
                           SizedBox(
@@ -214,47 +165,19 @@ class _ServiceActiveJobScreenState extends State<ServiceActiveJobScreen> {
                         ],
                       ),
                     ),
-                    ServiceFlowCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.inventory_2_outlined, size: 18, color: AppThemeData.primary200),
-                              const SizedBox(width: 8),
-                              Text('Material Cost'.tr, style: const TextStyle(fontFamily: AppThemeData.semiBold, fontSize: 15)),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Enter material/parts cost if customer needs to pay for it.'.tr,
-                            style: TextStyle(fontSize: 12, color: AppThemeData.grey500, height: 1.3),
-                          ),
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: _materialController,
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                            decoration: _fieldDecoration('Material amount in ₹'.tr, Icons.shopping_bag_outlined),
-                            onChanged: (v) => flow.materialCost.value = double.tryParse(v) ?? 0,
-                          ),
-                        ],
-                      ),
-                    ),
+                    
                     _billPreviewCard(
                       labour: flow.labourTotal,
                       visit: visit,
                       material: material,
                       platform: platform,
                       total: flow.billTotal,
+                      serviceItems: flow.itemizedBillItems,
                     ),
                   ],
                 ),
               ),
             ),
-            ),
-          ],
-        ),
         bottomBar: SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -317,6 +240,7 @@ class _ServiceActiveJobScreenState extends State<ServiceActiveJobScreen> {
     required double material,
     required double platform,
     required double total,
+    required List<ServiceLineItem> serviceItems,
   }) {
     return Container(
       width: double.infinity,
@@ -338,7 +262,10 @@ class _ServiceActiveJobScreenState extends State<ServiceActiveJobScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          _billRow('Service Charges'.tr, labour),
+          if (serviceItems.isNotEmpty)
+            ...serviceItems.map((item) => _billRow(item.name, item.price))
+          else
+            _billRow('Service Charges'.tr, labour),
           if (visit > 0) _billRow('Visiting Charge'.tr, visit, highlight: true),
           if (material > 0) _billRow('Material Cost'.tr, material),
           if (platform > 0) _billRow('Platform Fee'.tr, platform),

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class ServiceLineItem {
   final String name;
   final double price;
@@ -113,7 +115,21 @@ class DriverBookingItem {
   factory DriverBookingItem.fromJson(Map<String, dynamic> json) {
     final desc = json['description']?.toString() ?? '';
     final items = <ServiceLineItem>[];
-    final rawItems = json['service_items'];
+
+    Map<String, dynamic>? breakdown;
+    final pbRaw = json['price_breakdown'];
+    if (pbRaw is Map) {
+      breakdown = Map<String, dynamic>.from(pbRaw);
+    } else if (pbRaw is String && pbRaw.trim().isNotEmpty) {
+      try {
+        final decoded = jsonDecode(pbRaw);
+        if (decoded is Map) {
+          breakdown = Map<String, dynamic>.from(decoded);
+        }
+      } catch (_) {}
+    }
+
+    final rawItems = json['service_items'] ?? breakdown?['service_items'];
     if (rawItems is List) {
       for (final entry in rawItems) {
         if (entry is Map) {
@@ -121,8 +137,19 @@ class DriverBookingItem {
         }
       }
     }
+
+    final visitVal = double.tryParse(breakdown?['visiting_charge']?.toString() ?? breakdown?['visiting_charge_min']?.toString() ?? '') ?? 0;
+    if (visitVal > 0 && !items.any((e) => e.name.toLowerCase().contains('visit'))) {
+      items.add(ServiceLineItem(name: 'Visiting Charge', price: visitVal));
+    }
+
     if (items.isEmpty) {
       items.addAll(_parseServiceItemsFromName(json['service_name']?.toString() ?? json['title']?.toString() ?? ''));
+    }
+
+    var parsedAmount = double.tryParse(json['amount']?.toString() ?? '') ?? 0;
+    if (parsedAmount <= 0 && breakdown != null) {
+      parsedAmount = double.tryParse(breakdown['total']?.toString() ?? breakdown['total_min']?.toString() ?? '') ?? 0;
     }
 
     final customerObj = json['customer'] is Map ? Map<String, dynamic>.from(json['customer']) : null;
@@ -167,7 +194,7 @@ class DriverBookingItem {
       customerPhoto: json['customer_photo']?.toString() ?? customerObj?['photo']?.toString() ?? userObj?['photo']?.toString() ?? '',
       customerRating: double.tryParse(json['customer_rating']?.toString() ?? '4.7') ?? 4.7,
       reviewCount: int.tryParse(json['review_count']?.toString() ?? '0') ?? 0,
-      amount: double.tryParse(json['amount']?.toString() ?? '0') ?? 0,
+      amount: parsedAmount,
       paymentStatus: json['payment_status']?.toString() ?? 'pending',
       date: json['date']?.toString() ?? '',
       pickup: json['pickup']?.toString() ?? '',

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
+import 'package:cabme_driver/constant/constant.dart';
 import 'package:cabme_driver/controller/service_history_controller.dart';
 import 'package:cabme_driver/model/service_request_model.dart';
 import 'package:cabme_driver/page/auth_screens/phone_entry_screen.dart';
@@ -9,6 +10,8 @@ import 'package:cabme_driver/themes/app_bar_custom.dart';
 import 'package:cabme_driver/themes/constant_colors.dart';
 import 'package:cabme_driver/utils/Preferences.dart';
 import 'package:cabme_driver/utils/dark_theme_provider.dart';
+import 'package:cabme_driver/themes/button_them.dart';
+import 'service_booking_resume.dart';
 import 'all_services_screen.dart';
 import 'service_style.dart';
 
@@ -186,10 +189,28 @@ class _ServiceHistoryScreenState extends State<ServiceHistoryScreen> with Single
           ),
           const SizedBox(height: 10),
           _infoRow(Icons.calendar_today_outlined, item.scheduleLabel, isDarkMode),
-          if ((item.addressType ?? '').isNotEmpty)
-            _infoRow(Icons.location_on_outlined, item.addressType!, isDarkMode),
+          if (item.payableAmount > 0)
+            _infoRow(Icons.payments_outlined, '${Constant.currency ?? ''}${item.payableAmount.toStringAsFixed(0)}', isDarkMode),
+          if ((item.serviceAddress ?? item.addressType ?? '').isNotEmpty)
+            _infoRow(Icons.location_on_outlined, item.serviceAddress ?? item.addressType!, isDarkMode),
           if ((item.description ?? '').trim().isNotEmpty)
             _infoRow(Icons.notes_outlined, item.description!.trim(), isDarkMode, maxLines: 3),
+          if (item.canTrackLive) ...[
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: ButtonThem.buildButton(
+                context,
+                title: item.trackActionLabel.tr,
+                btnColor: style.color,
+                txtColor: Colors.white,
+                btnHeight: 42,
+                txtSize: 13,
+                radius: 10,
+                onPress: () => resumeServiceBookingFlow(item),
+              ),
+            ),
+          ],
         ],
       ),
     );

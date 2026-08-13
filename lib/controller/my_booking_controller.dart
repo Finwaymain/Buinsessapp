@@ -8,6 +8,7 @@ import 'package:cabme_driver/model/driver_booking_model.dart';
 import 'package:cabme_driver/service/api.dart';
 import 'package:cabme_driver/utils/Preferences.dart';
 import 'package:get/get.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class MyBookingController extends GetxController {
@@ -23,6 +24,15 @@ class MyBookingController extends GetxController {
   final hasDriverLocation = false.obs;
   final locationMessage = ''.obs;
   final profession = ''.obs;
+
+  // Wallet debt tracking
+  final walletBalance = 0.0.obs;
+  final hasDebt = false.obs;
+  final debtAmount = 0.0.obs;
+
+  // Static so it survives controller recreation (GetX dispose/re-put cycles).
+  // Rejected booking IDs are NEVER shown again for the entire app session.
+  static final _locallyRejectedIds = <String>{};
 
   Timer? _pollTimer;
 
@@ -42,7 +52,7 @@ class MyBookingController extends GetxController {
     super.onInit();
     fetchBookings();
     _pollTimer = Timer.periodic(const Duration(seconds: 8), (_) {
-      if (!isLoading.value) fetchBookings();
+      if (!isLoading.value) fetchBookings(isSilentPoll: true);
     });
   }
 
@@ -52,10 +62,17 @@ class MyBookingController extends GetxController {
     super.onClose();
   }
 
-  Future<void> fetchBookings({bool showLoader = false}) async {
+  Future<void> fetchBookings({bool showLoader = false, bool isSilentPoll = false}) async {
+    // Also refresh wallet status on every fetch so debt badge stays accurate
+    _fetchWalletStatus();
     try {
       if (showLoader) ShowToastDialog.showLoader('Please wait'.tr);
-      isLoading.value = true;
+
+      // Only set isLoading to true on initial load when list is empty
+      if (bookings.isEmpty && !isSilentPoll && !showLoader) {
+        isLoading.value = true;
+      }
+
       onboardingRequired.value = false;
       locationRequired.value = false;
       locationMessage.value = '';
@@ -95,22 +112,50 @@ class MyBookingController extends GetxController {
         profession.value = body['profession']?.toString() ?? '';
         final list = (body['data'] as List? ?? [])
             .map((e) => DriverBookingItem.fromJson(Map<String, dynamic>.from(e)))
+            .toList()
+            // Always filter out locally rejected IDs so polls can't bring them back
+            .where((e) => !_locallyRejectedIds.contains(e.id))
             .toList();
         bookings.assignAll(list);
 
-        final counts = body['counts'] as Map<String, dynamic>? ?? {};
-        incomingCount.value = int.tryParse(counts['incoming']?.toString() ?? '0') ?? 0;
-        activeCount.value = int.tryParse(counts['active']?.toString() ?? '0') ?? 0;
-        historyCount.value = int.tryParse(counts['history']?.toString() ?? '0') ?? 0;
+        // Update badge counts from server counts map so all tab counts stay accurate
+        if (body['counts'] is Map) {
+          final c = Map<String, dynamic>.from(body['counts'] as Map);
+          incomingCount.value = int.tryParse(c['incoming']?.toString() ?? '0') ?? 0;
+          activeCount.value = int.tryParse(c['active']?.toString() ?? '0') ?? 0;
+          historyCount.value = int.tryParse(c['history']?.toString() ?? '0') ?? 0;
+        } else {
+          if (selectedTab.value == 0) incomingCount.value = list.length;
+          if (selectedTab.value == 1) activeCount.value = list.length;
+          if (selectedTab.value == 2) historyCount.value = list.length;
+        }
+
+        // Auto switch to Active tab if user is on Incoming tab (0) and there are no incoming bookings but active bookings exist
+        if (selectedTab.value == 0 && incomingCount.value == 0 && activeCount.value > 0) {
+          selectedTab.value = 1;
+          fetchBookings(isSilentPoll: true);
+        }
       } else {
-        bookings.clear();
+        if (bookings.isEmpty) bookings.clear();
       }
     } catch (e) {
-      bookings.clear();
+      if (bookings.isEmpty) bookings.clear();
     } finally {
       isLoading.value = false;
       if (showLoader) ShowToastDialog.closeLoader();
     }
+  }
+
+  /// Call this immediately when a driver rejects/cancels a booking so it
+  /// is never shown again in this session, even if a background poll races
+  /// against the rejection API write.
+  void markLocallyRejected(String bookingId) {
+    _locallyRejectedIds.add(bookingId);
+    bookings.removeWhere((e) => e.id == bookingId);
+    // Immediately recompute counts so badges update without waiting for next fetch
+    incomingCount.value = bookings.where((e) => e.isIncoming).length;
+    activeCount.value = bookings.where((e) => e.isAccepted || e.isInProgress || e.isAwaitingPayment).length;
+    historyCount.value = bookings.where((e) => e.isCompleted || e.isCancelled).length;
   }
 
   void changeTab(int index) {
@@ -123,6 +168,7 @@ class MyBookingController extends GetxController {
     String bookingId,
     String status, {
     String? otp,
+    String? paymentMethod,
     Map<String, dynamic>? billPayload,
   }) async {
     try {
@@ -135,6 +181,9 @@ class MyBookingController extends GetxController {
       };
       if (otp != null && otp.trim().isNotEmpty) {
         body['otp'] = ServiceBookingFlowController.normalizeOtp(otp);
+      }
+      if (paymentMethod != null && paymentMethod.isNotEmpty) {
+        body['payment_method'] = paymentMethod;
       }
       if (billPayload != null && billPayload.isNotEmpty) {
         body.addAll(billPayload);
@@ -150,8 +199,13 @@ class MyBookingController extends GetxController {
       final isSuccess = response.statusCode == 200 &&
           (responseBody['success'] == 'success' || responseBody['success'] == true);
       if (isSuccess) {
+        if (status == 'rejected' || status == 'cancelled' || status == 'canceled') {
+          // Add to local rejected set FIRST so subsequent polls can't bring it back
+          _locallyRejectedIds.add(bookingId);
+          bookings.removeWhere((e) => e.id == bookingId);
+        }
         ShowToastDialog.showToast(responseBody['message']?.toString() ?? 'Updated'.tr);
-        await fetchBookings();
+        await fetchBookings(showLoader: false);
         return true;
       }
       ShowToastDialog.showToast(responseBody['message']?.toString() ?? 'Failed to update'.tr);
@@ -191,5 +245,54 @@ class MyBookingController extends GetxController {
       ShowToastDialog.closeLoader();
       ShowToastDialog.showToast(e.toString());
     }
+  }
+
+  /// Silently fetches the driver wallet status and updates [hasDebt] / [debtAmount].
+  Future<void> _fetchWalletStatus() async {
+    try {
+      final driverId = Preferences.getInt(Preferences.userId);
+      final uri = Uri.parse(API.driverWalletStatus)
+          .replace(queryParameters: {'id_driver': driverId.toString()});
+      final response = await http.get(uri, headers: API.header);
+      if (response.statusCode == 200) {
+        final body = json.decode(response.body);
+        if (body['success'] == 'success') {
+          walletBalance.value = double.tryParse(body['wallet_balance']?.toString() ?? '0') ?? 0;
+          hasDebt.value = body['has_debt'] == true;
+          debtAmount.value = double.tryParse(body['debt_amount']?.toString() ?? '0') ?? 0;
+        }
+      }
+    } catch (_) {
+      // Wallet status check is non-critical — silently ignore errors
+    }
+  }
+
+  /// Fetches a single booking detail by ID. Useful for polling status of an active flow
+  /// independent of the currently selected tab in the booking screen list.
+  Future<DriverBookingItem?> fetchSingleBooking(String bookingId) async {
+    try {
+      final driverId = Preferences.getInt(Preferences.userId);
+      final headers = Map<String, String>.from(API.header);
+      headers['id_user'] = driverId.toString(); // Pass driver ID to bypass verification
+
+      final uri = Uri.parse('${API.baseUrl}service-booking/$bookingId');
+      final response = await http.get(uri, headers: headers);
+      if (response.statusCode == 200) {
+        final body = json.decode(response.body);
+        if (body['success'] == 'success' && body['data'] != null) {
+          final updated = DriverBookingItem.fromJson(Map<String, dynamic>.from(body['data']));
+          // Update it in our local bookings list if present
+          final index = bookings.indexWhere((e) => e.id == bookingId);
+          if (index != -1) {
+            bookings[index] = updated;
+            bookings.refresh();
+          }
+          return updated;
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching single booking: $e');
+    }
+    return null;
   }
 }

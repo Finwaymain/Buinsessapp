@@ -16,6 +16,7 @@ class WalletMainContent extends StatefulWidget {
     required this.onWithdraw,
     required this.onRefresh,
     this.isTab = false,
+    this.initialIndex = 0,
   });
 
   final WalletController walletController;
@@ -23,6 +24,7 @@ class WalletMainContent extends StatefulWidget {
   final VoidCallback onWithdraw;
   final Future<void> Function() onRefresh;
   final bool isTab;
+  final int initialIndex;
 
   @override
   State<WalletMainContent> createState() => _WalletMainContentState();
@@ -34,7 +36,7 @@ class _WalletMainContentState extends State<WalletMainContent> with SingleTicker
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 3, vsync: this, initialIndex: widget.initialIndex);
     WidgetsBinding.instance.addPostFrameCallback((_) => widget.onRefresh());
   }
 

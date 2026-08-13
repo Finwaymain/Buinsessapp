@@ -9,7 +9,8 @@ import '../../../service/api.dart';
 import '../../../themes/constant_colors.dart';
 import '../../../utils/Preferences.dart';
 import '../../../utils/dark_theme_provider.dart';
-import 'partner_webview_screen.dart';
+import 'referral_history_screen.dart';
+import 'submit_aadhar_screen.dart';
 
 class ReferralEarnScreen extends StatefulWidget {
   const ReferralEarnScreen({super.key});
@@ -19,10 +20,12 @@ class ReferralEarnScreen extends StatefulWidget {
 }
 
 class _ReferralEarnScreenState extends State<ReferralEarnScreen> {
+  bool _isCheckingAadhar = true; // show loader until Aadhaar gate is verified
+
   String referralCode = 'FIIN8829';
   String referralLink = 'https://fiinway.online/r/FIIN8829';
   String totalReferrals = '0';
-  String walletBalance = '₹0.00';
+  String walletBalance = Constant().amountShow(amount: '0');
   String activeUsers = '0';
   String appInstalled = '0';
   String registered = '0';
@@ -57,12 +60,26 @@ class _ReferralEarnScreenState extends State<ReferralEarnScreen> {
         final resData = json.decode(response.body);
         if (resData['success'] == 'success' && resData['data'] != null) {
           final data = resData['data'];
-          if (data['aadhar_number'] != null && (data['aadhar_number'].toString()).isNotEmpty) {
-            await Preferences.setString('user_aadhar_number', data['aadhar_number'].toString());
-            await Preferences.setString('driver_aadhar_number', data['aadhar_number'].toString());
+          final aadhar = data['aadhar_number']?.toString() ?? '';
+
+          // ── Aadhaar Gate ─────────────────────────────────────────────────
+          // If the backend has no Aadhaar for this driver, redirect to submit screen
+          if (aadhar.isEmpty) {
+            if (mounted) {
+              Get.off(
+                () => const SubmitAadharScreen(),
+                transition: Transition.rightToLeftWithFade,
+              );
+            }
+            return;
           }
+          // ─────────────────────────────────────────────────────────────────
+
+          await Preferences.setString('user_aadhar_number', aadhar);
+          await Preferences.setString('driver_aadhar_number', aadhar);
           if (mounted) {
             setState(() {
+              _isCheckingAadhar = false;
               referralCode = data['referral_code'] ?? referralCode;
               referralLink = data['referral_link'] ?? referralLink;
               totalReferrals = data['total_referrals']?.toString() ?? totalReferrals;
@@ -72,20 +89,28 @@ class _ReferralEarnScreenState extends State<ReferralEarnScreen> {
               registered = data['registered']?.toString() ?? '0';
             });
           }
+        } else {
+          // API succeeded but no data — treat as no Aadhaar
+          if (mounted) {
+            Get.off(
+              () => const SubmitAadharScreen(),
+              transition: Transition.rightToLeftWithFade,
+            );
+          }
         }
+      } else {
+        // Network/server error — stop spinner, show whatever we have
+        if (mounted) setState(() => _isCheckingAadhar = false);
       }
     } catch (e) {
       debugPrint('Error fetching referral stats: $e');
+      if (mounted) setState(() => _isCheckingAadhar = false);
     }
   }
 
   void _openHistory() {
     Get.to(
-      () => const PartnerWebViewScreen(
-        title: 'Referral History',
-        urlPath: 'referral-history',
-        userType: 'driver',
-      ),
+      () => const ReferralHistoryScreen(),
       transition: Transition.rightToLeftWithFade,
     );
   }
@@ -107,6 +132,30 @@ class _ReferralEarnScreenState extends State<ReferralEarnScreen> {
   Widget build(BuildContext context) {
     final themeChange = Provider.of<DarkThemeProvider>(context);
     final isDark = themeChange.getThem();
+
+    // Show a full-screen loader while we check Aadhaar status from the backend
+    if (_isCheckingAadhar) {
+      return Scaffold(
+        backgroundColor: isDark ? AppThemeData.surface50Dark : AppThemeData.surface50,
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(color: AppThemeData.primary200, strokeWidth: 2.5),
+              const SizedBox(height: 16),
+              Text(
+                'Verifying partner status...'.tr,
+                style: TextStyle(
+                  color: isDark ? Colors.white70 : AppThemeData.grey800,
+                  fontSize: 14,
+                  fontFamily: AppThemeData.medium,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: isDark ? AppThemeData.surface50Dark : AppThemeData.surface50,

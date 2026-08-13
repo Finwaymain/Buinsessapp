@@ -1,5 +1,7 @@
 
+import 'dart:convert';
 import 'package:cabme_driver/constant/constant.dart';
+import 'package:cabme_driver/model/user_model.dart';
 import 'package:cabme_driver/page/new_ride_screens/payment_collection_screen.dart';
 import 'package:cabme_driver/constant/show_toast_dialog.dart';
 import 'package:cabme_driver/controller/dash_board_controller.dart';
@@ -55,68 +57,66 @@ class NewRideScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '${Constant.appName}'.tr,
+                    'Incoming Ride Requests'.tr,
                     style: TextStyle(
                       color: themeChange.getThem() ? AppThemeData.grey900Dark : AppThemeData.grey900,
                       fontSize: 18,
                       fontFamily: AppThemeData.semiBold,
                     ),
                   ),
-                  // Row(
-                  //   children: [
-                  //     Text(
-                  //       "Status".tr,
-                  //       style: TextStyle(
-                  //         color: themeChange.getThem() ? AppThemeData.grey500Dark : AppThemeData.grey500,
-                  //         fontFamily: AppThemeData.regular,
-                  //         fontSize: 16,
-                  //       ),
-                  //     ),
-                  //     const SizedBox(
-                  //       width: 4,
-                  //     ),
-                  //     Transform.scale(
-                  //       scale: 0.8,
-                  //       child: Switch(
-                  //         value: controllerDashBoard.isActive.value,
-                  //         activeColor: AppThemeData.success300,
-                  //         inactiveTrackColor: AppThemeData.warning200,
-                  //         onChanged: (value) async {
-                  //           await controllerDashBoard.getUsrData();
-                  //           if (controllerDashBoard.userModel.value.userData!.statutVehicule == "no") {
-                  //             showAlertDialog(context, "vehicleInformation");
-                  //           } else if (controllerDashBoard.userModel.value.userData!.isVerified == "no" || controllerDashBoard.userModel.value.userData!.isVerified!.isEmpty) {
-                  //             showAlertDialog(context, "document");
-                  //           } else {
-                  //             ShowToastDialog.showLoader("Please wait");
-                  //
-                  //             Map<String, dynamic> bodyParams = {
-                  //               'id_driver': Preferences.getInt(Preferences.userId),
-                  //               'online': controllerDashBoard.isActive.value ? 'no' : 'yes',
-                  //             };
-                  //
-                  //             await controllerDashBoard.changeOnlineStatus(bodyParams).then((value) {
-                  //               if (value != null) {
-                  //                 if (value['success'] == "success") {
-                  //                   UserModel userModel = Constant.getUserData();
-                  //                   userModel.userData!.online = value['data']['online'];
-                  //                   controller.userModel.value = userModel;
-                  //                   Preferences.setString(Preferences.user, jsonEncode(userModel.toJson()));
-                  //                   controllerDashBoard.isActive.value = userModel.userData!.online == 'no' ? false : true;
-                  //                   ShowToastDialog.showToast(value['message']);
-                  //                 } else {
-                  //                   ShowToastDialog.showToast(value['error']);
-                  //                 }
-                  //               }
-                  //             });
-                  //
-                  //             ShowToastDialog.closeLoader();
-                  //           }
-                  //         },
-                  //       ),
-                  //     ),
-                  //   ],
-                  // ),
+                  Row(
+                    children: [
+                      Text(
+                        controllerDashBoard.isActive.value ? "Online".tr : "Offline".tr,
+                        style: TextStyle(
+                          color: controllerDashBoard.isActive.value ? AppThemeData.success300 : (themeChange.getThem() ? AppThemeData.grey500Dark : AppThemeData.grey500),
+                          fontFamily: AppThemeData.medium,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Transform.scale(
+                        scale: 0.8,
+                        child: Switch(
+                          value: controllerDashBoard.isActive.value,
+                          activeColor: AppThemeData.success300,
+                          inactiveTrackColor: AppThemeData.warning200,
+                          onChanged: (value) async {
+                            await controllerDashBoard.getUsrData();
+                            if (controllerDashBoard.userModel.value.userData!.statutVehicule == "no") {
+                              showAlertDialog(context, "vehicleInformation");
+                            } else if (controllerDashBoard.userModel.value.userData!.isVerified == "no" || controllerDashBoard.userModel.value.userData!.isVerified!.isEmpty) {
+                              showAlertDialog(context, "document");
+                            } else {
+                              ShowToastDialog.showLoader("Please wait");
+
+                              Map<String, dynamic> bodyParams = {
+                                'id_driver': Preferences.getInt(Preferences.userId),
+                                'online': controllerDashBoard.isActive.value ? 'no' : 'yes',
+                              };
+
+                              await controllerDashBoard.changeOnlineStatus(bodyParams).then((val) {
+                                if (val != null) {
+                                  if (val['success'] == "success") {
+                                    UserModel userModel = Constant.getUserData();
+                                    userModel.userData!.online = val['data']['online'];
+                                    controller.userModel.value = userModel;
+                                    Preferences.setString(Preferences.user, jsonEncode(userModel.toJson()));
+                                    controllerDashBoard.isActive.value = userModel.userData!.online == 'no' ? false : true;
+                                    ShowToastDialog.showToast(val['message']);
+                                  } else {
+                                    ShowToastDialog.showToast(val['error']);
+                                  }
+                                }
+                              });
+
+                              ShowToastDialog.closeLoader();
+                            }
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
               titleSpacing: 12,
@@ -161,29 +161,11 @@ class NewRideScreen extends StatelessWidget {
                 },
                 icon: const Icon(Icons.add),
                 label: Text(
-                  'Create Ride'.tr,
+                  'Create Manual Trip'.tr,
                   style: TextStyle(fontSize: 14, fontFamily: AppThemeData.medium),
                 ),
               ),
             ),
-            // floatingActionButton: FloatingActionButton(
-            //   backgroundColor: AppThemeData.primary200,
-            //   onPressed: () {
-            //     if (controller.userModel.value.userData!.isVerified == "yes") {
-            //       if (Constant.selectedMapType == 'osm') {
-            //         Get.to(() => const CreateOsmRideScreen());
-            //       } else {
-            //         Get.to(() => const CreateRideScreen());
-            //       }
-            //     } else {
-            //       ShowToastDialog.showToast('Your document is not verified by admin'.tr);
-            //     }
-            //   },
-            //   child: const Icon(
-            //     Icons.add,
-            //     size: 35,
-            //   ),
-            // ),
             drawer: isTab ? null : buildAppDrawer(context, controllerDashBoard),
             body: RefreshIndicator(
               onRefresh: () => controller.getNewRide(),
@@ -191,19 +173,11 @@ class NewRideScreen extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 child: Column(
                   children: [
-                    // if (double.parse(controller.userModel.value.userData!.amount.toString()) < double.parse(Constant.minimumWalletBalance!))
-                    //   Container(
-                    //     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    //     decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), color: AppThemeData.primary200),
-                    //     child: Text(
-                    //       "${"Your wallet balance must be".tr} ${Constant().amountShow(amount: Constant.minimumWalletBalance!.toString())} ${"to get ride.".tr}",
-                    //     ),
-                    //   ),
                     Expanded(
                       child: controller.isLoading.value
                           ? SizedBox()
                           : controller.rideList.isEmpty
-                              ? Constant.emptyView("Your don't have any ride booked.")
+                              ? Constant.emptyView("No incoming ride requests at the moment. Stay online to receive new trip requests.".tr)
                               : ListView.builder(
                                   padding: EdgeInsets.only(bottom: isTab ? 150 : 50),
                                   itemCount: controller.rideList.length,

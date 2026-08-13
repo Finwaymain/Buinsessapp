@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'package:cabme_driver/constant/constant.dart';
 import '../../../service/api.dart';
 import '../../../themes/constant_colors.dart';
 import '../../../utils/Preferences.dart';
@@ -22,7 +23,7 @@ class _ReferralHistoryScreenState extends State<ReferralHistoryScreen> {
   String appInstalled = '0';
   String registered = '0';
   String activeUsers = '0';
-  String walletBalance = '₹0.00';
+  String walletBalance = Constant().amountShow(amount: '0');
   String verified = '0';
   String activeBusiness = '0';
   String activeServices = '0';
@@ -57,7 +58,7 @@ class _ReferralHistoryScreenState extends State<ReferralHistoryScreen> {
               appInstalled = (summary['app_installed'] ?? stats['app_installed'] ?? 0).toString();
               registered = (summary['registered'] ?? stats['registered'] ?? 0).toString();
               activeUsers = stats['active_users']?.toString() ?? '0';
-              walletBalance = stats['wallet_balance']?.toString() ?? '₹0.00';
+              walletBalance = stats['wallet_balance']?.toString() ?? Constant().amountShow(amount: '0');
               verified = (summary['verified'] ?? stats['verified'] ?? 0).toString();
               activeBusiness = (summary['active_business'] ?? stats['active_business'] ?? 0).toString();
               activeServices = (summary['active_services'] ?? stats['active_services'] ?? 0).toString();
@@ -474,7 +475,7 @@ class _ReferralHistoryScreenState extends State<ReferralHistoryScreen> {
           ),
           const SizedBox(width: 10),
           Text(
-            user['amount']?.toString() ?? '₹0.00',
+            user['amount']?.toString() ?? Constant().amountShow(amount: '0'),
             style: TextStyle(
               fontSize: 14,
               fontFamily: AppThemeData.bold,

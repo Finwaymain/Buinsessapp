@@ -149,6 +149,7 @@ class ServiceItemsList extends StatelessWidget {
   final bool showPrices;
   final bool showCheckmarks;
   final void Function(int index)? onToggle;
+  final bool Function(String name)? isExtraCheck;
 
   const ServiceItemsList({
     super.key,
@@ -156,6 +157,7 @@ class ServiceItemsList extends StatelessWidget {
     this.showPrices = true,
     this.showCheckmarks = false,
     this.onToggle,
+    this.isExtraCheck,
   });
 
   @override
@@ -163,6 +165,7 @@ class ServiceItemsList extends StatelessWidget {
     return Column(
       children: List.generate(items.length, (index) {
         final item = items[index];
+        final isExtra = isExtraCheck != null ? isExtraCheck!(item.name) : false;
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: Row(
@@ -170,15 +173,31 @@ class ServiceItemsList extends StatelessWidget {
               if (showCheckmarks)
                 InkWell(
                   onTap: onToggle == null ? null : () => onToggle!(index),
-                  child: Icon(
-                    item.completed ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                    color: item.completed ? AppThemeData.success300 : AppThemeData.grey400,
-                    size: 20,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        item.completed ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                        color: item.completed ? AppThemeData.success300 : AppThemeData.grey400,
+                        size: 20,
+                      ),
+                      if (!isExtra)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4),
+                          child: Icon(Icons.lock_rounded, size: 12, color: AppThemeData.grey400),
+                        ),
+                    ],
                   ),
                 ),
               if (showCheckmarks) const SizedBox(width: 8),
               Expanded(
-                child: Text(item.name, style: const TextStyle(fontSize: 14, fontFamily: AppThemeData.regular)),
+                child: Text(
+                  item.name,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontFamily: !isExtra ? AppThemeData.semiBold : AppThemeData.regular,
+                  ),
+                ),
               ),
               if (showPrices && item.price > 0)
                 Text(

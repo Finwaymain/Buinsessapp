@@ -70,9 +70,9 @@ class WalletOverviewTab extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              _quick(isDark, Icons.send_rounded, 'Send Money', () => _requireLogin(() => Get.to(() => ScannerAndTransferScreen()))),
+              _quick(isDark, Icons.send_rounded, 'Transfer', () => _requireLogin(() => Get.to(() => ScannerAndTransferScreen()))),
               _quick(isDark, Icons.account_balance_outlined, 'Payout', () => _requireLogin(() => Get.to(() => PayoutScreen()))),
-              _quick(isDark, Icons.qr_code_scanner_rounded, 'Scan & Pay', () => _requireLogin(() => Get.to(() => ScannerAndTransferScreen()))),
+              _quick(isDark, Icons.qr_code_scanner_rounded, 'Scan', () => _requireLogin(() => Get.to(() => ScannerAndTransferScreen()))),
               _quick(isDark, Icons.qr_code_2_outlined, 'My QR', () => _requireLogin(() => Get.to(() => MyQRScreen()))),
             ],
           ),
@@ -95,7 +95,7 @@ class WalletOverviewTab extends StatelessWidget {
                 children: [
                   _walletCard(
                     isDark,
-                    'Main Smart Value',
+                    'Smart Value',
                     'Available balance',
                     walletController.walletAmount.value,
                     Icons.account_balance_wallet_rounded,
@@ -104,7 +104,7 @@ class WalletOverviewTab extends StatelessWidget {
                   const SizedBox(height: 12),
                   _walletCard(
                     isDark,
-                    'Cashback Smart Value',
+                    'Cashback',
                     'Rewards & earnings',
                     walletController.earnAmount.value,
                     Icons.card_giftcard_rounded,
@@ -167,7 +167,7 @@ class WalletOverviewTab extends StatelessWidget {
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  Constant().amountShow(amount: walletController.walletAmount.value.toString()),
+                  Constant().amountShowWithoutSymbol(amount: walletController.walletAmount.value.toString()),
                   style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
                 ),
               ),
@@ -179,7 +179,7 @@ class WalletOverviewTab extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  '${'Total Earnings'.tr}: ${Constant().amountShow(amount: walletController.totalEarn.toString())}',
+                  '${'Total Earnings'.tr}: ${Constant().amountShowWithoutSymbol(amount: walletController.totalEarn.toString())}',
                   style: const TextStyle(color: Colors.white, fontSize: 12, fontFamily: AppThemeData.medium),
                 ),
               ),
@@ -364,7 +364,7 @@ class WalletOverviewTab extends StatelessWidget {
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerRight,
               child: Text(
-                Constant().amountShow(amount: amount.toString()),
+                Constant().amountShowWithoutSymbol(amount: amount.toString()),
                 style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
               ),
             ),

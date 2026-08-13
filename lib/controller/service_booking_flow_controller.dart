@@ -8,10 +8,9 @@ import 'package:image_picker/image_picker.dart';
 
 class ServiceBookingFlowController extends GetxController {
   ServiceBookingFlowController({
-    required DriverBookingItem booking,
+    required this.booking,
     required this.listController,
-  })  : booking = booking,
-        currentBooking = booking.obs {
+  }) : currentBooking = booking.obs {
     _initItems(booking);
     if (booking.isInProgress) {
       startedAt.value = DateTime.now();
@@ -44,12 +43,28 @@ class ServiceBookingFlowController extends GetxController {
   }
 
   void _initItems(DriverBookingItem item) {
-    final rawItems = item.serviceItems.isNotEmpty
-        ? item.serviceItems
-        : [ServiceLineItem(name: item.categoryLabel, price: item.amount)];
-    _assignServiceItems(rawItems);
+    final rawItems = item.serviceItems;
+    final fallbackName = item.categoryLabel.isNotEmpty
+        ? item.categoryLabel
+        : (item.serviceName.isNotEmpty
+            ? item.serviceName
+            : (item.title.isNotEmpty ? item.title : 'Service'));
+
+    final List<ServiceLineItem> finalItems = [];
+
+    if (rawItems.isNotEmpty) {
+      finalItems.addAll(rawItems);
+    }
+
+    if (!finalItems.any((e) => !isVisitingLine(e.name))) {
+      finalItems.add(ServiceLineItem(
+        name: fallbackName,
+        price: item.amount > 0 ? item.amount : 0,
+      ));
+    }
+
+    _assignServiceItems(finalItems);
     _distributePrices();
-    _syncStoredFees();
   }
 
   void _assignServiceItems(List<ServiceLineItem> rawItems) {
@@ -59,22 +74,11 @@ class ServiceBookingFlowController extends GetxController {
       if (isVisitingLine(entry.name)) {
         if (entry.price > visit) visit = entry.price;
       } else {
-        labour.add(entry);
+        labour.add(entry.copyWith(completed: true));
       }
     }
     if (visit > 0) visitingCharge.value = visit;
     serviceItems.assignAll(labour);
-    _syncStoredFees();
-  }
-
-  void _syncStoredFees() {
-    final amount = currentBooking.value.amount > 0 ? currentBooking.value.amount : booking.amount;
-    if (amount <= 0) return;
-    final labour = serviceItems.fold<double>(0, (t, e) => t + e.price);
-    final remainder = amount - labour - visitingCharge.value - materialCost.value;
-    if (remainder > 0 && platformFeeStored.value <= 0) {
-      platformFeeStored.value = remainder;
-    }
   }
 
   void _distributePrices() {
@@ -82,10 +86,37 @@ class ServiceBookingFlowController extends GetxController {
     if (serviceItems.isEmpty || amount <= 0) return;
     final withoutPrice = serviceItems.where((e) => e.price <= 0).length;
     if (withoutPrice == 0) return;
-    final distributable = amount - visitingCharge.value - materialCost.value - platformFeeStored.value;
-    if (distributable <= 0) return;
-    final each = distributable / serviceItems.length;
-    serviceItems.assignAll(serviceItems.map((e) => e.price > 0 ? e : e.copyWith(price: each)));
+    final distributable = amount - visitingCharge.value - materialCost.value;
+    final priceToAssign = distributable > 0 ? (distributable / withoutPrice) : (amount / serviceItems.length);
+    serviceItems.assignAll(serviceItems.map((e) => e.price > 0 ? e : e.copyWith(price: priceToAssign)));
+  }
+
+  List<ServiceLineItem> get itemizedBillItems {
+    final activeItems = serviceItems.where((e) => e.completed).toList();
+    final extras = extraServices.toSet();
+    final extraItems = activeItems.where((e) => extras.contains(e.name)).toList();
+    final baseItems = activeItems.where((e) => !extras.contains(e.name)).toList();
+
+    final totalExtraPrice = extraItems.fold<double>(0, (sum, e) => sum + e.price);
+    final totalBaseLabour = (labourTotal - totalExtraPrice) > 0 ? (labourTotal - totalExtraPrice) : 0.0;
+
+    final result = <ServiceLineItem>[];
+
+    if (baseItems.isNotEmpty) {
+      final baseWithoutPriceCount = baseItems.where((e) => e.price <= 0).length;
+      final defaultBasePrice = baseWithoutPriceCount > 0 ? (totalBaseLabour / baseWithoutPriceCount) : 0.0;
+
+      for (final item in baseItems) {
+        final finalPrice = item.price > 0 ? item.price : (baseWithoutPriceCount > 0 ? defaultBasePrice : totalBaseLabour);
+        result.add(item.copyWith(price: finalPrice));
+      }
+    }
+
+    for (final item in extraItems) {
+      result.add(item);
+    }
+
+    return result;
   }
 
   List<ServiceLineItem> get extraAddedItems {
@@ -94,20 +125,39 @@ class ServiceBookingFlowController extends GetxController {
   }
 
   double get labourTotal {
-    final sum = serviceItems.fold<double>(0, (t, e) => t + e.price);
-    if (sum > 0) return sum;
+    final activeItems = serviceItems.where((e) => e.completed).toList();
+    if (activeItems.isEmpty) return 0.0;
+
+    final extras = extraServices.toSet();
+    final activeExtraItems = activeItems.where((e) => extras.contains(e.name)).toList();
+    final activeBaseItems = activeItems.where((e) => !extras.contains(e.name)).toList();
+
+    final extraSum = activeExtraItems.fold<double>(0, (t, e) => t + e.price);
+    final baseExplicitSum = activeBaseItems.fold<double>(0, (t, e) => t + e.price);
+
+    if (baseExplicitSum > 0) {
+      return baseExplicitSum + extraSum;
+    }
+
+    final allBaseItems = serviceItems.where((e) => !extras.contains(e.name)).toList();
     final bookingAmount = currentBooking.value.amount > 0 ? currentBooking.value.amount : booking.amount;
-    final base = bookingAmount - visitingCharge.value - materialCost.value - platformFeeStored.value;
-    return base > 0 ? base : bookingAmount;
+    final totalBaseLabour = bookingAmount - visitingCharge.value - materialCost.value;
+
+    if (totalBaseLabour > 0 && allBaseItems.isNotEmpty) {
+      final ratio = activeBaseItems.length / allBaseItems.length;
+      return (totalBaseLabour * ratio) + extraSum;
+    }
+
+    return activeBaseItems.isNotEmpty ? (totalBaseLabour + extraSum) : extraSum;
   }
 
   double get billSubtotal => labourTotal + materialCost.value + visitingCharge.value;
 
-  double get billTotal => billSubtotal + platformFeeStored.value;
+  double get billTotal => billSubtotal;
 
   double get subTotal => billSubtotal;
 
-  double get platformFee => platformFeeStored.value;
+  double get platformFee => 0.0;
 
   double get totalBill => billTotal;
 
@@ -132,9 +182,24 @@ class ServiceBookingFlowController extends GetxController {
     isPaused.toggle();
   }
 
+  bool isExtraService(String name) {
+    return extraServices.contains(name);
+  }
+
   void toggleServiceDone(int index) {
     if (index < 0 || index >= serviceItems.length) return;
     final item = serviceItems[index];
+
+    // Primary booked services cannot be unchecked from the bill
+    if (!isExtraService(item.name)) {
+      Get.snackbar(
+        'Primary Service'.tr,
+        'Primary booked service cannot be removed from bill.'.tr,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
     serviceItems[index] = item.copyWith(completed: !item.completed);
     serviceItems.refresh();
   }
@@ -196,12 +261,24 @@ class ServiceBookingFlowController extends GetxController {
 
   Future<bool> acceptBooking() async {
     final ok = await listController.updateServiceStatus(currentBooking.value.id, 'accepted');
-    if (ok) await _refreshCurrent();
+    if (ok) await refreshCurrent();
     return ok;
   }
 
   Future<bool> rejectBooking() async {
-    return listController.updateServiceStatus(currentBooking.value.id, 'rejected');
+    final ok = await listController.updateServiceStatus(currentBooking.value.id, 'rejected');
+    if (ok) {
+      listController.markLocallyRejected(currentBooking.value.id);
+    }
+    return ok;
+  }
+
+  Future<bool> cancelBooking() async {
+    final ok = await listController.updateServiceStatus(currentBooking.value.id, 'cancelled');
+    if (ok) {
+      listController.markLocallyRejected(currentBooking.value.id);
+    }
+    return ok;
   }
 
   static String normalizeOtp(String raw) => raw.replaceAll(RegExp(r'\D'), '');
@@ -221,7 +298,7 @@ class ServiceBookingFlowController extends GetxController {
       startedAt.value = DateTime.now();
       elapsedSeconds.value = 0;
       _startTimer();
-      await _refreshCurrent();
+      await refreshCurrent();
     }
     return ok;
   }
@@ -230,8 +307,7 @@ class ServiceBookingFlowController extends GetxController {
     return {
       'material_cost': materialCost.value,
       'visiting_charge': visitingCharge.value,
-      'platform_fee': platformFeeStored.value,
-      'service_items': serviceItems
+      'service_items': itemizedBillItems
           .map((e) => {
                 'name': e.name,
                 'price': e.price,
@@ -248,27 +324,35 @@ class ServiceBookingFlowController extends GetxController {
       'awaiting_payment',
       billPayload: buildBillPayload(),
     );
-    if (ok) await _refreshCurrent();
+    if (ok) await refreshCurrent();
     return ok;
   }
 
   Future<bool> completeJob() async {
     _timer?.cancel();
     final ok = await listController.updateServiceStatus(currentBooking.value.id, 'completed');
-    if (ok) await _refreshCurrent();
+    if (ok) await refreshCurrent();
     return ok;
   }
 
-  Future<void> _refreshCurrent() async {
-    await listController.fetchBookings();
-    final updated = listController.bookings.firstWhereOrNull((e) => e.id == booking.id);
+  Future<bool> completeJobWithCash() async {
+    _timer?.cancel();
+    final ok = await listController.updateServiceStatus(
+      currentBooking.value.id,
+      'completed',
+      paymentMethod: 'cash',
+    );
+    if (ok) await refreshCurrent();
+    return ok;
+  }
+
+  Future<void> refreshCurrent() async {
+    final updated = await listController.fetchSingleBooking(booking.id);
     if (updated != null) {
       currentBooking.value = updated;
-      if (updated.serviceItems.isNotEmpty) {
-        _assignServiceItems(updated.serviceItems);
-      }
-      _distributePrices();
+      _initItems(updated);
     }
+    listController.fetchBookings();
   }
 
   int get completedServiceCount => serviceItems.where((e) => e.completed).length;

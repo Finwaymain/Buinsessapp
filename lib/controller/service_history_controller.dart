@@ -61,4 +61,14 @@ class ServiceHistoryController extends GetxController {
   List<ServiceRequestData> get pending => items.where((e) => e.isPending).toList();
   List<ServiceRequestData> get ongoing => items.where((e) => e.isOngoing).toList();
   List<ServiceRequestData> get history => items.where((e) => e.isHistory).toList();
+
+  static int resolveUserId() {
+    return Preferences.getInt(Preferences.userId);
+  }
+
+  static Future<void> refreshAll() async {
+    if (Get.isRegistered<ServiceHistoryController>()) {
+      await Get.find<ServiceHistoryController>().fetchHistory();
+    }
+  }
 }

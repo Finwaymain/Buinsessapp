@@ -28,12 +28,20 @@ android {
         versionName = flutter.versionName
         multiDexEnabled = true
     }
+    signingConfigs {
+        create("release") {
+            storeFile = file("fiinway-driver-key.jks")
+            storePassword = "12345678"
+            keyAlias = "fiinway_key"
+            keyPassword = "12345678"
+        }
+    }
 
     buildTypes {
         release {
             isMinifyEnabled = false
             isShrinkResources = false
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 

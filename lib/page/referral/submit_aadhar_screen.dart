@@ -12,7 +12,7 @@ import '../../../utils/Preferences.dart';
 import '../../../utils/dark_theme_provider.dart';
 import '../../../constant/show_toast_dialog.dart';
 import '../auth_screens/phone_entry_screen.dart';
-import 'partner_webview_screen.dart';
+import 'referral_earn_screen.dart';
 
 class SubmitAadharScreen extends StatefulWidget {
   const SubmitAadharScreen({super.key});
@@ -87,11 +87,7 @@ class _SubmitAadharScreenState extends State<SubmitAadharScreen> {
 
         if (mounted) {
           Get.off(
-            () => const PartnerWebViewScreen(
-              title: 'Partner Dashboard',
-              urlPath: 'partner-dashboard',
-              userType: 'driver',
-            ),
+            () => const ReferralEarnScreen(),
             transition: Transition.rightToLeftWithFade,
           );
         }
