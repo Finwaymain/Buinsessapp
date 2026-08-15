@@ -111,6 +111,11 @@ class _WebViewScreenState extends State<WebViewScreen> {
             Get.back();
             return;
           }
+          if (message.message == 'finishWelcome' || message.message == 'login' || message.message == 'register' || message.message == 'unauthorized') {
+            Preferences.setBoolean(Preferences.isFinishOnBoardingKey, true);
+            Get.offAll(() => const PhoneEntryScreen());
+            return;
+          }
           try {
             final data = jsonDecode(message.message);
             if (widget.onBridgeAction != null && data is Map<String, dynamic>) {

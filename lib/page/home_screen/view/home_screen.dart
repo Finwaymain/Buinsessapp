@@ -828,13 +828,8 @@ class MainHomeScreen extends StatelessWidget {
                                       : 'Join as a Partner',
                                   onTap: () {
                                     if (homeController.getLoginStatus(inProgress: false)) {
-                                      if ((Preferences.getString('user_aadhar_number') ?? Preferences.getString('driver_aadhar_number') ?? '').isNotEmpty) {
-                                        Get.to(() => const ReferralEarnScreen(),
-                                            transition: Transition.rightToLeftWithFade);
-                                      } else {
-                                        Get.to(() => const SubmitAadharScreen(),
-                                            transition: Transition.rightToLeftWithFade);
-                                      }
+                                      Get.to(() => const ReferralEarnScreen(),
+                                          transition: Transition.rightToLeftWithFade);
                                     }
                                   },
                                 ),

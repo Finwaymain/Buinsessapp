@@ -481,7 +481,20 @@ class DashBoardController extends GetxController {
   Future<dynamic> updateFCMToken(String token) async {
     try {
       if (userModel.value.userData == null) return null;
-      Map<String, dynamic> bodyParams = {'user_id': Preferences.getInt(Preferences.userId), 'fcm_id': token, 'device_id': "", 'user_cat': userModel.value.userData!.userCat};
+      String userId = Preferences.getString(Preferences.userId);
+      if (userId.isEmpty || userId == "0") {
+        userId = userModel.value.userData!.id ?? "";
+      }
+      String phone = userModel.value.userData!.phone ?? "";
+
+      Map<String, dynamic> bodyParams = {
+        'user_id': userId,
+        'driver_id': userId,
+        'phone': phone,
+        'fcm_id': token,
+        'device_id': "",
+        'user_cat': userModel.value.userData!.userCat ?? "driver"
+      };
       final response = await http.post(Uri.parse(API.updateToken), headers: API.header, body: jsonEncode(bodyParams));
       showLog("API :: URL :: ${API.updateToken} ");
       showLog("API :: Request Body :: ${jsonEncode(bodyParams)} ");
@@ -595,11 +608,7 @@ class DashBoardController extends GetxController {
     } else if (item.title == 'Change Password'.tr) {
       Get.to(ChangePasswordScreen());
     } else if (item.title == 'Refer a Friend'.tr || item.title == 'Join as a Partner'.tr || item.title == 'Join as Partner'.tr || item.title == 'Partner Dashboard'.tr || item.title == partnerTitle) {
-      if (hasAadhar) {
-        Get.to(() => const ReferralEarnScreen());
-      } else {
-        Get.to(() => const SubmitAadharScreen());
-      }
+      Get.to(() => const ReferralEarnScreen());
     } else if (item.title == 'Terms & Conditions'.tr) {
       Get.to(const TermsOfServiceScreen());
     } else if (item.title == 'Privacy & Policy'.tr) {

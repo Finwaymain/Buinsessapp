@@ -127,11 +127,7 @@ class MainHomeController extends GetxController
     } else if (routeName == '/history') {
       Get.to(() => WalletScreen(initialIndex: 1), transition: Transition.rightToLeftWithFade);
     } else if (routeName == '/referral') {
-      if (hasAadhar) {
-        Get.to(() => const ReferralEarnScreen(), transition: Transition.rightToLeftWithFade);
-      } else {
-        Get.to(() => const SubmitAadharScreen(), transition: Transition.rightToLeftWithFade);
-      }
+      Get.to(() => const ReferralEarnScreen(), transition: Transition.rightToLeftWithFade);
     } else if (routeName == '/premium') {
       Get.to(() => const BusinessPremiumPlanScreen(), transition: Transition.rightToLeftWithFade);
     } else {
@@ -167,11 +163,7 @@ class MainHomeController extends GetxController
     } else if (routeName == '/smartValue') {
       Get.to(() => MyQRScreen(), transition: Transition.rightToLeftWithFade);
     } else if (routeName == '/referralProgram') {
-      if (hasAadhar) {
-        Get.to(() => const ReferralEarnScreen(), transition: Transition.rightToLeftWithFade);
-      } else {
-        Get.to(() => const SubmitAadharScreen(), transition: Transition.rightToLeftWithFade);
-      }
+      Get.to(() => const ReferralEarnScreen(), transition: Transition.rightToLeftWithFade);
     } else if (index == 0) {
       Get.to(() => TaxiDashBoard(), transition: Transition.rightToLeftWithFade);
     } else {

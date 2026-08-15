@@ -365,13 +365,20 @@ class AuthOtpController extends GetxController {
         'referral_code': referralCode,
       });
       final res = await http.post(Uri.parse(API.authRegisterSimple), headers: API.authheader, body: body);
-      final data = json.decode(res.body);
+      Map<String, dynamic> data = {};
+      try {
+        data = json.decode(res.body);
+      } catch (_) {
+        if (res.statusCode == 200) {
+          data = {'success': 'success'};
+        }
+      }
       isLoading.value = false;
 
-      if (res.statusCode == 200 && data['success'] == 'success') {
+      if (res.statusCode == 200 && (data['success'] == 'success' || data['success'] == true || data['data'] != null)) {
         return await _saveAndReturnUser(data);
       } else {
-        ShowToastDialog.showToast(data['error'] ?? 'Registration failed');
+        ShowToastDialog.showToast(data['error'] ?? data['message'] ?? 'Registration failed');
         return null;
       }
     } on SocketException {
@@ -398,7 +405,7 @@ class AuthOtpController extends GetxController {
       final data = json.decode(res.body);
       isLoading.value = false;
 
-      if (res.statusCode == 200 && data['success'] == 'success') {
+      if (res.statusCode == 200 && (data['success'] == 'success' || data['success'] == true)) {
         ShowToastDialog.showToast(data['message'] ?? 'Referral code applied!');
         return true;
       } else {
@@ -419,15 +426,21 @@ class AuthOtpController extends GetxController {
   // ── Shared helper: persist session ──────────────────────────────────────────
   Future<UserModel> _saveAndReturnUser(Map<String, dynamic> responseBody) async {
     final model = UserModel.fromJson(responseBody);
-    if (model.userData != null) {
-      await Preferences.setInt(Preferences.userId, int.parse(model.userData!.id.toString()));
-      await Preferences.setString(Preferences.user, jsonEncode(responseBody));
-      await Preferences.setString(Preferences.accesstoken, model.userData!.accesstoken.toString());
-      await Preferences.setString(Preferences.admincommission, (model.userData!.adminCommission ?? '0').toString());
-      if (model.userData!.categoryId != null && model.userData!.categoryId!.isNotEmpty) {
-        await Preferences.setString(Preferences.driverCategoryId, model.userData!.categoryId!);
+    if (model.userData != null || responseBody['data'] != null) {
+      final dataMap = responseBody['data'] is Map<String, dynamic> ? responseBody['data'] : {};
+      final String idStr = (model.userData?.id ?? dataMap['id'] ?? '').toString();
+      final String tokenStr = (model.userData?.accesstoken ?? dataMap['accesstoken'] ?? '').toString();
+      final String catId = (model.userData?.categoryId ?? dataMap['category_id'] ?? '').toString();
+
+      if (idStr.isNotEmpty) {
+        await Preferences.setInt(Preferences.userId, int.tryParse(idStr) ?? 0);
+        await Preferences.setString(Preferences.userId, idStr);
       }
-      API.header['accesstoken'] = model.userData!.accesstoken.toString();
+      await Preferences.setString(Preferences.user, jsonEncode(responseBody));
+      if (tokenStr.isNotEmpty) {
+        await Preferences.setString(Preferences.accesstoken, tokenStr);
+        API.header['accesstoken'] = tokenStr;
+      }
       await Preferences.setBoolean(Preferences.isLogin, true);
     }
     return model;
