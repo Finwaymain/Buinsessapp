@@ -84,11 +84,11 @@ class SupportChatController extends GetxController {
     if (fromPrefs.isNotEmpty) return fromPrefs;
     final intId = Preferences.getInt(Preferences.userId);
     if (intId != 0) return intId.toString();
-    return Constant.getUserData().data?.id?.toString() ?? '1';
+    return Constant.getUserData().userData?.id?.toString() ?? '1';
   }
 
   String _getUserName() {
-    final data = Constant.getUserData().data;
+    final data = Constant.getUserData().userData;
     if (data != null) {
       final name = '${data.prenom ?? ''} ${data.nom ?? ''}'.trim();
       if (name.isNotEmpty) return name;
