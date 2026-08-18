@@ -315,9 +315,7 @@ class NewRideController extends GetxController with WidgetsBindingObserver {
       Map<String, dynamic> responseBody = json.decode(response.body);
 
       if (response.statusCode == 200 && responseBody['success'] == "success") {
-        if (data.rideType!.toString() == "driver") {
-          await cashPaymentRequest(data, paymethod: paymethod);
-        }
+        await cashPaymentRequest(data, paymethod: paymethod);
         ShowToastDialog.closeLoader();
         return responseBody;
       } else if (response.statusCode == 200 && responseBody['success'] == "Failed") {
