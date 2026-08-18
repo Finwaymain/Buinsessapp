@@ -12,11 +12,11 @@ import '../referral/referral_earn_screen.dart';
 import '../wallet/wallet_screen.dart';
 import '../features/SmartValue/ScanAndTransfer/view/scanner_and_transfer_screen.dart';
 import '../features/SmartValue/MyQR/view/my_qr_view.dart';
-import '../features/SmartValue/Payout/view/payout_screen.dart';
-import '../features/SmartValue/AccountDetails/view/account_details.dart';
 import '../subscription_plan_screen/business_premium_plan_screen.dart';
 import '../add_bank_details/add_bank_account.dart';
 import '../contact_us/customer_support_screen.dart';
+import '../../utils/onboarding_url.dart';
+import '../web_view_screen/web_view_screen.dart';
 
 class DriverServiceSearchItem {
   final String id;
@@ -198,17 +198,6 @@ class _SearchAllServicesScreenState extends State<SearchAllServicesScreen> {
         onTap: () => Get.to(() => WalletScreen()),
       ),
       DriverServiceSearchItem(
-        id: 'sv_payout',
-        title: 'Direct Bank Payout',
-        category: 'Smart Value',
-        description: 'Transfer your wallet earnings directly into your bank account',
-        iconEmoji: '🏦',
-        iconData: Icons.payments_rounded,
-        accentColor: const Color(0xFF2C5CE6),
-        badge: 'Fast Payout',
-        onTap: () => Get.to(() => PayoutScreen()),
-      ),
-      DriverServiceSearchItem(
         id: 'sv_bank_details',
         title: 'Bank Account & UPI Details',
         category: 'Smart Value',
@@ -217,16 +206,6 @@ class _SearchAllServicesScreenState extends State<SearchAllServicesScreen> {
         iconData: Icons.account_balance_rounded,
         accentColor: const Color(0xFF455A64),
         onTap: () => Get.to(() => const AddBankAccount()),
-      ),
-      DriverServiceSearchItem(
-        id: 'sv_account_card',
-        title: 'Smart Value Card & Profile',
-        category: 'Smart Value',
-        description: 'View Smart Value virtual card and driver profile',
-        iconEmoji: '💳',
-        iconData: Icons.credit_card_rounded,
-        accentColor: const Color(0xFF6554C0),
-        onTap: () => Get.to(() => AccountDetails()),
       ),
       DriverServiceSearchItem(
         id: 'sv_scan',
@@ -281,7 +260,14 @@ class _SearchAllServicesScreenState extends State<SearchAllServicesScreen> {
         iconData: Icons.storefront_rounded,
         accentColor: const Color(0xFF673AB7),
         badge: 'Offers',
-        onTap: () => Get.to(() => const MarketplaceHomeScreen()),
+        onTap: () {
+          final isDarkTheme = Provider.of<DarkThemeProvider>(Get.context!, listen: false).getThem();
+          final url = OnboardingUrl.build('/marketplace', extra: {
+            'user_type': 'driver',
+            'theme': isDarkTheme ? 'dark' : 'light',
+          });
+          Get.to(() => WebViewScreen(url: url, title: 'Marketplace'));
+        },
       ),
       DriverServiceSearchItem(
         id: 'support_help',
