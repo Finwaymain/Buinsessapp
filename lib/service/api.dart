@@ -205,4 +205,11 @@ class API {
   static const driverBookings = "${baseUrl}driver/bookings";
   static const driverServiceBookingStatus = "${baseUrl}driver/bookings/service-status";
   static const driverWalletStatus = "${baseUrl}driver/wallet-status";
+
+  // Support Live Chat Endpoints
+  static const supportQuickQuestions = "${baseUrl}support/quick-questions";
+  static const supportTicket = "${baseUrl}support/ticket";
+  static const supportMessages = "${baseUrl}support/messages";
+  static const supportSendMessage = "${baseUrl}support/send-message";
+  static const supportCloseTicket = "${baseUrl}support/close-ticket";
 }
