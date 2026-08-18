@@ -13,7 +13,6 @@ import '../widget/custom_bottom_navbar.dart';
 import '../widget/custom_drawer.dart';
 import '../../home_screen/view/home_screen.dart';
 import '../../wallet/wallet_screen.dart';
-import '../../search_location_screen.dart';
 import '../../features/AllServices/service_history_screen.dart';
 import '../../../controller/service_history_controller.dart';
 import '../../../controller/dash_board_controller.dart';
@@ -21,6 +20,7 @@ import '../../../utils/Preferences.dart';
 import '../../../utils/onboarding_url.dart';
 import '../../auth_screens/phone_entry_screen.dart';
 import '../../web_view_screen/web_view_screen.dart';
+import '../../search_services/search_all_services_screen.dart';
 
 enum _DashboardMode { loading, native, web }
 
@@ -67,7 +67,7 @@ class _MainDashboardState extends State<MainDashboard> {
 
   final List<Widget> _screens = [
     MainHomeScreen(),
-    const AddressSearchScreen(isTab: true),
+    const SearchAllServicesScreen(isTab: true),
     const InProgressScreen(),
     const ServiceHistoryScreen(showScaffold: false),
     WalletScreen(isTab: true),
