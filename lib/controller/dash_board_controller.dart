@@ -25,8 +25,8 @@ import '../page/privacy_policy/privacy_policy_screen.dart';
 import '../page/referral/referral_earn_screen.dart';
 import '../page/referral/submit_aadhar_screen.dart';
 import '../page/terms_of_service/terms_of_service_screen.dart';
-import '../page/wallet/wallet_screen.dart';
 import '../service/api.dart';
+import '../service/app_version_service.dart';
 import '../utils/Preferences.dart';
 import '../utils/onboarding_url.dart';
 import '../widget/permission_dialog.dart';
@@ -68,6 +68,8 @@ class DashBoardController extends GetxController {
     getPaymentSettingData();
     initLocationTracking();
     fetchDriverServices();
+    // Check for compulsory or optional Play Store updates for Driver Partners
+    AppVersionService.checkAppVersion(appType: 'business');
     super.onInit();
   }
 
