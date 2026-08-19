@@ -710,7 +710,7 @@ class MainHomeScreen extends StatelessWidget {
                                         Get.to(() => PhoneEntryScreen(mode: 'signup'), transition: Transition.rightToLeftWithFade);
                                         return;
                                       }
-                                      Get.to(() => const ServiceHistoryScreen(),
+                                      Get.to(() => ServiceHistoryScreen(),
                                           transition: Transition.rightToLeftWithFade);
                                     },
                                   ),
@@ -871,6 +871,274 @@ class MainHomeScreen extends StatelessWidget {
         );
       },
     );
+  }
+
+  Widget _buildPartnerKitHorizontalCard(BuildContext context, bool isDark) {
+    final kitService = Get.isRegistered<DriverKitService>()
+        ? Get.find<DriverKitService>()
+        : Get.put(DriverKitService());
+
+    return Obx(() {
+      final kitData = kitService.kitData.value;
+      if (kitData == null || kitData.kit == null) return const SizedBox.shrink();
+
+      final kit = kitData.kit!;
+      final hasPurchased = kitData.hasPurchased;
+      final order = kitData.order;
+
+      // If purchased and already delivered, hide card
+      if (hasPurchased && order?.deliveryStatus == 'delivered') {
+        return const SizedBox.shrink();
+      }
+
+      // Case A: Purchased (Processing or Dispatched)
+      if (hasPurchased && order != null) {
+        final isDispatched = order.deliveryStatus == 'dispatched';
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: isDark
+                    ? [const Color(0xFF0F291E), const Color(0xFF0A1F17)]
+                    : [const Color(0xFFECFDF5), const Color(0xFFD1FAE5)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: const Color(0xFF10B981).withValues(alpha: 0.4),
+                width: 1.2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    isDispatched ? Icons.local_shipping_rounded : Icons.inventory_2_rounded,
+                    color: const Color(0xFF10B981),
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            'Partner Kit Ordered'.tr,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontFamily: AppThemeData.bold,
+                              color: isDark ? Colors.white : const Color(0xFF065F46),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              isDispatched ? 'In Transit'.tr : 'Processing'.tr,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontFamily: AppThemeData.bold,
+                                color: Color(0xFF10B981),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '#${order.orderNumber} • Size: ${order.tshirtSize}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontFamily: AppThemeData.medium,
+                          color: isDark ? AppThemeData.grey400Dark : const Color(0xFF047857),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+
+      // Case B: Not Purchased Yet (Show promotional purchase card)
+      final itemsSummary = kit.itemsIncluded.take(3).join(' • ');
+
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: isDark
+                  ? [const Color(0xFF1E1C15), const Color(0xFF151413)]
+                  : [const Color(0xFFFFF9E6), const Color(0xFFFFFFFF)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: kitData.isCompulsory
+                  ? AppThemeData.warning200.withValues(alpha: 0.6)
+                  : AppThemeData.primary200.withValues(alpha: 0.5),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppThemeData.primary200.withValues(alpha: isDark ? 0.08 : 0.12),
+                blurRadius: 14,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              // Left Icon
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppThemeData.primary200, AppThemeData.primary300],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppThemeData.primary200.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Icon(
+                    kitData.categoryCode == 'bike'
+                        ? Icons.two_wheeler_rounded
+                        : (kitData.categoryCode == 'home_service'
+                            ? Icons.home_repair_service_rounded
+                            : Icons.shopping_bag_rounded),
+                    color: Colors.white,
+                    size: 26,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+
+              // Middle Information
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            kit.title.tr,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontFamily: AppThemeData.bold,
+                              color: isDark ? AppThemeData.grey900Dark : AppThemeData.grey900,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (kitData.isCompulsory) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                            decoration: BoxDecoration(
+                              color: AppThemeData.warning200.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              'Required'.tr,
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontFamily: AppThemeData.bold,
+                                color: AppThemeData.warning200,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      itemsSummary.isNotEmpty ? itemsSummary : 'Apparel & Partner ID',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontFamily: AppThemeData.regular,
+                        color: isDark ? AppThemeData.grey500Dark : AppThemeData.grey500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      kit.priceFormatted,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontFamily: AppThemeData.bold,
+                        color: AppThemeData.primary200,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+
+              // Right CTA Button
+              ElevatedButton(
+                onPressed: () => kitService.openKitWebView(kit.webviewUrl),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppThemeData.primary200,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 2,
+                  shadowColor: AppThemeData.primary200.withValues(alpha: 0.3),
+                ),
+                child: Text(
+                  'Order Kit'.tr,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontFamily: AppThemeData.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    });
   }
 }
 
@@ -2539,273 +2807,5 @@ class AddFundScreen extends StatelessWidget {
       Get.back();
       return '';
     }
-  }
-
-  Widget _buildPartnerKitHorizontalCard(BuildContext context, bool isDark) {
-    final kitService = Get.isRegistered<DriverKitService>()
-        ? Get.find<DriverKitService>()
-        : Get.put(DriverKitService());
-
-    return Obx(() {
-      final kitData = kitService.kitData.value;
-      if (kitData == null || kitData.kit == null) return const SizedBox.shrink();
-
-      final kit = kitData.kit!;
-      final hasPurchased = kitData.hasPurchased;
-      final order = kitData.order;
-
-      // If purchased and already delivered, hide card
-      if (hasPurchased && order?.deliveryStatus == 'delivered') {
-        return const SizedBox.shrink();
-      }
-
-      // Case A: Purchased (Processing or Dispatched)
-      if (hasPurchased && order != null) {
-        final isDispatched = order.deliveryStatus == 'dispatched';
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: isDark
-                    ? [const Color(0xFF0F291E), const Color(0xFF0A1F17)]
-                    : [const Color(0xFFECFDF5), const Color(0xFFD1FAE5)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: const Color(0xFF10B981).withValues(alpha: 0.4),
-                width: 1.2,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF10B981).withValues(alpha: 0.1),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withValues(alpha: 0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    isDispatched ? Icons.local_shipping_rounded : Icons.inventory_2_rounded,
-                    color: const Color(0xFF10B981),
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            'Partner Kit Ordered'.tr,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontFamily: AppThemeData.bold,
-                              color: isDark ? Colors.white : const Color(0xFF065F46),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF10B981).withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              isDispatched ? 'In Transit'.tr : 'Processing'.tr,
-                              style: const TextStyle(
-                                fontSize: 10,
-                                fontFamily: AppThemeData.bold,
-                                color: Color(0xFF10B981),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '#${order.orderNumber} • Size: ${order.tshirtSize}',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontFamily: AppThemeData.medium,
-                          color: isDark ? AppThemeData.grey400Dark : const Color(0xFF047857),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      }
-
-      // Case B: Not Purchased Yet (Show promotional purchase card)
-      final itemsSummary = kit.itemsIncluded.take(3).join(' • ');
-
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: isDark
-                  ? [const Color(0xFF1E1C15), const Color(0xFF151413)]
-                  : [const Color(0xFFFFF9E6), const Color(0xFFFFFFFF)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: kitData.isCompulsory
-                  ? AppThemeData.warning200.withValues(alpha: 0.6)
-                  : AppThemeData.primary200.withValues(alpha: 0.5),
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppThemeData.primary200.withValues(alpha: isDark ? 0.08 : 0.12),
-                blurRadius: 14,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              // Left Icon
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [AppThemeData.primary200, AppThemeData.primary300],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppThemeData.primary200.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child: Icon(
-                    kitData.categoryCode == 'bike'
-                        ? Icons.two_wheeler_rounded
-                        : (kitData.categoryCode == 'home_service'
-                            ? Icons.home_repair_service_rounded
-                            : Icons.shopping_bag_rounded),
-                    color: Colors.white,
-                    size: 26,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 14),
-
-              // Middle Information
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            kit.title.tr,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontFamily: AppThemeData.bold,
-                              color: isDark ? AppThemeData.grey900Dark : AppThemeData.grey900,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (kitData.isCompulsory) ...[
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                            decoration: BoxDecoration(
-                              color: AppThemeData.warning200.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              'Required'.tr,
-                              style: TextStyle(
-                                fontSize: 9,
-                                fontFamily: AppThemeData.bold,
-                                color: AppThemeData.warning200,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      itemsSummary.isNotEmpty ? itemsSummary : 'Apparel & Partner ID',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontFamily: AppThemeData.regular,
-                        color: isDark ? AppThemeData.grey500Dark : AppThemeData.grey500,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      kit.priceFormatted,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontFamily: AppThemeData.bold,
-                        color: AppThemeData.primary200,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 10),
-
-              // Right CTA Button
-              ElevatedButton(
-                onPressed: () => kitService.openKitWebView(kit.webviewUrl),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppThemeData.primary200,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 2,
-                  shadowColor: AppThemeData.primary200.withValues(alpha: 0.3),
-                ),
-                child: Text(
-                  'Order Kit'.tr,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontFamily: AppThemeData.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    });
   }
 }
