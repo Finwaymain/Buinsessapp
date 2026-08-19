@@ -215,4 +215,8 @@ class API {
 
   // App Version Control
   static const checkAppVersion = "${baseUrl}app-version/check";
+
+  // Driver Welcome Kit Endpoints
+  static const driverKitStatus = "${baseUrl}driver/kit-status";
+  static const driverKitRecordPurchase = "${baseUrl}driver/kit-purchase/record";
 }

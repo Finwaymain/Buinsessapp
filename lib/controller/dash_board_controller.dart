@@ -17,6 +17,7 @@ import '../model/user_model.dart';
 import '../page/auth_screens/phone_entry_screen.dart';
 import '../page/features/Taxi/taxi_dashboard/taxi_dashboard.dart';
 import '../page/my_profile/change_password_screen.dart';
+import '../page/wallet/wallet_screen.dart';
 import '../utils/onboarding_navigation.dart';
 import '../page/my_profile/my_profile_screen.dart';
 import '../page/web_view_screen/web_view_screen.dart';
@@ -27,6 +28,7 @@ import '../page/referral/submit_aadhar_screen.dart';
 import '../page/terms_of_service/terms_of_service_screen.dart';
 import '../service/api.dart';
 import '../service/app_version_service.dart';
+import '../service/driver_kit_service.dart';
 import '../utils/Preferences.dart';
 import '../utils/onboarding_url.dart';
 import '../widget/permission_dialog.dart';
@@ -70,6 +72,11 @@ class DashBoardController extends GetxController {
     fetchDriverServices();
     // Check for compulsory or optional Play Store updates for Driver Partners
     AppVersionService.checkAppVersion(appType: 'business');
+    // Check for Driver Partner Welcome Kit & Popups
+    final kitService = Get.isRegistered<DriverKitService>()
+        ? Get.find<DriverKitService>()
+        : Get.put(DriverKitService());
+    kitService.fetchKitStatus();
     super.onInit();
   }
 
