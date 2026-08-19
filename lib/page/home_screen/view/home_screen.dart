@@ -7,6 +7,7 @@ import '../../../constant/show_toast_dialog.dart';
 import '../../../controller/dash_board_controller.dart';
 import '../../../utils/Preferences.dart';
 import '../../../utils/onboarding_url.dart';
+import '../../features/AllServices/service_history_screen.dart';
 import '../../web_view_screen/web_view_screen.dart';
 import '../../auth_screens/phone_entry_screen.dart';
 import '../../../controller/new_ride_controller.dart';
@@ -424,6 +425,15 @@ class MainHomeScreen extends StatelessWidget {
                                     });
                                     return;
                                   }
+
+                                  // If partner kit is mandatory and not purchased, block access with prompt
+                                  final kitService = Get.isRegistered<DriverKitService>()
+                                      ? Get.find<DriverKitService>()
+                                      : Get.put(DriverKitService());
+                                  if (!kitService.checkBookingAccessWithPrompt()) {
+                                    return;
+                                  }
+
                                   final userData = controller.userModel.value.userData;
                                   if (shouldShowOnlineStatus(userData)) {
                                     Get.to(() => TaxiDashBoard(), transition: Transition.rightToLeftWithFade);
