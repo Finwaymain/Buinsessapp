@@ -322,6 +322,12 @@ class WalletController extends GetxController with GetSingleTickerProviderStateM
     } else if (orderType == 'ride') {
       category = 'Cab Ride';
       icon = 'cab';
+    } else if (orderType == 'service') {
+      category = data.departName?.isNotEmpty == true ? data.departName! : 'Home Service';
+      icon = 'home_service';
+    } else if (orderType == 'commission') {
+      category = 'Admin Commission';
+      icon = 'commission';
     } else {
       category = 'Wallet Top-up';
       icon = 'topup';
@@ -330,6 +336,7 @@ class WalletController extends GetxController with GetSingleTickerProviderStateM
     final counterparty = [
       data.nom,
       data.prenom,
+      data.userName,
       data.receiverName,
       data.libelle,
       data.payment,
