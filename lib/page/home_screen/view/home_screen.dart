@@ -134,9 +134,13 @@ class MainHomeScreen extends StatelessWidget {
                         // Safely parse the amount with null checks
                         double userAmount = 0.0;
                         try {
-                          userAmount = double.parse(
-                              rideController.userModel.value.userData!.amount.toString()
-                          );
+                          final amountVal = double.tryParse(
+                              rideController.userModel.value.userData!.amount?.toString() ?? '0'
+                          ) ?? 0.0;
+                          final earnVal = double.tryParse(
+                              rideController.userModel.value.userData!.earnAmount?.toString() ?? '0'
+                          ) ?? 0.0;
+                          userAmount = amountVal > 0 ? amountVal : (earnVal > 0 ? earnVal : amountVal);
                         } catch (e) {
                           return const SizedBox();
                         }
