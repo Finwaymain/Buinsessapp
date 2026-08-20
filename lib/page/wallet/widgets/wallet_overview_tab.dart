@@ -1,11 +1,12 @@
 import 'package:cabme_driver/constant/constant.dart';
+import 'package:cabme_driver/controller/subscription_controller.dart';
 import 'package:cabme_driver/controller/wallet_controller.dart';
 import 'package:cabme_driver/page/auth_screens/phone_entry_screen.dart';
 import 'package:cabme_driver/page/features/SmartValue/AccountDetails/view/account_details.dart';
 import 'package:cabme_driver/page/features/SmartValue/MyQR/view/my_qr_view.dart';
 import 'package:cabme_driver/page/features/SmartValue/Payout/view/payout_screen.dart';
 import 'package:cabme_driver/page/features/SmartValue/ScanAndTransfer/view/scanner_and_transfer_screen.dart';
-import 'package:cabme_driver/page/subscription_plan_screen/business_premium_plan_screen.dart';
+import 'package:cabme_driver/page/subscription_plan_screen/subscription_plan_screen.dart' as subs;
 import 'package:cabme_driver/themes/constant_colors.dart';
 import 'package:cabme_driver/utils/Preferences.dart';
 import 'package:cabme_driver/utils/dark_theme_provider.dart';
@@ -82,7 +83,10 @@ class WalletOverviewTab extends StatelessWidget {
             children: [
               Text('Your Smart Value', style: _sectionStyle(isDark)),
               TextButton(
-                onPressed: () => _requireLogin(() => Get.to(() => const BusinessPremiumPlanScreen())),
+                onPressed: () => _requireLogin(() {
+                  Get.delete<SubscriptionController>();
+                  Get.to(() => const subs.SubscriptionPlanScreen(isbackButton: true));
+                }),
                 child: Text(
                   'Upgrade Plan',
                   style: TextStyle(color: AppThemeData.primary200, fontFamily: AppThemeData.medium, fontSize: 13),

@@ -57,7 +57,7 @@ class MainHomeController extends GetxController
       {
         "routeName": "/travelTransport",
         "title": "Travel & Transport",
-        "subtitle": "Book cabs, view requests, and track active rides",
+        "subtitle": "Bike Ride, Cab -  Parcel Delivery & Packers & Mover ",
         "status": 1,
       },
       {
@@ -71,7 +71,7 @@ class MainHomeController extends GetxController
       {
         "routeName": "/smartValue",
         "title": "Smart Value & QR",
-        "subtitle": "Scan QR & transfer Smart Value money instantly",
+        "subtitle": "Earn Upto 2%  By Using App Services",
         "status": 1,
       },
     ];

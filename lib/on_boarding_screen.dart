@@ -7,7 +7,7 @@ class OnBoardingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const WebViewScreen(
-      url: 'https://api.fiinway.com/onboarding/welcome',
+      url: 'https://api.fiinway.com/onboarding/welcome?type=driver',
       title: 'Welcome to Fiinway Business',
       showAppBar: false,
     );

@@ -1,7 +1,9 @@
 import 'dart:math';
 
 import 'package:cabme_driver/constant/constant.dart';
+import 'package:cabme_driver/controller/subscription_controller.dart';
 import 'package:cabme_driver/page/features/SmartValue/AccountDetails/controller/account_details_controller.dart';
+import 'package:cabme_driver/page/subscription_plan_screen/subscription_plan_screen.dart' as subs;
 import 'package:cabme_driver/page/wallet/utils/wallet_formatters.dart';
 import 'package:cabme_driver/themes/constant_colors.dart';
 import 'package:flutter/material.dart';
@@ -402,7 +404,10 @@ class WalletFlipCard extends StatelessWidget {
                   // Upgrade Plan Button (Green pill)
                   Expanded(
                     child: GestureDetector(
-                      onTap: controller.flipCard,
+                      onTap: () {
+                        Get.delete<SubscriptionController>();
+                        Get.to(() => const subs.SubscriptionPlanScreen(isbackButton: true));
+                      },
                       child: Container(
                         height: 34,
                         decoration: BoxDecoration(
