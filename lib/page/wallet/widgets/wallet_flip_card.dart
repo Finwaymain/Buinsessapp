@@ -188,7 +188,7 @@ class WalletFlipCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'Smart Value Card',
+                          'Smart Value',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 17,
@@ -198,7 +198,7 @@ class WalletFlipCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'Your Smart Wallet for Daily Savings',
+                          'Transfer &  earn monthly Upto 25000',
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.88),
                             fontSize: 10.5,
@@ -340,9 +340,9 @@ class WalletFlipCard extends StatelessWidget {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              '1% Cashback',
-                              style: TextStyle(
+                            Text(
+                              controller.cashbackText,
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 10,
                                 fontFamily: AppThemeData.bold,
