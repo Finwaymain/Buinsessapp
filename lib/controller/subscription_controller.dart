@@ -118,13 +118,14 @@ class SubscriptionController extends GetxController {
     return null;
   }
 
-  Future<bool> completeSubscription({bool redirect = false}) async {
+  Future<bool> completeSubscription({bool redirect = false, String? mpin}) async {
     try {
       ShowToastDialog.showLoader("Please wait");
       Map<String, String> bodyParams = {
         "planId": selectedSubscriptionPlan.value.id.toString(),
         "driverId": userModel.value.userData!.id.toString(),
-        "paymentType": selectedRadioTile.value
+        "paymentType": selectedRadioTile.value,
+        if (mpin != null && mpin.isNotEmpty) "mpin": mpin,
       };
       final response = await http.post(Uri.parse(API.setSubscription), headers: API.header, body: jsonEncode(bodyParams));
       showLog("API :: URL :: ${API.setSubscription} ");

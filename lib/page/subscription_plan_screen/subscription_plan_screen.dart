@@ -16,6 +16,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '../../../utils/dark_theme_provider.dart';
+import '../../../utils/mpin_dialog.dart';
 
 class SubscriptionPlanScreen extends StatefulWidget {
   final bool isbackButton;
@@ -350,8 +351,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                 _buildSubDetailRow('Plan Name', activePlanName, isDark),
                 const Divider(height: 16),
                 _buildSubDetailRow('Subscription Price', activePlanPrice, isDark),
-                const Divider(height: 16),
-                _buildSubDetailRow('Booking Limit', activePlan.bookingLimit == null || activePlan.bookingLimit == "-1" ? "Unlimited" : "${activePlan.bookingLimit} Rides", isDark),
+               
               ],
             ),
           ),
@@ -1080,12 +1080,27 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 ),
                                 onPressed: () async {
-                                  if (controller.selectedRadioTile.value == 'razorpay') {
-                                    Get.back();
+                                  final method = controller.selectedRadioTile.value;
+                                  if (method.isEmpty) return;
+                                  Get.back();
+                                  if (method == 'razorpay') {
                                     razorpayPayment(controller);
-                                  } else {
-                                    Get.back();
-                                    await controller.completeSubscription();
+                                    return;
+                                  }
+                                  if (method == 'wallet') {
+                                    final verified = await showMpinVerificationBottomSheet(
+                                      context,
+                                      amount: controller.totalAmount.value,
+                                      title: 'Enter MPIN to Pay'.tr,
+                                      userCat: 'driver',
+                                    );
+                                    if (verified != true) {
+                                      return;
+                                    }
+                                  }
+                                  final success = await controller.completeSubscription();
+                                  if (!mounted) return;
+                                  if (success) {
                                     setState(() => viewMode = 'activated');
                                   }
                                 },
