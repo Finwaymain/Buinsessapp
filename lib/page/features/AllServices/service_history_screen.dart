@@ -14,6 +14,7 @@ import 'package:cabme_driver/themes/button_them.dart';
 import 'service_booking_resume.dart';
 import 'all_services_screen.dart';
 import 'service_style.dart';
+import '../../MainDashBoard/widget/custom_bottom_navbar.dart';
 
 class ServiceHistoryScreen extends StatefulWidget {
   final bool showScaffold;
@@ -276,6 +277,7 @@ class _ServiceHistoryScreenState extends State<ServiceHistoryScreen> with Single
 
     return Scaffold(
       backgroundColor: isDarkMode ? AppThemeData.surface50Dark : const Color(0xFFF7F8FA),
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 3),
       appBar: AppbarCustom(
         title: 'Service Bookings'.tr,
         elevation: 0,

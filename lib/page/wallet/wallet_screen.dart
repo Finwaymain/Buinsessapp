@@ -58,6 +58,7 @@ import 'package:cabme_driver/page/features/SmartValue/MyQR/view/my_qr_view.dart'
 import 'package:cabme_driver/page/features/SmartValue/Payout/view/payout_screen.dart';
 import 'package:cabme_driver/page/features/SmartValue/ScanAndTransfer/view/scanner_and_transfer_screen.dart';
 import 'package:cabme_driver/page/subscription_plan_screen/business_premium_plan_screen.dart';
+import 'package:cabme_driver/page/MainDashBoard/widget/custom_bottom_navbar.dart';
 
 class WalletScreen extends StatelessWidget {
   final bool isTab;
@@ -88,6 +89,7 @@ class WalletScreen extends StatelessWidget {
     });
 
     return Scaffold(
+      bottomNavigationBar: isTab ? null : const CustomBottomNavBar(currentIndex: 4),
       appBar: isTab
           ? null
           : AppbarCustom(

@@ -21,6 +21,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
+import 'package:cabme_driver/page/MainDashBoard/widget/custom_bottom_navbar.dart';
 
 class TaxiDashBoard extends StatelessWidget {
   TaxiDashBoard({super.key});
@@ -33,7 +34,10 @@ class TaxiDashBoard extends StatelessWidget {
       init: DashBoardController(),
       builder: (controller) {
         controller.getDrawerItems();
-        return Scaffold(body: NewRideScreen());
+        return Scaffold(
+          body: NewRideScreen(),
+          bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
+        );
       },
     );
   }
