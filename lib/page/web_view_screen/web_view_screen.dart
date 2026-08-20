@@ -11,6 +11,7 @@ import 'package:geolocator/geolocator.dart';
 
 import 'package:cabme_driver/utils/Preferences.dart';
 import 'package:cabme_driver/page/auth_screens/phone_entry_screen.dart';
+import 'package:share_plus/share_plus.dart';
 
 class WebViewScreen extends StatefulWidget {
   final String url;

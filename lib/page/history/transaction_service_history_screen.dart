@@ -447,7 +447,7 @@ class _TransactionServiceHistoryScreenState extends State<TransactionServiceHist
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Transaction ID: ${item['id']}', style: const TextStyle(fontSize: 12, fontFamily: AppThemeData.bold)),
+            Text('Transaction ID: ${item['id'] != null && int.tryParse(item['id'].toString()) != null ? item['id'].toString().padLeft(7, '0') : (item['id'] ?? '0000001')}', style: const TextStyle(fontSize: 12, fontFamily: AppThemeData.bold)),
             const SizedBox(height: 8),
             const Divider(),
             ...details.entries.map((e) => Padding(

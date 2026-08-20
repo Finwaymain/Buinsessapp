@@ -110,13 +110,15 @@ class AddBankAccount extends StatelessWidget {
                                   controller: controller.bankNameController.value,
                                   textInputType: TextInputType.text,
                                   validators: (String? value) {
-                                    if (value!.isNotEmpty) {
-                                      return null;
-                                    } else {
-                                      return 'required'.tr;
+                                    if (value == null || value.trim().isEmpty) {
+                                      return 'Bank Name is required'.tr;
                                     }
+                                    if (!RegExp(r'^[a-zA-Z\s]+$').hasMatch(value.trim())) {
+                                      return 'Bank name must contain only letters (no numbers or symbols)'.tr;
+                                    }
+                                    return null;
                                   },
-                                  hintText: 'Bank Name'.tr,
+                                  hintText: 'Bank Name (Words only)'.tr,
                                 ),
                                 dividerCust(isDarkMode: themeChange.getThem()),
                                 TextFieldWidget(
@@ -137,7 +139,7 @@ class AddBankAccount extends StatelessWidget {
                                   controller: controller.branchNameController.value,
                                   textInputType: TextInputType.text,
                                   validators: (String? value) {
-                                    if (value!.isNotEmpty) {
+                                    if (value != null && value.isNotEmpty) {
                                       return null;
                                     } else {
                                       return 'required'.tr;
@@ -164,13 +166,15 @@ class AddBankAccount extends StatelessWidget {
                                   controller: controller.holderNameController.value,
                                   textInputType: TextInputType.text,
                                   validators: (String? value) {
-                                    if (value!.isNotEmpty) {
-                                      return null;
-                                    } else {
-                                      return 'required'.tr;
+                                    if (value == null || value.trim().isEmpty) {
+                                      return 'Holder Name is required'.tr;
                                     }
+                                    if (!RegExp(r'^[a-zA-Z\s]+$').hasMatch(value.trim())) {
+                                      return 'Holder name must contain only letters'.tr;
+                                    }
+                                    return null;
                                   },
-                                  hintText: 'Holder Name'.tr,
+                                  hintText: 'Account Holder Name'.tr,
                                 ),
                                 dividerCust(isDarkMode: themeChange.getThem()),
                                 TextFieldWidget(
@@ -189,15 +193,20 @@ class AddBankAccount extends StatelessWidget {
                                     ),
                                   ),
                                   controller: controller.accountNumberController.value,
-                                  textInputType: TextInputType.text,
+                                  textInputType: TextInputType.number,
                                   validators: (String? value) {
-                                    if (value!.isNotEmpty) {
-                                      return null;
-                                    } else {
-                                      return 'required'.tr;
+                                    if (value == null || value.trim().isEmpty) {
+                                      return 'Account Number is required'.tr;
                                     }
+                                    if (!RegExp(r'^[0-9]+$').hasMatch(value.trim())) {
+                                      return 'Account number must contain only numbers'.tr;
+                                    }
+                                    if (value.trim().length < 8 || value.trim().length > 22) {
+                                      return 'Account number must be between 9 and 18 digits'.tr;
+                                    }
+                                    return null;
                                   },
-                                  hintText: 'Account Number'.tr,
+                                  hintText: 'Account Number (Numbers only)'.tr,
                                 ),
                                 dividerCust(isDarkMode: themeChange.getThem()),
                                 TextFieldWidget(
@@ -218,13 +227,15 @@ class AddBankAccount extends StatelessWidget {
                                   controller: controller.ifscCodeController.value,
                                   textInputType: TextInputType.text,
                                   validators: (String? value) {
-                                    if (value!.isNotEmpty) {
-                                      return null;
-                                    } else {
-                                      return 'required'.tr;
+                                    if (value == null || value.trim().isEmpty) {
+                                      return 'IFSC Code is required'.tr;
                                     }
+                                    if (!RegExp(r'^[A-Za-z0-9]{11}$').hasMatch(value.trim())) {
+                                      return 'IFSC code must be 11 alphanumeric characters'.tr;
+                                    }
+                                    return null;
                                   },
-                                  hintText: 'IFSC Code'.tr,
+                                  hintText: 'IFSC Code (e.g. SBIN0001234)'.tr,
                                 ),
                                 dividerCust(isDarkMode: themeChange.getThem()),
                                 TextFieldWidget(

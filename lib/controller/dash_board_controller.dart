@@ -9,6 +9,7 @@ import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:in_app_review/in_app_review.dart';
 import 'package:location/location.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:permission_handler/permission_handler.dart' hide PermissionStatus;
 import '../constant/constant.dart';
 import '../constant/logdata.dart';
@@ -628,14 +629,21 @@ class DashBoardController extends GetxController {
       Get.to(const PrivacyPolicyScreen());
     } else if (item.title == 'Rate the App'.tr) {
       try {
-        if (await inAppReview.isAvailable()) {
-          inAppReview.requestReview();
+        final Uri marketUri = Uri.parse("market://details?id=com.fiinwaybusiness");
+        final Uri playStoreUri = Uri.parse("https://play.google.com/store/apps/details?id=com.fiinwaybusiness");
+        if (await canLaunchUrl(marketUri)) {
+          await launchUrl(marketUri, mode: LaunchMode.externalApplication);
+        } else if (await canLaunchUrl(playStoreUri)) {
+          await launchUrl(playStoreUri, mode: LaunchMode.externalApplication);
         } else {
-          log(":::::::::InAppReview:::::::::::");
-          inAppReview.openStoreListing();
+          await launchUrl(playStoreUri);
         }
       } catch (e) {
-        log("Error triggering in-app review: $e");
+        log("Error opening play store for rating: $e");
+        try {
+          final Uri fallbackUri = Uri.parse("https://play.google.com/store/apps/details?id=com.fiinwaybusiness");
+          await launchUrl(fallbackUri, mode: LaunchMode.externalApplication);
+        } catch (_) {}
       }
     } else if (item.title == 'Log Out'.tr) {
       ShowToastDialog.showLoader("Logging out...");
