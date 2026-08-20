@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../../../constant/constant.dart';
 import '../../../themes/constant_colors.dart';
 import '../../../utils/dark_theme_provider.dart';
-import '../MainDashBoard/widget/custom_bottom_navbar.dart';
 
 class TransactionServiceHistoryScreen extends StatefulWidget {
   const TransactionServiceHistoryScreen({super.key});
@@ -164,7 +163,6 @@ class _TransactionServiceHistoryScreenState extends State<TransactionServiceHist
 
     return Scaffold(
       backgroundColor: isDark ? AppThemeData.surface50Dark : AppThemeData.surface50,
-      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 3),
       appBar: AppBar(
         title: Text(
           'Transaction & Service History'.tr,

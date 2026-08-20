@@ -25,21 +25,19 @@ import '../../search_services/search_all_services_screen.dart';
 enum _DashboardMode { loading, native, web }
 
 class MainDashboard extends StatefulWidget {
-  final int initialIndex;
-  const MainDashboard({super.key, this.initialIndex = 0});
+  const MainDashboard({super.key});
 
   @override
   State<MainDashboard> createState() => _MainDashboardState();
 }
 
 class _MainDashboardState extends State<MainDashboard> {
-  late int currentIndex;
+  int currentIndex = 0;
   _DashboardMode _mode = _DashboardMode.loading;
 
   @override
   void initState() {
     super.initState();
-    currentIndex = widget.initialIndex;
     _resolveDashboard();
   }
 

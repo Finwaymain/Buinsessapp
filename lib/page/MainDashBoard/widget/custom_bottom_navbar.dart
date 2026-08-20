@@ -1,40 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
 import '../../../themes/constant_colors.dart';
-import '../../../utils/dark_theme_provider.dart';
-import '../../features/SmartValue/ScanAndTransfer/view/scanner_and_transfer_screen.dart';
+import '../../../utils/dark_theme_provider.dart'; // import your theme
 
 class CustomBottomNavBar extends StatelessWidget {
   final int currentIndex;
-  final Function(int)? onTabSelected;
-  final VoidCallback? onFingerprintTap;
+  final Function(int) onTabSelected;
+  final VoidCallback onFingerprintTap;
 
   const CustomBottomNavBar({
     super.key,
     required this.currentIndex,
-    this.onTabSelected,
-    this.onFingerprintTap,
+    required this.onTabSelected,
+    required this.onFingerprintTap,
   });
-
-  void _handleTabSelected(int index) {
-    if (onTabSelected != null) {
-      onTabSelected!(index);
-    }
-  }
-
-  void _handleFingerprintTap() {
-    if (onFingerprintTap != null) {
-      onFingerprintTap!();
-      return;
-    }
-    Get.to(
-      () => ScannerAndTransferScreen(),
-      transition: Transition.rightToLeft,
-      duration: const Duration(milliseconds: 500),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,9 +32,9 @@ class CustomBottomNavBar extends StatelessWidget {
             decoration: BoxDecoration(
               color: themeChange.getThem()
                   ? const Color(0xFF1C1A17)
-                  : AppThemeData.surface50,
+                  : AppThemeData.surface50,  // match LoginScreen background color
               borderRadius: BorderRadius.circular(30),
-              boxShadow: const [
+              boxShadow: [
                 BoxShadow(
                   color: Colors.black12,
                   blurRadius: 5,
@@ -66,9 +46,9 @@ class CustomBottomNavBar extends StatelessWidget {
               children: [
                 _navItem(Icons.home, 0, themeChange),
                 _navItem(Icons.search, 1, themeChange),
-                const SizedBox(width: 60),
+                const SizedBox(width: 60,),
                 _navItem(Icons.home_repair_service_outlined, 3, themeChange),
-                _navItem(Icons.account_balance_wallet_rounded, 4, themeChange),
+                _navItem(Icons.receipt_long, 4,themeChange),
               ],
             ),
           ),
@@ -79,12 +59,11 @@ class CustomBottomNavBar extends StatelessWidget {
               width: 60,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: LinearGradient(
+                gradient:  LinearGradient(
                   colors: [
                     AppThemeData.primary200,
                     AppThemeData.primary200.withValues(alpha: 0.7),
-                  ],
-                ),
+                  ],                ),
                 boxShadow: const [
                   BoxShadow(
                     color: Colors.black26,
@@ -95,7 +74,7 @@ class CustomBottomNavBar extends StatelessWidget {
               ),
               child: IconButton(
                 icon: const Icon(Icons.fingerprint, color: Colors.white, size: 30),
-                onPressed: _handleFingerprintTap,
+                onPressed: onFingerprintTap,
               ),
             ),
           ),
@@ -106,12 +85,12 @@ class CustomBottomNavBar extends StatelessWidget {
 
   Widget _navItem(IconData icon, int index, DarkThemeProvider themeChange) {
     return IconButton(
-      onPressed: () => _handleTabSelected(index),
+      onPressed: () => onTabSelected(index),
       icon: Icon(
         icon,
         color: currentIndex == index
             ? AppThemeData.primary200
-            : (themeChange.getThem() ? Colors.white38 : AppThemeData.primary200.withValues(alpha: 0.3)),
+            :  AppThemeData.primary200.withValues(alpha: 0.2),
       ),
     );
   }
