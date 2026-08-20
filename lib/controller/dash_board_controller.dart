@@ -31,6 +31,7 @@ import '../service/app_version_service.dart';
 import '../service/driver_kit_service.dart';
 import '../utils/Preferences.dart';
 import '../utils/onboarding_url.dart';
+import '../utils/location_picker_helper.dart';
 import '../widget/permission_dialog.dart';
 import '../page/marketplace/view/marketplace_home_screen.dart';
 
@@ -104,23 +105,26 @@ class DashBoardController extends GetxController {
   }
 
   Future<void> getCurrentLocation() async {
-    PermissionStatus permissionStatus = await location.hasPermission();
-    if (permissionStatus != PermissionStatus.granted) {
-      return;
-    }
-    LocationData locationVal = await location.getLocation();
-    List<geocoding.Placemark> placeMarks = await geocoding.placemarkFromCoordinates(locationVal.latitude ?? 0.0, locationVal.longitude ?? 0.0);
-    if (placeMarks.isNotEmpty) {
-      String currentCountry = placeMarks.first.country?.toString().toUpperCase() ?? '';
-      for (var i = 0; i < Constant.allTaxList.length; i++) {
-        String? taxCountry = Constant.allTaxList[i].country;
-        if (taxCountry != null && currentCountry == taxCountry.toUpperCase()) {
-          Constant.taxList.add(Constant.allTaxList[i]);
+    try {
+      final hasAccess = await LocationPickerHelper.ensureLocationAccess(showPromptDialog: true);
+      if (!hasAccess) return;
+
+      LocationData locationVal = await location.getLocation();
+      List<geocoding.Placemark> placeMarks = await geocoding.placemarkFromCoordinates(locationVal.latitude ?? 0.0, locationVal.longitude ?? 0.0);
+      if (placeMarks.isNotEmpty) {
+        String currentCountry = placeMarks.first.country?.toString().toUpperCase() ?? '';
+        for (var i = 0; i < Constant.allTaxList.length; i++) {
+          String? taxCountry = Constant.allTaxList[i].country;
+          if (taxCountry != null && currentCountry == taxCountry.toUpperCase()) {
+            Constant.taxList.add(Constant.allTaxList[i]);
+          }
         }
       }
+      print(Constant.taxList.length);
+      setCurrentLocation(locationVal.latitude.toString(), locationVal.longitude.toString());
+    } catch (e) {
+      log("getCurrentLocation error in DashBoardController: $e");
     }
-    print(Constant.taxList.length);
-    setCurrentLocation(locationVal.latitude.toString(), locationVal.longitude.toString());
   }
 
   // getDrawerItem() {
