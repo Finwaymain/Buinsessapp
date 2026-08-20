@@ -52,6 +52,7 @@ class SubscriptionController extends GetxController {
 
   RxString ref = ''.obs;
   Future<void> getInitData() async {
+    isLoading.value = true;
     await getUsrData();
     await getPaymentSettingData();
     await getSubscription();
@@ -179,7 +180,6 @@ class SubscriptionController extends GetxController {
       print("getSubscription: Response Body = ${response.body}");
       Map<String, dynamic> responseBody = json.decode(response.body);
       if (response.statusCode == 200 && responseBody['success'] == "success") {
-        isLoading.value = false;
         SubscriptionPlanModel model = SubscriptionPlanModel.fromJson(responseBody);
         if (model.data?.isNotEmpty == true) {
           List<SubscriptionPlanData> subscriptionPlanData = model.data!;
@@ -221,28 +221,25 @@ class SubscriptionController extends GetxController {
       } else {
         print("getSubscription: failed on status or success field. success = ${responseBody['success']}");
         ShowToastDialog.closeLoader();
-        isLoading.value = false;
       }
     } on TimeoutException catch (e) {
       print("getSubscription TimeoutException: $e");
-      isLoading.value = false;
       ShowToastDialog.closeLoader();
       ShowToastDialog.showToast(e.message.toString());
     } on SocketException catch (e) {
       print("getSubscription SocketException: $e");
-      isLoading.value = false;
       ShowToastDialog.closeLoader();
       ShowToastDialog.showToast(e.message.toString());
     } on Error catch (e) {
       print("getSubscription Error: $e");
-      isLoading.value = false;
       ShowToastDialog.closeLoader();
       ShowToastDialog.showToast(e.toString());
     } catch (e) {
       print("getSubscription Exception: $e");
-      isLoading.value = false;
       ShowToastDialog.closeLoader();
       ShowToastDialog.showToast(e.toString());
+    } finally {
+      isLoading.value = false;
     }
     return null;
   }
