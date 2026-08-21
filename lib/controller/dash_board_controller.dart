@@ -646,8 +646,20 @@ class DashBoardController extends GetxController {
         } catch (_) {}
       }
     } else if (item.title == 'Log Out'.tr) {
-      ShowToastDialog.showLoader("Logging out...");
-      await updateFCMToken('');
+      ShowToastDialog.showLoader("Logging out...".tr);
+      try {
+        final driverId = Preferences.getInt(Preferences.userId);
+        if (driverId != 0) {
+          await changeOnlineStatus({'id_driver': driverId, 'online': 'no'});
+        }
+      } catch (_) {}
+      try {
+        await updateFCMToken('');
+      } catch (_) {}
+      try {
+        await FirebaseMessaging.instance.unsubscribeFromTopic('cabme_driver');
+        await FirebaseMessaging.instance.deleteToken();
+      } catch (_) {}
       ShowToastDialog.closeLoader();
       Preferences.clearKeyData(Preferences.isLogin);
       Preferences.clearKeyData(Preferences.user);
