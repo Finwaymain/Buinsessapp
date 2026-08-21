@@ -40,6 +40,9 @@ import 'package:flutter_callkit_incoming/entities/call_kit_params.dart';
 import 'package:flutter_callkit_incoming/entities/android_params.dart';
 import 'package:flutter_callkit_incoming/entities/ios_params.dart';
 import 'package:flutter_callkit_incoming/entities/notification_params.dart';
+import 'package:cabme_driver/controller/my_booking_controller.dart';
+import 'package:cabme_driver/page/booking/my_booking_screen.dart';
+import 'package:cabme_driver/page/booking/service_flow/service_booking_flow.dart';
 
 
 
@@ -269,6 +272,21 @@ class FirebaseService {
             Get.put(DashBoardController());
         dashBoardController.selectedDrawerIndex.value = 4;
         await Get.to(MainDashboard());
+      } else if (message.data['type'] == "homeservice" ||
+          message.data['tag'] == "homeservicerequest" ||
+          message.data['tag'] == "homeservicenotif") {
+        final bookingId = message.data['booking_id']?.toString() ?? '';
+        final myBookingCtrl = Get.isRegistered<MyBookingController>()
+            ? Get.find<MyBookingController>()
+            : Get.put(MyBookingController());
+        if (bookingId.isNotEmpty) {
+          final booking = await myBookingCtrl.fetchSingleBooking(bookingId);
+          if (booking != null) {
+            openServiceBookingFlow(booking, myBookingCtrl);
+            return;
+          }
+        }
+        await Get.to(() => const MyBookingScreen(initialTab: 0));
       }
     } catch (e) {
       log('Error handling notification tap: $e');

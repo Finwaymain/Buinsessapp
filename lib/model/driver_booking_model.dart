@@ -238,8 +238,11 @@ class DriverBookingItem {
 
   String get normalizedStatus => status.toLowerCase().trim();
 
-  bool get isIncoming => normalizedStatus == 'pending' || normalizedStatus == 'new' || statusGroup == 'incoming';
-  bool get isAccepted => normalizedStatus == 'accepted';
+  bool get isIncoming =>
+      (normalizedStatus == 'pending' || normalizedStatus == 'new' || statusGroup == 'incoming') &&
+      normalizedStatus != 'accepted' &&
+      normalizedStatus != 'confirmed';
+  bool get isAccepted => normalizedStatus == 'accepted' || normalizedStatus == 'confirmed';
   bool get isInProgress => normalizedStatus == 'in progress' || normalizedStatus == 'in_progress';
   bool get isAwaitingPayment =>
       normalizedStatus == 'awaiting payment' || normalizedStatus == 'awaiting_payment';

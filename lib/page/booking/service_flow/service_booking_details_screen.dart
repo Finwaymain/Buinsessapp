@@ -149,11 +149,11 @@ class ServiceBookingDetailsScreen extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
+                  flex: 2,
                   child: FlowPrimaryButton(
-                    label: 'Start Navigation'.tr,
-                    icon: Icons.navigation_rounded,
-                    onPressed: () async {
-                      await flow.openNavigation();
+                    label: 'Reach Location'.tr,
+                    icon: Icons.location_on_rounded,
+                    onPressed: () {
                       Get.to(() => ServiceReachedLocationScreen(tag: tag));
                     },
                   ),

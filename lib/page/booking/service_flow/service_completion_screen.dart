@@ -7,10 +7,8 @@ import 'package:cabme_driver/page/booking/service_flow/service_booking_flow.dart
 import 'package:cabme_driver/page/booking/service_flow/service_flow_widgets.dart';
 import 'package:cabme_driver/page/booking/service_flow/service_payment_received_screen.dart';
 import 'package:cabme_driver/themes/constant_colors.dart';
-import 'package:cabme_driver/utils/Preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 
 class ServiceCompletionScreen extends StatefulWidget {
   final String tag;
@@ -115,29 +113,35 @@ class _ServiceCompletionScreenState extends State<ServiceCompletionScreen> {
                       ),
                     ],
                   ),
-                  child: Column(
+                  child: Row(
                     children: [
-                      Text(
-                        'Scan to Pay (Wallet)'.tr,
-                        style: TextStyle(
-                          fontFamily: AppThemeData.bold,
-                          fontSize: 15,
-                          color: Colors.black,
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppThemeData.primary200.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
                         ),
+                        child: Icon(Icons.account_balance_wallet_outlined, color: AppThemeData.primary200, size: 24),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Show this QR code to the customer to scan and pay directly from their wallet.'.tr,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 12, color: AppThemeData.grey500),
-                      ),
-                      const SizedBox(height: 16),
-                      Center(
-                        child: QrImageView(
-                          data: '{"type":"service_payment","booking_id":"${booking.id}","driver_id":"${Preferences.getInt(Preferences.userId)}"}',
-                          version: QrVersions.auto,
-                          size: 180.0,
-                          backgroundColor: Colors.white,
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Customer Payment Pending'.tr,
+                              style: const TextStyle(
+                                fontFamily: AppThemeData.bold,
+                                fontSize: 14,
+                                color: Colors.black,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Customer can pay via Wallet, UPI, or Cash.'.tr,
+                              style: TextStyle(fontSize: 12, color: AppThemeData.grey500),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -232,7 +236,7 @@ class _ServiceCompletionScreenState extends State<ServiceCompletionScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Or ask customer to scan QR code / pay online in app.'.tr,
+                    'Or wait for customer to pay via Wallet / UPI in app.'.tr,
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 12, color: AppThemeData.grey500),
                   ),
