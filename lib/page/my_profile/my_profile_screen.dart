@@ -766,16 +766,10 @@ class MyProfileScreen extends StatelessWidget {
                         onTap: () => Get.to(() => ChangePasswordScreen()),
                         textPrimary: textPrimary,
                       ),
-                      Divider(color: borderColor, height: 1),
-                      _buildActionTile(
+                      const SizedBox(height: 14),
+                      _buildDeleteAccountButton(
                         isDark: isDark,
-                        title: "Delete Account".tr,
-                        icon: Icons.delete_outline_rounded,
-                        iconColor: AppThemeData.error50,
-                        textColor: AppThemeData.error50,
-                        showArrow: false,
                         onTap: () => _confirmDeleteAccount(context, myProfileController),
-                        textPrimary: textPrimary,
                       ),
                     ],
                   ),
@@ -1007,6 +1001,76 @@ class MyProfileScreen extends StatelessWidget {
           ? Icon(Icons.arrow_forward_ios_rounded, size: 14, color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8))
           : null,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+    );
+  }
+
+  Widget _buildDeleteAccountButton({
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+          decoration: BoxDecoration(
+            color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.16 : 0.08),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: const Color(0xFFEF4444).withValues(alpha: 0.4),
+              width: 1.2,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEF4444).withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.delete_forever_rounded,
+                  color: Color(0xFFDC2626),
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Delete Account".tr,
+                      style: const TextStyle(
+                        fontFamily: AppThemeData.bold,
+                        fontSize: 14.5,
+                        color: Color(0xFFDC2626),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      "Permanently remove your driver profile".tr,
+                      style: TextStyle(
+                        fontFamily: AppThemeData.regular,
+                        fontSize: 11.5,
+                        color: const Color(0xFFDC2626).withValues(alpha: 0.85),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: Color(0xFFDC2626),
+                size: 14,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

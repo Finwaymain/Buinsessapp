@@ -9,6 +9,7 @@ import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 
 import '../model/driver_kit_model.dart';
+import '../utils/onboarding_url.dart';
 
 class DriverKitService extends GetxController {
   static DriverKitService get to => Get.find<DriverKitService>();
@@ -262,10 +263,18 @@ class DriverKitService extends GetxController {
 
   /// Open Kit Purchase WebView
   void openKitWebView(String webviewUrl) {
-    if (webviewUrl.isEmpty) return;
+    String finalUrl = webviewUrl;
+    if (finalUrl.isEmpty || finalUrl.contains('localhost') || !finalUrl.startsWith('http')) {
+      final driverId = _getDriverId();
+      final token = _getAccessToken();
+      finalUrl = OnboardingUrl.build('/onboarding/kit-purchase', extra: {
+        'driver_id': driverId,
+        'accesstoken': token,
+      });
+    }
 
     Get.to(() => WebViewScreen(
-      url: webviewUrl,
+      url: finalUrl,
       title: 'Partner Welcome Kit'.tr,
     ))?.then((_) {
       // Re-fetch status when returning from WebView
