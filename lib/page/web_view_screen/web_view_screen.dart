@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:get/get.dart';
 import 'package:cabme_driver/themes/constant_colors.dart';
@@ -168,51 +169,65 @@ class _WebViewScreenState extends State<WebViewScreen> {
     final themeChange = Provider.of<DarkThemeProvider>(context);
     final isDark = themeChange.getThem();
     
-    final scaffold = Scaffold(
-      backgroundColor: isDark ? AppThemeData.surface50Dark : AppThemeData.surface50,
-      appBar: widget.showAppBar
-          ? AppBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              leading: IconButton(
-                icon: Icon(Icons.arrow_back_ios_new_rounded, color: isDark ? Colors.white : AppThemeData.grey900, size: 20),
-                onPressed: () => Get.back(),
-              ),
-              title: Text(
-                widget.title,
-                style: TextStyle(
-                  color: isDark ? Colors.white : AppThemeData.grey900,
-                  fontFamily: AppThemeData.bold,
-                  fontSize: 18,
+    final SystemUiOverlayStyle overlayStyle = SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+      statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+      systemNavigationBarColor: isDark ? AppThemeData.surface50Dark : AppThemeData.surface50,
+      systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+    );
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: overlayStyle,
+      child: Scaffold(
+        backgroundColor: isDark ? AppThemeData.surface50Dark : AppThemeData.surface50,
+        appBar: widget.showAppBar 
+            ? AppBar(
+                systemOverlayStyle: overlayStyle,
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                leading: IconButton(
+                  icon: Icon(Icons.arrow_back_ios_new_rounded, color: isDark ? Colors.white : AppThemeData.grey900, size: 20),
+                  onPressed: () => Get.back(),
                 ),
-              ),
-              centerTitle: true,
-            )
-          : null,
-      body: Stack(
-        children: [
-          if (!hasError) WebViewWidget(controller: controller),
-          if (isLoading && !hasError)
-            const Center(
-              child: CircularProgressIndicator(),
-            ),
-          if (hasError)
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: Image.network(
-                        'https://images.unsplash.com/photo-1529927066849-79b791a69825?w=500&auto=format&fit=crop&q=60',
-                        width: 200,
-                        height: 200,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => const Icon(Icons.pets, size: 100, color: Colors.grey),
-                      ),
-                    ),
+                title: Text(
+                  widget.title,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : AppThemeData.grey900,
+                    fontFamily: AppThemeData.bold,
+                    fontSize: 18,
+                  ),
+                ),
+                centerTitle: true,
+              )
+            : null,
+        body: SafeArea(
+          top: !widget.showAppBar,
+          bottom: false,
+          child: Stack(
+            children: [
+              if (!hasError) WebViewWidget(controller: controller),
+              if (isLoading && !hasError)
+                const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              if (hasError)
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Image.network(
+                            'https://images.unsplash.com/photo-1529927066849-79b791a69825?w=500&auto=format&fit=crop&q=60',
+                            width: 200,
+                            height: 200,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => const Icon(Icons.pets, size: 100, color: Colors.grey),
+                          ),
+                        ),
                     const SizedBox(height: 24),
                     Text(
                       'Try again later'.tr,
