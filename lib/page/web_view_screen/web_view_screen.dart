@@ -177,7 +177,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
       systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
     );
 
-    return AnnotatedRegion<SystemUiOverlayStyle>(
+    final Widget scaffold = AnnotatedRegion<SystemUiOverlayStyle>(
       value: overlayStyle,
       child: Scaffold(
         backgroundColor: isDark ? AppThemeData.surface50Dark : AppThemeData.surface50,
@@ -228,57 +228,59 @@ class _WebViewScreenState extends State<WebViewScreen> {
                             errorBuilder: (context, error, stackTrace) => const Icon(Icons.pets, size: 100, color: Colors.grey),
                           ),
                         ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'Try again later'.tr,
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontFamily: AppThemeData.bold,
-                        color: isDark ? Colors.white : AppThemeData.grey900,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'We couldn\'t load the page.'.tr,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontFamily: AppThemeData.regular,
-                        color: isDark ? AppThemeData.grey400Dark : AppThemeData.grey400,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'URL: ${widget.url}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontFamily: AppThemeData.regular,
-                        color: isDark ? AppThemeData.grey400Dark : AppThemeData.grey400,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppThemeData.primary200,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                        const SizedBox(height: 24),
+                        Text(
+                          'Try again later'.tr,
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontFamily: AppThemeData.bold,
+                            color: isDark ? Colors.white : AppThemeData.grey900,
+                          ),
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          hasError = false;
-                          isLoading = true;
-                        });
-                        controller.reload();
-                      },
-                      child: Text('Retry'.tr, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                    )
-                  ],
+                        const SizedBox(height: 8),
+                        Text(
+                          'We couldn\'t load the page.'.tr,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontFamily: AppThemeData.regular,
+                            color: isDark ? AppThemeData.grey400Dark : AppThemeData.grey400,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'URL: ${widget.url}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontFamily: AppThemeData.regular,
+                            color: isDark ? AppThemeData.grey400Dark : AppThemeData.grey400,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppThemeData.primary200,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              hasError = false;
+                              isLoading = true;
+                            });
+                            controller.reload();
+                          },
+                          child: Text('Retry'.tr, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                        )
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-            ),
-        ],
+            ],
+          ),
+        ),
       ),
     );
 
