@@ -129,22 +129,36 @@ class _WebViewScreenState extends State<WebViewScreen> {
       )
       ..setNavigationDelegate(
         NavigationDelegate(
+          onProgress: (int progress) {
+            if (progress >= 100 && mounted) {
+              setState(() {
+                isLoading = false;
+              });
+            }
+          },
           onPageStarted: (String url) {
-            print('WebView :: Page Started :: $url');
-            setState(() {
-              isLoading = true;
-              hasError = false;
-            });
+            debugPrint('WebView :: Page Started :: $url');
+            if (mounted) {
+              setState(() {
+                isLoading = true;
+                hasError = false;
+              });
+            }
           },
           onPageFinished: (String url) {
-            print('WebView :: Page Finished :: $url');
-            setState(() {
-              isLoading = false;
-            });
+            debugPrint('WebView :: Page Finished :: $url');
+            if (mounted) {
+              setState(() {
+                isLoading = false;
+              });
+            }
+          },
+          onHttpError: (HttpResponseError error) {
+            debugPrint('WebView :: HTTP Error :: ${error.response?.statusCode}');
           },
           onWebResourceError: (WebResourceError error) {
-            print('WebView :: Error :: ${error.description} :: ${error.errorType}');
-            if (error.isForMainFrame == true) {
+            debugPrint('WebView :: Error :: ${error.description} :: ${error.errorType}');
+            if (error.isForMainFrame == true && mounted) {
               final desc = error.description.toUpperCase();
               if (desc.contains('ERR_ABORTED') || desc.contains('CANCELLED') || error.errorCode == -999) {
                 return;
@@ -156,12 +170,17 @@ class _WebViewScreenState extends State<WebViewScreen> {
             }
           },
           onNavigationRequest: (NavigationRequest request) {
-            print('WebView :: Navigation Request :: ${request.url}');
+            debugPrint('WebView :: Navigation Request :: ${request.url}');
             return NavigationDecision.navigate;
           },
         ),
       )
       ..loadRequest(Uri.parse(widget.url));
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   @override
