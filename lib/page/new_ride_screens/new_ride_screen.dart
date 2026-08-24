@@ -11,6 +11,7 @@ import 'package:cabme_driver/page/completed/trip_history_screen.dart';
 import 'package:cabme_driver/page/create_ride/create_osm_ride_screen.dart';
 import 'package:cabme_driver/page/create_ride/create_ride_screen.dart';
 import 'package:cabme_driver/page/features/Taxi/taxi_dashboard/taxi_dashboard.dart';
+import 'package:cabme_driver/page/MainDashBoard/widget/custom_drawer.dart';
 import 'package:cabme_driver/page/review_screens/add_review_screen.dart';
 import 'package:cabme_driver/page/route_view_screen/route_osm_view_screen.dart';
 import 'package:cabme_driver/page/route_view_screen/route_view_screen.dart';
@@ -190,7 +191,7 @@ class _NewRideScreenState extends State<NewRideScreen> with SingleTickerProvider
               ),
             ),
           ),
-          drawer: widget.isTab ? null : buildAppDrawer(context, controllerDashBoard),
+          drawer: widget.isTab ? null : const CustomDrawer(),
           body: Column(
             children: [
               // ── Top Segmented Tab Bar ──
