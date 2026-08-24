@@ -350,14 +350,8 @@ class MPinChangeController extends GetxController
           return;
         }
 
-        // Verify current PIN with API fetched PIN
-        if (storedMPin.isEmpty) {
-          _showErrorMessage('Unable to verify PIN. Please try again.');
-          isLoading.value = false;
-          return;
-        }
-
-        if (currentPinValue != storedMPin) {
+        // Verify current PIN with API fetched PIN if available
+        if (storedMPin.isNotEmpty && currentPinValue != storedMPin) {
           _showErrorMessage('Current PIN is incorrect. Please try again.');
           _clearCurrentPin();
           Future.delayed(const Duration(milliseconds: 300), () {
@@ -482,13 +476,7 @@ class MPinChangeController extends GetxController
         return;
       }
 
-      if (storedMPin.isEmpty) {
-        _showErrorMessage('Unable to verify PIN. Please try again.');
-        isLoading.value = false;
-        return;
-      }
-
-      if (currentPinValue != storedMPin) {
+      if (storedMPin.isNotEmpty && currentPinValue != storedMPin) {
         _showErrorMessage('Current PIN is incorrect.');
         isLoading.value = false;
         return;
@@ -505,8 +493,17 @@ class MPinChangeController extends GetxController
       ShowToastDialog.showLoader(
           isSetMode.value ? "Setting PIN..." : "Changing PIN...");
 
+      final driver = Constant.getUserData();
+      final acNo = driver.userData?.acNo ?? '';
+      final driverId = Preferences.getInt(Preferences.userId).toString();
+      final phone = driver.userData?.phone ?? '';
+
       Map<String, String> bodyParams = {
-        'ac_no': "${Constant.getUserData().userData?.acNo}",
+        'ac_no': acNo,
+        'user_id': driverId,
+        'driver_id': driverId,
+        'phone': phone,
+        'user_type': 'driver',
         'opass': isSetMode.value ? '' : currentPinValue,
         'npass': newPinValue,
         'cpass': confirmPinValue
@@ -524,22 +521,22 @@ class MPinChangeController extends GetxController
 
       ShowToastDialog.closeLoader();
 
-      if (response.statusCode == 200 && responseBody['res'] == "success") {
-        if (isSetMode.value) {
-          hasMPinSet.value = true;
-        }
+      if (response.statusCode == 200 && (responseBody['res'] == "success" || responseBody['success'] == "success")) {
+        hasMPinSet.value = true;
+        storedMPin = newPinValue;
 
-        final value = UserModel.fromJson(responseBody['data']);
-
-        Preferences.setInt(Preferences.userId, int.parse(value.userData!.id.toString()));
-        Preferences.setString(Preferences.user, jsonEncode(value));
-        Preferences.setString(Preferences.accesstoken, value.userData!.accesstoken.toString());
-        Preferences.setString(Preferences.admincommission, value.userData!.adminCommission.toString());
-        API.header['accesstoken'] = Preferences.getString(Preferences.accesstoken);
+        // Update cached driver data
+        try {
+          final currentDriver = Constant.getUserData();
+          if (currentDriver.userData != null) {
+            currentDriver.userData!.mPin = newPinValue;
+            Preferences.setString(Preferences.user, jsonEncode(currentDriver.toJson()));
+          }
+        } catch (_) {}
 
         _showSuccessDialog();
       } else {
-        String errorMsg = responseBody['error'] ??
+        String errorMsg = responseBody['msg'] ?? responseBody['message'] ?? responseBody['error'] ??
             'Failed to ${isSetMode.value ? 'set' : 'change'} M-PIN. Please try again.';
         _showErrorMessage(errorMsg);
       }
