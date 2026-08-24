@@ -35,6 +35,19 @@ class _ServiceCompletionScreenState extends State<ServiceCompletionScreen> {
     if (!mounted) return;
     final flow = serviceFlowFor(widget.tag);
     final booking = flow.currentBooking.value;
+
+    // If booking is already paid (regardless of status), go to PaymentReceived screen
+    if (booking.isPaid && !booking.isCompleted) {
+      _pollTimer?.cancel();
+      Get.off(() => ServicePaymentReceivedScreen(tag: widget.tag));
+      return;
+    }
+    if (booking.isCompleted) {
+      _pollTimer?.cancel();
+      return;
+    }
+
+    // Only poll the server if we're in awaiting_payment state
     if (!booking.isAwaitingPayment) return;
 
     final updated = await flow.listController.fetchSingleBooking(flow.booking.id);
@@ -47,6 +60,13 @@ class _ServiceCompletionScreenState extends State<ServiceCompletionScreen> {
       _pollTimer?.cancel();
       Get.snackbar('Payment Received'.tr, 'You can now complete the job.'.tr);
       Get.off(() => ServicePaymentReceivedScreen(tag: widget.tag));
+    } else if (updated.isCompleted) {
+      // Already completed (e.g., auto-completed by payment system)
+      _pollTimer?.cancel();
+      try {
+        Get.delete<ServiceBookingFlowController>(tag: widget.tag, force: true);
+      } catch (_) {}
+      Get.off(() => const MyBookingScreen());
     }
   }
 
@@ -250,9 +270,13 @@ class _ServiceCompletionScreenState extends State<ServiceCompletionScreen> {
                         : () async {
                             setState(() => _submitting = true);
                             final ok = await flow.completeJob();
+                            if (!mounted) return;
                             setState(() => _submitting = false);
                             if (ok) {
-                              Get.delete<ServiceBookingFlowController>(tag: widget.tag);
+                              _pollTimer?.cancel();
+                              try {
+                                Get.delete<ServiceBookingFlowController>(tag: widget.tag, force: true);
+                              } catch (_) {}
                               Get.off(() => const MyBookingScreen());
                               Get.snackbar('Completed'.tr, 'Service marked as completed.'.tr);
                             }
@@ -294,17 +318,20 @@ class _ServiceCompletionScreenState extends State<ServiceCompletionScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
             onPressed: () async {
-              Get.back();
-              setState(() => _submitting = true);
-              final ok = await flow.completeJobWithCash();
-              setState(() => _submitting = false);
-              if (ok) {
-                _pollTimer?.cancel();
-                Get.delete<ServiceBookingFlowController>(tag: widget.tag);
-                Get.off(() => const MyBookingScreen());
-                Get.snackbar('Job Completed'.tr, 'Service completed via Cash payment.'.tr);
-              }
-            },
+                Get.back();
+                setState(() => _submitting = true);
+                final ok = await flow.completeJobWithCash();
+                if (!mounted) return;
+                setState(() => _submitting = false);
+                if (ok) {
+                  _pollTimer?.cancel();
+                  try {
+                    Get.delete<ServiceBookingFlowController>(tag: widget.tag, force: true);
+                  } catch (_) {}
+                  Get.off(() => const MyBookingScreen());
+                  Get.snackbar('Job Completed'.tr, 'Service completed via Cash payment.'.tr);
+                }
+              },
             child: Text('Yes, Received Cash'.tr),
           ),
         ],

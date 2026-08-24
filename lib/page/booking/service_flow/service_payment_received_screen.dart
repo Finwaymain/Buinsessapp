@@ -9,14 +9,37 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-class ServicePaymentReceivedScreen extends StatelessWidget {
+class ServicePaymentReceivedScreen extends StatefulWidget {
   final String tag;
 
   const ServicePaymentReceivedScreen({super.key, required this.tag});
 
   @override
+  State<ServicePaymentReceivedScreen> createState() => _ServicePaymentReceivedScreenState();
+}
+
+class _ServicePaymentReceivedScreenState extends State<ServicePaymentReceivedScreen> {
+  bool _completing = false;
+
+  Future<void> _completeJob(ServiceBookingFlowController flow) async {
+    if (_completing) return;
+    setState(() => _completing = true);
+    final ok = await flow.completeJob();
+    if (!mounted) return;
+    setState(() => _completing = false);
+    if (ok) {
+      try {
+        Get.delete<ServiceBookingFlowController>(tag: widget.tag, force: true);
+      } catch (_) {}
+      Get.off(() => const MyBookingScreen());
+    } else {
+      ShowToastDialog.showToast('Failed to complete job. Please try again.'.tr, isError: true);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final flow = serviceFlowFor(tag);
+    final flow = serviceFlowFor(widget.tag);
     final booking = flow.currentBooking.value;
     final now = DateTime.now();
 
@@ -67,7 +90,7 @@ class ServicePaymentReceivedScreen extends StatelessWidget {
                 children: [
                   Text('Payment Details'.tr, style: const TextStyle(fontFamily: AppThemeData.semiBold, fontSize: 14)),
                   const SizedBox(height: 10),
-                  _detail('Payment Method'.tr, 'Wallet'),
+                  _detail('Payment Method'.tr, 'Wallet / UPI'),
                   _detail('Paid By'.tr, booking.customerName),
                   _detail('Date & Time'.tr, DateFormat('dd MMM yyyy, hh:mm a').format(now)),
                   _detail('Booking ID'.tr, '#${booking.id}'),
@@ -97,31 +120,24 @@ class ServicePaymentReceivedScreen extends StatelessWidget {
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                FlowPrimaryButton(
-                  label: 'Download Invoice'.tr,
-                  outlined: true,
-                  icon: Icons.download_rounded,
-                  onPressed: () => Get.snackbar('Invoice'.tr, 'Invoice download coming soon'.tr),
-                ),
                 const SizedBox(height: 10),
                 FlowPrimaryButton(
-                  label: isCompleted ? 'Back to Bookings'.tr : 'Complete Job'.tr,
+                  label: isCompleted
+                      ? 'Back to Bookings'.tr
+                      : (_completing ? 'Completing...'.tr : 'Complete Job'.tr),
                   color: isCompleted ? AppThemeData.primary200 : AppThemeData.success300,
-                  onPressed: () async {
-                    if (isCompleted) {
-                      Get.delete<ServiceBookingFlowController>(tag: tag);
-                      Get.off(() => const MyBookingScreen());
-                    } else {
-                      ShowToastDialog.showLoader('Please wait'.tr);
-                      final ok = await flow.completeJob();
-                      ShowToastDialog.closeLoader();
-                      if (ok) {
-                        Get.delete<ServiceBookingFlowController>(tag: tag);
-                        Get.off(() => const MyBookingScreen());
-                        Get.snackbar('Completed'.tr, 'Service marked as completed.'.tr);
-                      }
-                    }
-                  },
+                  onPressed: _completing
+                      ? null
+                      : () {
+                          if (isCompleted) {
+                            try {
+                              Get.delete<ServiceBookingFlowController>(tag: widget.tag, force: true);
+                            } catch (_) {}
+                            Get.off(() => const MyBookingScreen());
+                          } else {
+                            _completeJob(flow);
+                          }
+                        },
                 ),
               ],
             );
@@ -158,3 +174,4 @@ class ServicePaymentReceivedScreen extends StatelessWidget {
     );
   }
 }
+
