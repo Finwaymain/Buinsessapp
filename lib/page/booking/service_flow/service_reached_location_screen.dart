@@ -35,6 +35,9 @@ class _ServiceReachedLocationScreenState
   Future<void> _verifyOtp(
       ServiceBookingFlowController flow,
       ) async {
+    if (_verifying) return;
+    FocusManager.instance.primaryFocus?.unfocus();
+
     final otp = _otpController.text.trim();
 
     if (otp.length != 4) {
@@ -45,8 +48,6 @@ class _ServiceReachedLocationScreenState
       );
       return;
     }
-
-    if (_verifying) return;
 
     setState(() {
       _verifying = true;
@@ -83,11 +84,11 @@ class _ServiceReachedLocationScreenState
   Widget build(BuildContext context) {
     final flow = serviceFlowFor(widget.tag);
 
-
       return ServiceFlowScaffold(
         title: 'Reached Location'.tr,
 
         body: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
           child: Column(
             children: [
