@@ -258,37 +258,23 @@ class MyProfileController extends GetxController {
     try {
       ShowToastDialog.showLoader("Please wait");
       final response = await http.post(Uri.parse(API.changePassword), headers: API.header, body: jsonEncode(bodyParams));
+      ShowToastDialog.closeLoader();
       showLog("API :: URL :: ${API.changePassword}");
-      showLog("API :: Request Body :: ${jsonEncode(bodyParams)}");
-      showLog("API :: Request Header :: ${API.header.toString()} ");
-      showLog("API :: responseStatus :: ${response.statusCode} ");
-      showLog("API :: responseBody :: ${response.body} ");
+      showLog("API :: Response Body :: ${response.body}");
       Map<String, dynamic> responseBody = json.decode(response.body);
-      if (response.statusCode == 200 && responseBody['success'] == "success") {
-        ShowToastDialog.closeLoader();
+
+      if (responseBody['success'] == "success" || responseBody['res'] == 'success') {
         return true;
-      } else if (response.statusCode == 200 && responseBody['success'] == "Failed") {
-        ShowToastDialog.closeLoader();
-        return responseBody['error'];
       } else {
-        ShowToastDialog.closeLoader();
-        ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
-        throw Exception('Failed to load album');
+        final errorMsg = responseBody['error'] ?? responseBody['msg'] ?? responseBody['message'] ?? 'Failed to update MPIN';
+        ShowToastDialog.showToast(errorMsg.toString());
+        return false;
       }
-    } on TimeoutException catch (e) {
-      ShowToastDialog.closeLoader();
-      ShowToastDialog.showToast(e.message.toString());
-    } on SocketException catch (e) {
-      ShowToastDialog.closeLoader();
-      ShowToastDialog.showToast(e.message.toString());
-    } on Error catch (e) {
-      ShowToastDialog.closeLoader();
-      ShowToastDialog.showToast(e.toString());
     } catch (e) {
       ShowToastDialog.closeLoader();
       ShowToastDialog.showToast(e.toString());
+      return false;
     }
-    return null;
   }
 
   Future<dynamic> deleteAccount(String userId) async {
