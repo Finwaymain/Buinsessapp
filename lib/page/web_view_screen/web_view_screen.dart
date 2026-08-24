@@ -108,21 +108,29 @@ class _WebViewScreenState extends State<WebViewScreen> {
       ..addJavaScriptChannel(
         'AppBridge',
         onMessageReceived: (JavaScriptMessage message) {
-          print('WebView :: JavaScript Message :: ${message.message}');
-          if (message.message == 'close') {
+          debugPrint('WebView :: JavaScript Message :: ${message.message}');
+          final msg = message.message.trim();
+          if (msg == 'close' || msg == 'close_webview' || msg == 'finishOrder' || msg == 'returnToHome') {
             Get.back();
             return;
           }
-          if (message.message == 'finishWelcome' || message.message == 'login' || message.message == 'register' || message.message == 'unauthorized') {
+          if (msg == 'finishWelcome' || msg == 'login' || msg == 'register') {
             Preferences.setBoolean(Preferences.isFinishOnBoardingKey, true);
             Get.offAll(() => const PhoneEntryScreen());
             return;
           }
           try {
-            final data = jsonDecode(message.message);
-            if (widget.onBridgeAction != null && data is Map<String, dynamic>) {
-              data['_controller'] = controller;
-              widget.onBridgeAction!(data);
+            final data = jsonDecode(msg);
+            if (data is Map<String, dynamic>) {
+              final action = data['action']?.toString();
+              if (action == 'close' || action == 'close_webview' || action == 'kit_purchased' || action == 'order_completed' || action == 'finishOrder') {
+                Get.back();
+                return;
+              }
+              if (widget.onBridgeAction != null) {
+                data['_controller'] = controller;
+                widget.onBridgeAction!(data);
+              }
             }
           } catch (_) {}
         },
