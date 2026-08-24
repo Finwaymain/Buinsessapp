@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:cabme_driver/constant/constant.dart';
+import 'package:cabme_driver/constant/show_toast_dialog.dart';
 import 'package:cabme_driver/controller/service_booking_controller.dart';
 import 'package:cabme_driver/controller/service_history_controller.dart';
 import 'package:cabme_driver/model/service_price_estimate_model.dart';
@@ -84,6 +85,11 @@ class _ServiceExpertAssignedScreenState extends State<ServiceExpertAssignedScree
   }
 
   Future<void> _cancelBooking() async {
+    if (_booking == null || !_booking!.canBeCancelled) {
+      ShowToastDialog.showToast('Service is already in progress or completed. Cannot be cancelled.'.tr);
+      return;
+    }
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -156,6 +162,7 @@ class _ServiceExpertAssignedScreenState extends State<ServiceExpertAssignedScree
             if (breakdown.displayVisitingCharge.isNotEmpty)
               _breakupRow('Visiting Charge'.tr, breakdown.displayVisitingCharge),
             if (breakdown.materialCost > 0) _breakupRow('Material Cost'.tr, _money(breakdown.materialCost)),
+            if (breakdown.platformFee > 0) _breakupRow('Platform Fee'.tr, _money(breakdown.platformFee)),
             const Divider(height: 24),
             _breakupRow('Total Payable'.tr, breakdown.displayTotal, bold: true),
             const SizedBox(height: 8),
@@ -200,7 +207,15 @@ class _ServiceExpertAssignedScreenState extends State<ServiceExpertAssignedScree
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new_rounded, size: 20, color: isDarkMode ? AppThemeData.grey900Dark : AppThemeData.grey900),
-          onPressed: _cancelling ? null : () => Get.back(),
+          onPressed: _cancelling
+              ? null
+              : () {
+                  if (_booking != null && (_booking!.isAwaitingPayment || _booking!.needsPayment)) {
+                    Get.off(() => ServiceCompletedPaymentScreen(bookingId: widget.bookingId));
+                  } else {
+                    Get.back();
+                  }
+                },
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -229,7 +244,7 @@ class _ServiceExpertAssignedScreenState extends State<ServiceExpertAssignedScree
                         ),
                       ),
                     ),
-                    if (!_booking!.isCompleted)
+                    if (_booking != null && _booking!.canBeCancelled)
                       Padding(
                         padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
                         child: ButtonThem.buildBorderButton(
