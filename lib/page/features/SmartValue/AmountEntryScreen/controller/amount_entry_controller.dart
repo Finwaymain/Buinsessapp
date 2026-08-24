@@ -153,7 +153,7 @@ class AmountEntryController extends GetxController {
       return;
     }
 
-    final currentBalance = double.tryParse(Constant.getUserData().data?.amount?.toString() ?? "0") ?? 0.0;
+    final currentBalance = double.tryParse(Constant.getUserData().userData?.amount?.toString() ?? "0") ?? 0.0;
     if (currentBalance >= 0 && enteredAmount > currentBalance) {
       Get.snackbar(
         'Insufficient Balance',
