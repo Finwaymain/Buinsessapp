@@ -77,14 +77,20 @@ class MyBookingController extends GetxController {
       locationRequired.value = false;
       locationMessage.value = '';
 
-      final driverId = Preferences.getInt(Preferences.userId);
+      final driverId = _getResolvedDriverId();
       final params = <String, String>{
         'id_driver': driverId.toString(),
         'status': _statusParam,
       };
 
+      final headers = Map<String, String>.from(API.header);
+      if (driverId != 0) {
+        headers['id_conducteur'] = driverId.toString();
+        headers['id_user'] = driverId.toString();
+      }
+
       final uri = Uri.parse(API.driverBookings).replace(queryParameters: params);
-      final response = await http.get(uri, headers: API.header);
+      final response = await http.get(uri, headers: headers);
       final body = json.decode(response.body);
 
       if (body['onboarding_required'] == true) {
@@ -164,6 +170,22 @@ class MyBookingController extends GetxController {
     fetchBookings();
   }
 
+  int _getResolvedDriverId() {
+    int driverId = Preferences.getInt(Preferences.userId);
+    if (driverId != 0) return driverId;
+    final strId = Preferences.getString(Preferences.userId);
+    if (strId.isNotEmpty) {
+      final parsed = int.tryParse(strId);
+      if (parsed != null && parsed != 0) return parsed;
+    }
+    final userDataId = Constant.getUserData().userData?.id;
+    if (userDataId != null) {
+      final parsed = int.tryParse(userDataId.toString());
+      if (parsed != null && parsed != 0) return parsed;
+    }
+    return 0;
+  }
+
   Future<bool> updateServiceStatus(
     String bookingId,
     String status, {
@@ -173,9 +195,10 @@ class MyBookingController extends GetxController {
   }) async {
     try {
       ShowToastDialog.showLoader('Please wait'.tr);
-      final driverId = Preferences.getInt(Preferences.userId);
+      final driverId = _getResolvedDriverId();
       final body = <String, dynamic>{
         'id_driver': driverId,
+        'driver_id': driverId,
         'booking_id': bookingId,
         'status': status,
       };
@@ -189,9 +212,15 @@ class MyBookingController extends GetxController {
         body.addAll(billPayload);
       }
 
+      final headers = Map<String, String>.from(API.header);
+      if (driverId != 0) {
+        headers['id_conducteur'] = driverId.toString();
+        headers['id_user'] = driverId.toString();
+      }
+
       final response = await http.post(
         Uri.parse(API.driverServiceBookingStatus),
-        headers: API.header,
+        headers: headers,
         body: json.encode(body),
       );
       ShowToastDialog.closeLoader();
@@ -271,9 +300,12 @@ class MyBookingController extends GetxController {
   /// independent of the currently selected tab in the booking screen list.
   Future<DriverBookingItem?> fetchSingleBooking(String bookingId) async {
     try {
-      final driverId = Preferences.getInt(Preferences.userId);
+      final driverId = _getResolvedDriverId();
       final headers = Map<String, String>.from(API.header);
-      headers['id_user'] = driverId.toString(); // Pass driver ID to bypass verification
+      if (driverId != 0) {
+        headers['id_conducteur'] = driverId.toString();
+        headers['id_user'] = driverId.toString();
+      }
 
       final uri = Uri.parse('${API.baseUrl}service-booking/$bookingId');
       final response = await http.get(uri, headers: headers);
