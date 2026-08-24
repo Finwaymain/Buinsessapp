@@ -178,11 +178,6 @@ class MyBookingController extends GetxController {
       final parsed = int.tryParse(strId);
       if (parsed != null && parsed != 0) return parsed;
     }
-    final userDataId = Constant.getUserData().userData?.id;
-    if (userDataId != null) {
-      final parsed = int.tryParse(userDataId.toString());
-      if (parsed != null && parsed != 0) return parsed;
-    }
     return 0;
   }
 
