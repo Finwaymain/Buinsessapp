@@ -40,8 +40,6 @@ class ReferralEarnScreen extends StatelessWidget {
       extra: {
         'driver_id': driverId,
         'id_driver': driverId,
-        'user_id': driverId,
-        'id_user': driverId,
         'user_cat': 'driver',
         'user_type': 'driver',
         if (phone.isNotEmpty) 'phone': phone,

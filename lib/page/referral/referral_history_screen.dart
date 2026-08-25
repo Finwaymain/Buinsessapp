@@ -1,5 +1,5 @@
 import 'package:cabme_driver/page/web_view_screen/web_view_screen.dart';
-import 'package:cabme_driver/utils/Preferences.dart';
+import 'package:cabme_driver/utils/onboarding_url.dart';
 import 'package:flutter/material.dart';
 
 class ReferralHistoryScreen extends StatelessWidget {
@@ -7,9 +7,14 @@ class ReferralHistoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final driverId = Preferences.getString(Preferences.userId);
-    final token = Preferences.getString(Preferences.accesstoken);
-    final url = 'https://api.fiinway.com/onboarding/referral?driver_id=$driverId&accesstoken=$token';
+    final url = OnboardingUrl.build(
+      '/onboarding/referral',
+      extra: {
+        'view': 'dashboard',
+        'user_type': 'driver',
+        'user_cat': 'driver',
+      },
+    );
 
     return WebViewScreen(
       url: url,
