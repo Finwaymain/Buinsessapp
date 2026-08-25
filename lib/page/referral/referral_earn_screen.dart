@@ -1,28 +1,53 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:cabme_driver/constant/constant.dart';
 import 'package:cabme_driver/page/web_view_screen/web_view_screen.dart';
 import 'package:cabme_driver/utils/Preferences.dart';
+import 'package:cabme_driver/utils/onboarding_url.dart';
 
 class ReferralEarnScreen extends StatelessWidget {
   const ReferralEarnScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    String driverId = Preferences.getString(Preferences.userId);
-    String phone = '';
-    final userStr = Preferences.getString(Preferences.user);
-    if (userStr.isNotEmpty) {
-      try {
-        final map = jsonDecode(userStr);
-        if (driverId.isEmpty || driverId == "0") {
-          driverId = (map['id'] ?? map['id_driver'] ?? map['userData']?['id'] ?? '').toString();
-        }
-        phone = (map['phone'] ?? map['userData']?['phone'] ?? '').toString();
-      } catch (_) {}
+    String driverId = OnboardingUrl.driverId();
+    if (driverId.isEmpty || driverId == "0") {
+      final intId = Preferences.getInt(Preferences.userId);
+      if (intId != 0) driverId = intId.toString();
+    }
+    if (driverId.isEmpty || driverId == "0") {
+      driverId = Preferences.getString(Preferences.userId);
+    }
+    if (driverId.isEmpty || driverId == "0") {
+      driverId = Constant.getUserData().userData?.id ?? '';
     }
 
-    final token = Preferences.getString(Preferences.accesstoken);
-    final url = 'https://api.fiinway.com/onboarding/referral?driver_id=$driverId&id_driver=$driverId&user_cat=driver&user_type=driver&phone=${Uri.encodeComponent(phone)}&accesstoken=$token';
+    String phone = Constant.getUserData().userData?.phone ?? '';
+    if (phone.isEmpty) {
+      final userStr = Preferences.getString(Preferences.user);
+      if (userStr.isNotEmpty) {
+        try {
+          final map = jsonDecode(userStr);
+          phone = (map['phone'] ?? map['userData']?['phone'] ?? '').toString();
+        } catch (_) {}
+      }
+    }
+
+    final token = OnboardingUrl.accessToken();
+
+    final url = OnboardingUrl.build(
+      '/onboarding/referral',
+      extra: {
+        'driver_id': driverId,
+        'id_driver': driverId,
+        'user_id': driverId,
+        'id_user': driverId,
+        'user_cat': 'driver',
+        'user_type': 'driver',
+        if (phone.isNotEmpty) 'phone': phone,
+        if (token.isNotEmpty) 'accesstoken': token,
+      },
+    );
 
     return WebViewScreen(
       url: url,
