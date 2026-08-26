@@ -308,13 +308,13 @@ class NotificationService {
     );
 
     // Dedicated ride-request channel — max importance, full-screen alert
-    AndroidNotificationChannel rideChannel = const AndroidNotificationChannel(
+    AndroidNotificationChannel rideChannel = AndroidNotificationChannel(
       'ride_requests',
       'New Ride Requests',
       description: 'Alerts for incoming ride requests',
       importance: Importance.max,
       playSound: true,
-      sound: RawResourceAndroidNotificationSound('ride_request_sound'),
+      sound: const RawResourceAndroidNotificationSound('ride_request_sound'),
       enableVibration: true,
       vibrationPattern: Int64List.fromList([0, 500, 200, 500, 200, 500]),
     );
