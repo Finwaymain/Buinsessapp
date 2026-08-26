@@ -893,19 +893,6 @@ class MainHomeScreen extends StatelessWidget {
         : Get.put(DriverKitService());
 
     return Obx(() {
-      final dashboardController = Get.isRegistered<DashBoardController>()
-          ? Get.find<DashBoardController>()
-          : null;
-      final userData = dashboardController?.userModel.value.userData ?? Constant.getUserData().userData;
-      final bool isOnboarded = userData?.onboardingCompleted == 'yes' ||
-          (userData?.selectedCategories != null && userData!.selectedCategories!.isNotEmpty) ||
-          (userData?.categoryId != null && userData!.categoryId != '0' && userData!.categoryId != '');
-
-      // Rule: Kit purchasing card is visible once driver has completed onboarding (e.g. Electrician, Plumber, Bike, Car)
-      if (!isOnboarded) {
-        return const SizedBox.shrink();
-      }
-
       final kitData = kitService.kitData.value;
       if (kitData == null || kitData.kit == null) return const SizedBox.shrink();
 
