@@ -11,6 +11,8 @@ import 'package:http/http.dart' as http;
 import '../model/driver_kit_model.dart';
 import '../utils/onboarding_url.dart';
 
+import '../controller/dash_board_controller.dart';
+
 class DriverKitService extends GetxController {
   static DriverKitService get to => Get.find<DriverKitService>();
 
@@ -18,16 +20,24 @@ class DriverKitService extends GetxController {
   var kitData = Rxn<DriverKitDataModel>();
 
   String _getDriverId() {
-    final fromPrefs = Preferences.getString(Preferences.userId);
-    if (fromPrefs.isNotEmpty) return fromPrefs;
     final intId = Preferences.getInt(Preferences.userId);
-    if (intId != 0) return intId.toString();
+    if (intId > 0) return intId.toString();
+    final fromPrefs = Preferences.getString(Preferences.userId);
+    if (fromPrefs.isNotEmpty && fromPrefs != "0") return fromPrefs;
+    if (Get.isRegistered<DashBoardController>()) {
+      final dashId = Get.find<DashBoardController>().userModel.value.userData?.id;
+      if (dashId != null && dashId.isNotEmpty && dashId != "0") return dashId;
+    }
     return Constant.getUserData().userData?.id?.toString() ?? '';
   }
 
   String _getAccessToken() {
     final fromPrefs = Preferences.getString(Preferences.accesstoken);
     if (fromPrefs.isNotEmpty) return fromPrefs;
+    if (Get.isRegistered<DashBoardController>()) {
+      final dashToken = Get.find<DashBoardController>().userModel.value.userData?.accesstoken;
+      if (dashToken != null && dashToken.isNotEmpty) return dashToken;
+    }
     return Constant.getUserData().userData?.accesstoken ?? '';
   }
 
@@ -41,7 +51,9 @@ class DriverKitService extends GetxController {
     try {
       isLoading.value = true;
       final url = Uri.parse('${API.driverKitStatus}?driver_id=$driverId&accesstoken=$token');
-      final res = await http.get(url, headers: API.header);
+      final headers = Map<String, String>.from(API.header);
+      if (token.isNotEmpty) headers['accesstoken'] = token;
+      final res = await http.get(url, headers: headers);
 
       if (res.statusCode == 200) {
         final body = json.decode(res.body);
