@@ -301,7 +301,7 @@ class NotificationService {
   static Future<void> initialize(BuildContext context) async {
     // General high-importance channel
     AndroidNotificationChannel generalChannel =
-        const AndroidNotificationChannel(
+        AndroidNotificationChannel(
       'high_importance_channel',
       'High Importance Notifications',
       importance: Importance.high,
@@ -319,10 +319,10 @@ class NotificationService {
       vibrationPattern: Int64List.fromList([0, 500, 200, 500, 200, 500]),
     );
 
-    const AndroidInitializationSettings initializationSettingsAndroid =
+    final AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    var iosInitializationSettings = const DarwinInitializationSettings();
+    var iosInitializationSettings = DarwinInitializationSettings();
 
     final InitializationSettings initializationSettings =
         InitializationSettings(
