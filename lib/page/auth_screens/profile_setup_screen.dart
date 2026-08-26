@@ -1,10 +1,12 @@
 import 'package:cabme_driver/constant/show_toast_dialog.dart';
 import 'package:cabme_driver/controller/auth_otp_controller.dart';
 import 'package:cabme_driver/page/MainDashBoard/screen/main_dashboard.dart';
+import 'package:cabme_driver/page/terms_of_service/terms_of_service_screen.dart';
 import 'package:cabme_driver/themes/button_them.dart';
 import 'package:cabme_driver/themes/constant_colors.dart';
 import 'package:cabme_driver/utils/Preferences.dart';
 import 'package:cabme_driver/utils/dark_theme_provider.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
@@ -21,6 +23,7 @@ class ProfileSetupScreen extends StatefulWidget {
 
 class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   bool _isSubmitting = false;
+  bool _agreeTerms = true;
 
   Future<void> _submitRegistration(BuildContext context, AuthOtpController controller) async {
     if (_isSubmitting || controller.isLoading.value) return;
@@ -35,6 +38,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
     if (first.isEmpty) {
       ShowToastDialog.showToast('Please enter your first name.'.tr);
+      return;
+    }
+
+    if (!_agreeTerms) {
+      ShowToastDialog.showToast('Please accept the Terms & Conditions to proceed.'.tr);
       return;
     }
 
@@ -190,6 +198,58 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   'Have a friend\'s referral code? Enter it above to reward them.'.tr,
                   style: TextStyle(fontSize: 12, color: hintColor, fontFamily: AppThemeData.regular),
                 ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Terms & Conditions Checkbox Row
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    height: 24,
+                    width: 24,
+                    child: Checkbox(
+                      value: _agreeTerms,
+                      activeColor: ConstantColors.primary,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                      onChanged: (val) {
+                        setState(() {
+                          _agreeTerms = val ?? false;
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        Get.to(() => const TermsOfServiceScreen());
+                      },
+                      child: Text.rich(
+                        TextSpan(
+                          text: 'I agree to the '.tr,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontFamily: AppThemeData.regular,
+                            color: subtitleColor,
+                          ),
+                          children: [
+                            TextSpan(
+                              text: 'Terms & Conditions'.tr,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontFamily: AppThemeData.semiBold,
+                                color: ConstantColors.primary,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
 
               const SizedBox(height: 24),
