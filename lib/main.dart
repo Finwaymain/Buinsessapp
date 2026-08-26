@@ -83,7 +83,7 @@ Future<void> showCallkitIncoming(Map<String, dynamic> data) async {
     android: const AndroidParams(
       isCustomNotification: true,
       isShowLogo: false,
-      ringtonePath: 'system_ringtone_default',
+      ringtonePath: 'ride_request_sound',
       backgroundColor: '#0955fa',
       actionColor: '#4CAF50',
       textColor: '#ffffff',
@@ -106,7 +106,7 @@ Future<void> showCallkitIncoming(Map<String, dynamic> data) async {
       supportsHolding: true,
       supportsGrouping: false,
       supportsUngrouping: false,
-      ringtonePath: 'system_ringtone_default',
+      ringtonePath: 'ride_request_sound',
     ),
   );
   await FlutterCallkitIncoming.showCallkitIncoming(callKitParams);
@@ -308,12 +308,13 @@ class NotificationService {
     );
 
     // Dedicated ride-request channel — max importance, full-screen alert
-    AndroidNotificationChannel rideChannel = AndroidNotificationChannel(
+    AndroidNotificationChannel rideChannel = const AndroidNotificationChannel(
       'ride_requests',
       'New Ride Requests',
       description: 'Alerts for incoming ride requests',
       importance: Importance.max,
       playSound: true,
+      sound: RawResourceAndroidNotificationSound('ride_request_sound'),
       enableVibration: true,
       vibrationPattern: Int64List.fromList([0, 500, 200, 500, 200, 500]),
     );
@@ -388,6 +389,9 @@ class NotificationService {
           enableVibration: true,
           vibrationPattern: isRideRequest
               ? Int64List.fromList([0, 500, 200, 500, 200, 500])
+              : null,
+          sound: isRideRequest
+              ? const RawResourceAndroidNotificationSound('ride_request_sound')
               : null,
           playSound: true,
         ),
