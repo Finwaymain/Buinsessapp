@@ -44,6 +44,7 @@ class DriverKitService extends GetxController {
   /// Fetch Kit Status silently (no auto popup)
   Future<void> fetchKitStatus() async {
     final driverId = _getDriverId();
+    debugPrint("DriverKitService: fetchKitStatus called, driverId='$driverId'");
     if (driverId.isEmpty) return;
 
     final token = _getAccessToken();
@@ -53,13 +54,17 @@ class DriverKitService extends GetxController {
       final url = Uri.parse('${API.driverKitStatus}?driver_id=$driverId&accesstoken=$token');
       final headers = Map<String, String>.from(API.header);
       if (token.isNotEmpty) headers['accesstoken'] = token;
+
+      debugPrint("DriverKitService: Fetching $url");
       final res = await http.get(url, headers: headers);
+      debugPrint("DriverKitService: Response status=${res.statusCode}, body=${res.body}");
 
       if (res.statusCode == 200) {
         final body = json.decode(res.body);
         if (body['success'] == 'success' && body['data'] != null) {
           final model = DriverKitDataModel.fromJson(body['data']);
           kitData.value = model;
+          debugPrint("DriverKitService: Successfully loaded kit '${model.kit?.title}'");
         }
       }
     } catch (e) {

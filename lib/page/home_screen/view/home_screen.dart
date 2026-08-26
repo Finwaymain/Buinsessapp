@@ -893,6 +893,12 @@ class MainHomeScreen extends StatelessWidget {
         : Get.put(DriverKitService());
 
     return Obx(() {
+      if (kitService.kitData.value == null && !kitService.isLoading.value) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          kitService.fetchKitStatus();
+        });
+      }
+
       final kitData = kitService.kitData.value;
       if (kitData == null || kitData.kit == null) return const SizedBox.shrink();
 
