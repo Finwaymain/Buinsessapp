@@ -899,9 +899,12 @@ class MainHomeScreen extends StatelessWidget {
       final userData = dashboardController?.userModel.value.userData ?? Constant.getUserData().userData;
       final bool isOnboarded = userData?.onboardingCompleted == 'yes' ||
           (userData?.selectedCategories != null && userData!.selectedCategories!.isNotEmpty);
+      final String statut = (userData?.statut ?? '').toString().toLowerCase();
+      final String isVerifiedStr = (userData?.isVerified ?? '').toString().toLowerCase();
+      final bool isVerified = isVerifiedStr == 'yes' || statut == 'yes' || statut == 'approved' || statut == '1';
 
-      // Kit purchasing card is ONLY visible when driver has onboarded in categories
-      if (!isOnboarded) {
+      // Rule: Kit purchasing card is ONLY visible when driver has onboarded AND is verified by admin
+      if (!isOnboarded || !isVerified) {
         return const SizedBox.shrink();
       }
 
@@ -910,167 +913,332 @@ class MainHomeScreen extends StatelessWidget {
 
       final kit = kitData.kit!;
       final hasPurchased = kitData.hasPurchased;
-      final order = kitData.order;
 
-      // If purchased, hide banner card completely per user requirement
+      // If purchased, hide banner card completely
       if (hasPurchased) {
         return const SizedBox.shrink();
       }
 
-      // Case B: Not Purchased Yet (Show promotional purchase card)
       final itemsSummary = kit.itemsIncluded.take(3).join(' • ');
 
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: isDark
-                  ? [const Color(0xFF1E1C15), const Color(0xFF151413)]
-                  : [const Color(0xFFFFF9E6), const Color(0xFFFFFFFF)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: kitData.isCompulsory
-                  ? AppThemeData.warning200.withValues(alpha: 0.6)
-                  : AppThemeData.primary200.withValues(alpha: 0.5),
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppThemeData.primary200.withValues(alpha: isDark ? 0.08 : 0.12),
-                blurRadius: 14,
-                offset: const Offset(0, 5),
+        child: GestureDetector(
+          onTap: () => _showKitDetailsBottomSheet(context, kitData, kitService),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: isDark
+                    ? [const Color(0xFF1E1C15), const Color(0xFF151413)]
+                    : [const Color(0xFFFFF9E6), const Color(0xFFFFFFFF)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-            ],
-          ),
-          child: Row(
-            children: [
-              // Left Icon
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [AppThemeData.primary200, AppThemeData.primary300],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppThemeData.primary200.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: kitData.isCompulsory
+                    ? AppThemeData.warning200.withValues(alpha: 0.6)
+                    : AppThemeData.primary200.withValues(alpha: 0.5),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppThemeData.primary200.withValues(alpha: isDark ? 0.08 : 0.12),
+                  blurRadius: 14,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                // Left Icon
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [AppThemeData.primary200, AppThemeData.primary300],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                  ],
-                ),
-                child: Center(
-                  child: Icon(
-                    kitData.categoryCode == 'bike'
-                        ? Icons.two_wheeler_rounded
-                        : (kitData.categoryCode == 'home_service'
-                            ? Icons.home_repair_service_rounded
-                            : Icons.shopping_bag_rounded),
-                    color: Colors.white,
-                    size: 26,
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppThemeData.primary200.withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Icon(
+                      kitData.categoryCode == 'bike'
+                          ? Icons.two_wheeler_rounded
+                          : (kitData.categoryCode == 'home_service'
+                              ? Icons.home_repair_service_rounded
+                              : Icons.shopping_bag_rounded),
+                      color: Colors.white,
+                      size: 26,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 14),
+                const SizedBox(width: 14),
 
-              // Middle Information
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            kit.title.tr,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontFamily: AppThemeData.bold,
-                              color: isDark ? AppThemeData.grey900Dark : AppThemeData.grey900,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (kitData.isCompulsory) ...[
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                            decoration: BoxDecoration(
-                              color: AppThemeData.warning200.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
+                // Middle Information (Price removed from card per requirement)
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
                             child: Text(
-                              'Required'.tr,
+                              kit.title.tr,
                               style: TextStyle(
-                                fontSize: 9,
+                                fontSize: 14,
                                 fontFamily: AppThemeData.bold,
-                                color: AppThemeData.warning200,
+                                color: isDark ? AppThemeData.grey900Dark : AppThemeData.grey900,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (kitData.isCompulsory) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                              decoration: BoxDecoration(
+                                color: AppThemeData.warning200.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                'Required'.tr,
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontFamily: AppThemeData.bold,
+                                  color: AppThemeData.warning200,
+                                ),
                               ),
                             ),
-                          ),
+                          ],
                         ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        itemsSummary.isNotEmpty ? itemsSummary : 'Apparel & Partner Starter Kit'.tr,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontFamily: AppThemeData.regular,
+                          color: isDark ? AppThemeData.grey500Dark : AppThemeData.grey500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+
+                // Right CTA Button - Opens detail modal with price
+                ElevatedButton(
+                  onPressed: () => _showKitDetailsBottomSheet(context, kitData, kitService),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppThemeData.primary200,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 2,
+                    shadowColor: AppThemeData.primary200.withValues(alpha: 0.3),
+                  ),
+                  child: Text(
+                    'View Kit'.tr,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontFamily: AppThemeData.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    });
+  }
+
+  /// Bottom Sheet detail view shown when tapping kit card on dashboard
+  void _showKitDetailsBottomSheet(BuildContext context, DriverKitDataModel kitData, DriverKitService kitService) {
+    final kit = kitData.kit;
+    if (kit == null) return;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Top Drag Handle
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.grey[700] : Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            Row(
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [AppThemeData.primary200, AppThemeData.primary300],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.shopping_bag_rounded,
+                      color: Colors.white,
+                      size: 30,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        kit.title.tr,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontFamily: AppThemeData.bold,
+                          color: isDark ? Colors.white : const Color(0xFF0F172A),
+                        ),
+                      ),
+                      if (kitData.isCompulsory) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          'Mandatory Partner Kit'.tr,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontFamily: AppThemeData.medium,
+                            color: AppThemeData.warning200,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
+            // Included Items
+            if (kit.itemsIncluded.isNotEmpty) ...[
+              Text(
+                'Kit Includes:'.tr,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontFamily: AppThemeData.bold,
+                  color: isDark ? Colors.grey[300] : const Color(0xFF334155),
+                ),
+              ),
+              const SizedBox(height: 10),
+              ...kit.itemsIncluded.map((item) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        Icon(Icons.check_circle_rounded, color: AppThemeData.primary200, size: 18),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            item,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontFamily: AppThemeData.regular,
+                              color: isDark ? Colors.grey[400] : const Color(0xFF475569),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 3),
+                  )),
+              const SizedBox(height: 16),
+            ],
+
+            Divider(color: isDark ? Colors.grey[800] : Colors.grey[200]),
+            const SizedBox(height: 16),
+
+            // Price & Purchase CTA
+            Row(
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      itemsSummary.isNotEmpty ? itemsSummary : 'Apparel & Partner ID',
+                      'Kit Price'.tr,
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 12,
                         fontFamily: AppThemeData.regular,
-                        color: isDark ? AppThemeData.grey500Dark : AppThemeData.grey500,
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       kit.priceFormatted,
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 20,
                         fontFamily: AppThemeData.bold,
                         color: AppThemeData.primary200,
                       ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(width: 10),
-
-              // Right CTA Button
-              ElevatedButton(
-                onPressed: () => kitService.openKitWebView(kit.webviewUrl),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppThemeData.primary200,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 2,
-                  shadowColor: AppThemeData.primary200.withValues(alpha: 0.3),
-                ),
-                child: Text(
-                  'Order Kit'.tr,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontFamily: AppThemeData.bold,
-                    color: Colors.white,
+                const Spacer(),
+                ElevatedButton(
+                  onPressed: () {
+                    Get.back();
+                    kitService.openKitWebView(kit.webviewUrl);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppThemeData.primary200,
+                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: Text(
+                    'Order Kit Now'.tr,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontFamily: AppThemeData.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
+          ],
         ),
-      );
-    });
+      ),
+      isScrollControlled: true,
+    );
   }
 }
 

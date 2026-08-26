@@ -48,6 +48,15 @@ class _DashboardStatusSectionState extends State<DashboardStatusSection> {
       return;
     }
 
+    if (goOnline) {
+      final kitService = Get.isRegistered<DriverKitService>()
+          ? Get.find<DriverKitService>()
+          : Get.put(DriverKitService());
+      if (!kitService.checkBookingAccessWithPrompt()) {
+        return;
+      }
+    }
+
     final bodyParams = {
       'id_driver': Preferences.getInt(Preferences.userId),
       'online': goOnline ? 'yes' : 'no',
