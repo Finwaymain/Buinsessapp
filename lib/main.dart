@@ -314,7 +314,6 @@ class NotificationService {
       description: 'Alerts for incoming ride requests',
       importance: Importance.max,
       playSound: true,
-      sound: const RawResourceAndroidNotificationSound('ride_request_sound'),
       enableVibration: true,
       vibrationPattern: Int64List.fromList([0, 500, 200, 500, 200, 500]),
     );
