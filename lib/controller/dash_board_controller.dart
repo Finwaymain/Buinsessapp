@@ -72,6 +72,7 @@ class DashBoardController extends GetxController {
     getPaymentSettingData();
     initLocationTracking();
     fetchDriverServices();
+    updateToken();
     // Check for compulsory or optional Play Store updates for Driver Partners
     AppVersionService.checkAppVersion(appType: 'business');
     // Check for Driver Partner Welcome Kit & Popups
@@ -96,12 +97,23 @@ class DashBoardController extends GetxController {
   }
 
   Future<void> updateToken() async {
-    if (userModel.value.userData == null) return;
-    // use the returned token to send messages to users from your custom server
-    String? token = await FirebaseMessaging.instance.getToken();
+    try {
+      String? token = await FirebaseMessaging.instance.getToken();
+      await FirebaseMessaging.instance.subscribeToTopic("cabme_driver");
 
-    if (token != null) {
-      updateFCMToken(token);
+      int driverIdInt = Preferences.getInt(Preferences.userId);
+      String driverId = driverIdInt > 0 ? driverIdInt.toString() : Preferences.getString(Preferences.userId);
+      if (driverId.isEmpty || driverId == "0") {
+        if (userModel.value.userData != null) {
+          driverId = userModel.value.userData!.id ?? "";
+        }
+      }
+
+      if (token != null && token.isNotEmpty && driverId.isNotEmpty && driverId != "0") {
+        await updateFCMToken(token);
+      }
+    } catch (e) {
+      log("Error in updateToken: $e");
     }
   }
 
@@ -494,20 +506,23 @@ class DashBoardController extends GetxController {
 
   Future<dynamic> updateFCMToken(String token) async {
     try {
-      if (userModel.value.userData == null) return null;
-      String userId = Preferences.getString(Preferences.userId);
+      int userIdInt = Preferences.getInt(Preferences.userId);
+      String userId = userIdInt > 0 ? userIdInt.toString() : Preferences.getString(Preferences.userId);
       if (userId.isEmpty || userId == "0") {
-        userId = userModel.value.userData!.id ?? "";
+        if (userModel.value.userData != null) {
+          userId = userModel.value.userData!.id ?? "";
+        }
       }
-      String phone = userModel.value.userData!.phone ?? "";
+      String phone = userModel.value.userData?.phone ?? "";
 
       Map<String, dynamic> bodyParams = {
         'user_id': userId,
         'driver_id': userId,
+        'id_driver': userId,
         'phone': phone,
         'fcm_id': token,
         'device_id': "",
-        'user_cat': userModel.value.userData!.userCat ?? "driver"
+        'user_cat': "driver"
       };
       final response = await http.post(Uri.parse(API.updateToken), headers: API.header, body: jsonEncode(bodyParams));
       showLog("API :: URL :: ${API.updateToken} ");
