@@ -11,6 +11,7 @@ import '../../../utils/onboarding_url.dart';
 import '../../booking/my_booking_screen.dart';
 import '../../features/Taxi/taxi_dashboard/taxi_dashboard.dart';
 import '../../web_view_screen/web_view_screen.dart';
+import '../../../service/driver_kit_service.dart';
 
 /// Online toggle + today's stats, shown on the driver home screen right
 /// below the greeting/onboarding-status header. Kept as a standalone
