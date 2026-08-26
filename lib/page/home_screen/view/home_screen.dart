@@ -898,13 +898,12 @@ class MainHomeScreen extends StatelessWidget {
           : null;
       final userData = dashboardController?.userModel.value.userData ?? Constant.getUserData().userData;
       final bool isOnboarded = userData?.onboardingCompleted == 'yes' ||
-          (userData?.selectedCategories != null && userData!.selectedCategories!.isNotEmpty);
-      final String statut = (userData?.statut ?? '').toString().toLowerCase();
-      final String isVerifiedStr = (userData?.isVerified ?? '').toString().toLowerCase();
-      final bool isVerified = isVerifiedStr == 'yes' || statut == 'yes' || statut == 'approved' || statut == '1';
+          (userData?.selectedCategories != null && userData!.selectedCategories!.isNotEmpty) ||
+          (userData?.serviceCategories != null && userData!.serviceCategories!.isNotEmpty) ||
+          (userData?.category_id != null && userData!.category_id != 0 && userData!.category_id.toString() != '0');
 
-      // Rule: Kit purchasing card is ONLY visible when driver has onboarded AND is verified by admin
-      if (!isOnboarded || !isVerified) {
+      // Rule: Kit purchasing card is visible once driver has completed onboarding (e.g. Electrician, Plumber, Bike, Car)
+      if (!isOnboarded) {
         return const SizedBox.shrink();
       }
 
