@@ -83,7 +83,7 @@ Future<void> showCallkitIncoming(Map<String, dynamic> data) async {
     android: const AndroidParams(
       isCustomNotification: true,
       isShowLogo: false,
-      ringtonePath: 'ride_request_sound',
+      ringtonePath: 'system_ringtone_default',
       backgroundColor: '#0955fa',
       actionColor: '#4CAF50',
       textColor: '#ffffff',
@@ -106,7 +106,7 @@ Future<void> showCallkitIncoming(Map<String, dynamic> data) async {
       supportsHolding: true,
       supportsGrouping: false,
       supportsUngrouping: false,
-      ringtonePath: 'ride_request_sound',
+      ringtonePath: 'system_ringtone_default',
     ),
   );
   await FlutterCallkitIncoming.showCallkitIncoming(callKitParams);
@@ -301,7 +301,7 @@ class NotificationService {
   static Future<void> initialize(BuildContext context) async {
     // General high-importance channel
     AndroidNotificationChannel generalChannel =
-        AndroidNotificationChannel(
+        const AndroidNotificationChannel(
       'high_importance_channel',
       'High Importance Notifications',
       importance: Importance.high,
@@ -318,10 +318,10 @@ class NotificationService {
       vibrationPattern: Int64List.fromList([0, 500, 200, 500, 200, 500]),
     );
 
-    final AndroidInitializationSettings initializationSettingsAndroid =
+    const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    var iosInitializationSettings = DarwinInitializationSettings();
+    var iosInitializationSettings = const DarwinInitializationSettings();
 
     final InitializationSettings initializationSettings =
         InitializationSettings(
@@ -388,9 +388,6 @@ class NotificationService {
           enableVibration: true,
           vibrationPattern: isRideRequest
               ? Int64List.fromList([0, 500, 200, 500, 200, 500])
-              : null,
-          sound: isRideRequest
-              ? const RawResourceAndroidNotificationSound('ride_request_sound')
               : null,
           playSound: true,
         ),
