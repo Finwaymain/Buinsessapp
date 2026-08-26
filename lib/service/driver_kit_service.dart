@@ -187,14 +187,6 @@ class DriverKitService extends GetxController {
                             color: Color(0xFF64748B),
                           ),
                         ),
-                        Text(
-                          kit.priceFormatted,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontFamily: AppThemeData.bold,
-                            color: AppThemeData.primary200,
-                          ),
-                        ),
                       ],
                     ),
                     const SizedBox(height: 6),

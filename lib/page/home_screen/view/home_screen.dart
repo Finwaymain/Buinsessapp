@@ -915,7 +915,7 @@ class MainHomeScreen extends StatelessWidget {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         child: GestureDetector(
-          onTap: () => _showKitDetailsBottomSheet(context, kitData, kitService),
+          onTap: () => kitService.openKitWebView(kit.webviewUrl),
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -946,8 +946,8 @@ class MainHomeScreen extends StatelessWidget {
               children: [
                 // Left Icon
                 Container(
-                  width: 48,
-                  height: 48,
+                  width: 46,
+                  height: 46,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [AppThemeData.primary200, AppThemeData.primary300],
@@ -971,13 +971,13 @@ class MainHomeScreen extends StatelessWidget {
                               ? Icons.home_repair_service_rounded
                               : Icons.shopping_bag_rounded),
                       color: Colors.white,
-                      size: 26,
+                      size: 24,
                     ),
                   ),
                 ),
                 const SizedBox(width: 14),
 
-                // Middle Information (Price removed from card per requirement)
+                // Middle Information (Sleek title + short subtitle)
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -999,7 +999,7 @@ class MainHomeScreen extends StatelessWidget {
                           if (kitData.isCompulsory) ...[
                             const SizedBox(width: 6),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
                                 color: AppThemeData.warning200.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(6),
@@ -1018,7 +1018,7 @@ class MainHomeScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        itemsSummary.isNotEmpty ? itemsSummary : 'Apparel & Partner Starter Kit'.tr,
+                        itemsSummary.isNotEmpty ? itemsSummary : 'Apparel & Safety Starter Kit'.tr,
                         style: TextStyle(
                           fontSize: 11,
                           fontFamily: AppThemeData.regular,
@@ -1032,9 +1032,9 @@ class MainHomeScreen extends StatelessWidget {
                 ),
                 const SizedBox(width: 10),
 
-                // Right CTA Button - Opens detail modal with price
+                // Right CTA Button - Directly redirects to purchase screen
                 ElevatedButton(
-                  onPressed: () => _showKitDetailsBottomSheet(context, kitData, kitService),
+                  onPressed: () => kitService.openKitWebView(kit.webviewUrl),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppThemeData.primary200,
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -1057,179 +1057,6 @@ class MainHomeScreen extends StatelessWidget {
         ),
       );
     });
-  }
-
-  /// Bottom Sheet detail view shown when tapping kit card on dashboard
-  void _showKitDetailsBottomSheet(BuildContext context, DriverKitDataModel kitData, DriverKitService kitService) {
-    final kit = kitData.kit;
-    if (kit == null) return;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    Get.bottomSheet(
-      Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Top Drag Handle
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.grey[700] : Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            Row(
-              children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [AppThemeData.primary200, AppThemeData.primary300],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.shopping_bag_rounded,
-                      color: Colors.white,
-                      size: 30,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        kit.title.tr,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontFamily: AppThemeData.bold,
-                          color: isDark ? Colors.white : const Color(0xFF0F172A),
-                        ),
-                      ),
-                      if (kitData.isCompulsory) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          'Mandatory Partner Kit'.tr,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontFamily: AppThemeData.medium,
-                            color: AppThemeData.warning200,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 20),
-
-            // Included Items
-            if (kit.itemsIncluded.isNotEmpty) ...[
-              Text(
-                'Kit Includes:'.tr,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontFamily: AppThemeData.bold,
-                  color: isDark ? Colors.grey[300] : const Color(0xFF334155),
-                ),
-              ),
-              const SizedBox(height: 10),
-              ...kit.itemsIncluded.map((item) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      children: [
-                        Icon(Icons.check_circle_rounded, color: AppThemeData.primary200, size: 18),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            item,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontFamily: AppThemeData.regular,
-                              color: isDark ? Colors.grey[400] : const Color(0xFF475569),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  )),
-              const SizedBox(height: 16),
-            ],
-
-            Divider(color: isDark ? Colors.grey[800] : Colors.grey[200]),
-            const SizedBox(height: 16),
-
-            // Price & Purchase CTA
-            Row(
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Kit Price'.tr,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontFamily: AppThemeData.regular,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      kit.priceFormatted,
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontFamily: AppThemeData.bold,
-                        color: AppThemeData.primary200,
-                      ),
-                    ),
-                  ],
-                ),
-                const Spacer(),
-                ElevatedButton(
-                  onPressed: () {
-                    Get.back();
-                    kitService.openKitWebView(kit.webviewUrl);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppThemeData.primary200,
-                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  ),
-                  child: Text(
-                    'Order Kit Now'.tr,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontFamily: AppThemeData.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-      isScrollControlled: true,
-    );
   }
 }
 
