@@ -129,6 +129,8 @@ class WalletScreen extends StatelessWidget {
               Get.to(() => ScannerAndTransferScreen());
             } else if (action == 'my_qr') {
               Get.to(() => MyQRScreen());
+            } else if (action == 'account_details') {
+              Get.to(() => AccountDetails());
             } else if (action == 'upgrade_plan') {
               Get.to(() => const BusinessPremiumPlanScreen());
             }
