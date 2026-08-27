@@ -22,11 +22,17 @@ class SettingsController extends GetxController {
     super.onInit();
   }
 
+  bool _parseBool(dynamic val) {
+    if (val == null) return false;
+    final s = val.toString().toLowerCase().trim();
+    return s == 'true' || s == '1' || s == 'yes';
+  }
+
   Future<void> fetchPaymentSettings() async {
     try {
       final response = await http
           .get(Uri.parse(API.paymentSetting), headers: API.header)
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 8));
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
         if (body['success'] == 'success') {
@@ -72,11 +78,11 @@ class SettingsController extends GetxController {
   Future<SettingsModel?> getSettingsData() async {
     try {
       isLoading.value = true;
-      // ShowToastDialog.showLoader("Please wait");
       final response = await http.get(
         Uri.parse(API.settings),
         headers: API.authheader,
-      );
+      ).timeout(const Duration(seconds: 8));
+
       showLog("API :: URL :: ${API.settings} ");
       showLog("API :: Request Header :: ${API.authheader.toString()} ");
       showLog("API :: responseStatus :: ${response.statusCode} ");
@@ -84,71 +90,57 @@ class SettingsController extends GetxController {
       Map<String, dynamic> responseBody = json.decode(response.body);
 
       if (response.statusCode == 200 && responseBody['success'] == "success") {
-        // ShowToastDialog.closeLoader();
-
         SettingsModel model = SettingsModel.fromJson(responseBody);
-        Constant.adminCommission = model.data!.adminCommission!;
-        Constant.subscriptionModel = bool.parse(model.data!.subscriptionModel!);
-        Constant.liveTrackingMapType = "inappmap";
-        if (Platform.isAndroid) {
-          Constant.selectedMapType = 'google';
-        } else {
-          Constant.selectedMapType = model.data?.mapForApplication != null ? '${model.data?.mapForApplication?.toLowerCase()}' : '';
+        if (model.data != null) {
+          if (model.data!.adminCommission != null) {
+            Constant.adminCommission = model.data!.adminCommission!;
+          }
+          Constant.subscriptionModel = _parseBool(model.data?.subscriptionModel);
+          Constant.liveTrackingMapType = "inappmap";
+          if (Platform.isAndroid) {
+            Constant.selectedMapType = 'google';
+          } else {
+            Constant.selectedMapType = model.data?.mapForApplication != null ? '${model.data?.mapForApplication?.toLowerCase()}' : '';
+          }
+          Constant.parcelActive = model.data?.parcelActive ?? "yes";
+          if (model.data?.driverappColor != null && model.data!.driverappColor!.isNotEmpty) {
+            try {
+              ConstantColors.primary = Color(int.parse(model.data!.driverappColor!.replaceFirst("#", "0xff")));
+            } catch (_) {}
+          }
+          Constant.distanceUnit = model.data?.deliveryDistance ?? "km";
+          Constant.appVersion = model.data?.appVersion?.toString() ?? "1.0.0";
+          Constant.decimal = model.data?.decimalDigit ?? "2";
+          Constant.currency = model.data?.currency ?? "₹";
+          Constant.symbolAtRight = _parseBool(model.data?.symbolAtRight);
+          Constant.kGoogleApiKey = model.data?.googleMapApiKey ?? "";
+          Constant.contactUsEmail = model.data?.contactUsEmail ?? "";
+          Constant.contactUsAddress = model.data?.contactUsAddress ?? "";
+          Constant.minimumWalletBalance = model.data?.minimumDepositAmount ?? "0";
+          Constant.contactUsPhone = model.data?.contactUsPhone ?? "";
+          Constant.rideOtp = model.data?.showRideOtp ?? "yes";
+          Constant.driverLocationUpdateUnit = model.data?.driverLocationUpdate ?? "10";
+          Constant.minimumWithdrawalAmount = model.data?.minimumWithdrawalAmount ?? "0";
+          Constant.deliveryChargeParcel = model.data?.deliveryChargeParcel ?? "0";
+          Constant.parcelPerWeightCharge = model.data?.parcelPerWeightCharge ?? "0";
+          if (model.data?.taxModel != null) {
+            Constant.allTaxList = model.data!.taxModel!;
+          }
+          Constant.senderId = model.data?.senderId ?? "";
+          Constant.jsonNotificationFileURL = model.data?.serviceJson ?? "";
         }
-        Constant.parcelActive = model.data!.parcelActive!;
-        ConstantColors.primary = Color(int.parse(model.data!.driverappColor!.replaceFirst("#", "0xff")));
-        // AppThemeData.primary200 = Color(int.parse(model.data!.driverappColor!.replaceFirst("#", "0xff")));
-        Constant.distanceUnit = model.data!.deliveryDistance!;
-        Constant.appVersion = model.data!.appVersion.toString();
-        Constant.decimal = model.data!.decimalDigit!;
-
-        // Constant.taxList = model.data!.taxModel!;
-        // Constant.taxType = model.data!.taxType!;
-        // Constant.taxName = model.data!.taxName!;
-
-        // Constant.taxValue = model.data!.taxValue!;
-        Constant.currency = model.data!.currency!;
-        Constant.symbolAtRight = model.data!.symbolAtRight! == 'true' ? true : false;
-        Constant.kGoogleApiKey = model.data!.googleMapApiKey!;
-        Constant.contactUsEmail = model.data!.contactUsEmail!;
-        Constant.contactUsAddress = model.data!.contactUsAddress!;
-        Constant.minimumWalletBalance = model.data!.minimumDepositAmount!;
-        Constant.contactUsPhone = model.data!.contactUsPhone!;
-        Constant.rideOtp = model.data!.showRideOtp!;
-        Constant.driverLocationUpdateUnit = model.data!.driverLocationUpdate!;
-        Constant.minimumWithdrawalAmount = model.data!.minimumWithdrawalAmount!;
-        Constant.deliveryChargeParcel = model.data!.deliveryChargeParcel!;
-
-        Constant.parcelPerWeightCharge = model.data!.parcelPerWeightCharge!;
-        Constant.allTaxList = model.data!.taxModel!;
-        Constant.senderId = model.data!.senderId!;
-        Constant.jsonNotificationFileURL = model.data!.serviceJson!;
-        isLoading.value = false;
       } else if (response.statusCode == 200 && responseBody['success'] == "Failed") {
-        ShowToastDialog.closeLoader();
-        ShowToastDialog.showToast(responseBody['error']);
-        isLoading.value = false;
+        ShowToastDialog.showToast(responseBody['error'] ?? 'Failed to load settings');
       } else {
-        ShowToastDialog.closeLoader();
         ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
-        isLoading.value = false;
-        throw Exception('Failed to load album');
       }
     } on TimeoutException catch (e) {
-      ShowToastDialog.closeLoader();
-      ShowToastDialog.showToast(e.message.toString());
-      isLoading.value = false;
+      showLog("SettingsController TimeoutException: $e");
     } on SocketException catch (e) {
-      ShowToastDialog.closeLoader();
-      ShowToastDialog.showToast(e.message.toString());
-      isLoading.value = false;
-    } on Error catch (e) {
-      ShowToastDialog.closeLoader();
-      ShowToastDialog.showToast(e.toString());
-      isLoading.value = false;
+      showLog("SettingsController SocketException: $e");
     } catch (e) {
-      ShowToastDialog.closeLoader();
-      ShowToastDialog.showToast(e.toString());
+      showLog("SettingsController error: $e");
+    } finally {
       isLoading.value = false;
     }
     return null;

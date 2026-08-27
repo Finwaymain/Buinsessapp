@@ -114,15 +114,23 @@ Future<void> showCallkitIncoming(Map<String, dynamic> data) async {
 
 class FirebaseService {
   static Future<void> initialize() async {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+    try {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    } catch (e) {
+      log('Firebase initialization error: $e');
+    }
 
-    await FirebaseAppCheck.instance.activate(
-      webProvider: ReCaptchaV3Provider('recaptcha-v3-site-key'),
-      androidProvider: AndroidProvider.playIntegrity,
-      appleProvider: AppleProvider.appAttest,
-    );
+    try {
+      await FirebaseAppCheck.instance.activate(
+        webProvider: ReCaptchaV3Provider('recaptcha-v3-site-key'),
+        androidProvider: AndroidProvider.debug,
+        appleProvider: AppleProvider.appAttest,
+      ).timeout(const Duration(seconds: 4));
+    } catch (e) {
+      log('Firebase App Check error: $e');
+    }
   }
 
   static Future<void> setupMessaging() async {
@@ -411,19 +419,37 @@ class AppInitialization {
     WidgetsFlutterBinding.ensureInitialized();
 
     // Initialize preferences
-    await Preferences.initPref();
+    try {
+      await Preferences.initPref();
+    } catch (e) {
+      log('Preferences init error: $e');
+    }
 
     // Initialize Firebase
-    await FirebaseService.initialize();
+    try {
+      await FirebaseService.initialize();
+    } catch (e) {
+      log('FirebaseService init error: $e');
+    }
 
     // Set preferred orientations
-    await _setOrientations();
+    try {
+      await _setOrientations();
+    } catch (_) {}
 
     // Setup Firebase messaging
-    await FirebaseService.setupMessaging();
+    try {
+      await FirebaseService.setupMessaging();
+    } catch (e) {
+      log('FirebaseService messaging error: $e');
+    }
 
     // Platform specific initialization
-    await _platformSpecificInit();
+    try {
+      await _platformSpecificInit();
+    } catch (e) {
+      log('Platform specific init error: $e');
+    }
   }
 
   static Future<void> _setOrientations() async {
