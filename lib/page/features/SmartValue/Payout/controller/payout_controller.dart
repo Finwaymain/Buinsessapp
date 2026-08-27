@@ -9,8 +9,10 @@ import 'package:http/http.dart' as http;
 import '../../../../../constant/constant.dart';
 import '../../../../../constant/logdata.dart';
 import '../../../../../constant/show_toast_dialog.dart';
+import '../../../../../model/bank_details_model.dart';
 import '../../../../../model/user_model.dart';
 import '../../../../../service/api.dart';
+import '../../../../../utils/Preferences.dart';
 import '../../AccountDetails/model/account_details_model.dart';
 
 class PayoutController extends GetxController with GetTickerProviderStateMixin {
@@ -21,6 +23,7 @@ class PayoutController extends GetxController with GetTickerProviderStateMixin {
   late Animation<Offset> slideAnimation;
   late Animation<double> fadeAnimation;
   Rx<AccountDetailsModel?> accountDetailsModel = Rx<AccountDetailsModel?>(null);
+  Rx<BankData?> driverBankDetails = Rx<BankData?>(null);
 
   String ac_no = '';
 
@@ -41,6 +44,23 @@ class PayoutController extends GetxController with GetTickerProviderStateMixin {
 
     _initializeAnimations();
     getAccountDetails("${Constant.getUserData().userData?.acNo}");
+    fetchBankDetails();
+  }
+
+  Future<void> fetchBankDetails() async {
+    try {
+      final driverId = Preferences.getInt(Preferences.userId);
+      final response = await http.get(
+        Uri.parse("${API.bankDetails}?driver_id=$driverId"),
+        headers: API.header,
+      );
+      if (response.statusCode == 200) {
+        final body = json.decode(response.body);
+        if (body['success'] == 'success' && body['data'] != null) {
+          driverBankDetails.value = BankData.fromJson(body['data']);
+        }
+      }
+    } catch (_) {}
   }
 
   Future<AccountDetailsModel?> getAccountDetails(String accountNumber) async {
@@ -226,14 +246,14 @@ class PayoutController extends GetxController with GetTickerProviderStateMixin {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Account No.:',
+                        'Bank Name:',
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.grey.shade600,
                         ),
                       ),
                       Text(
-                        ac_no,
+                        driverBankDetails.value?.bankName ?? accountDetailsModel.value?.data?.bankName ?? 'Bank Account',
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
@@ -241,6 +261,49 @@ class PayoutController extends GetxController with GetTickerProviderStateMixin {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Account No.:',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                      Text(
+                        driverBankDetails.value?.accountNo ?? accountDetailsModel.value?.data?.accountNo ?? ac_no,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if ((driverBankDetails.value?.holderName ?? accountDetailsModel.value?.data?.holderName) != null &&
+                      (driverBankDetails.value?.holderName ?? accountDetailsModel.value?.data?.holderName)!.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Account Holder:',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        Text(
+                          driverBankDetails.value?.holderName ?? accountDetailsModel.value?.data?.holderName ?? '',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
 
                 ],
               ),

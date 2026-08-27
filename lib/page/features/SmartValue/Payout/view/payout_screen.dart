@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import '../../../../../constant/constant.dart';
 import '../../../../../themes/constant_colors.dart';
 import '../../../../../themes/custom_base_widget.dart';
+import '../../../add_bank_details/add_bank_account.dart';
 import '../controller/payout_controller.dart';
 
 class PayoutScreen extends StatelessWidget {
@@ -478,7 +479,188 @@ class PayoutScreen extends StatelessWidget {
                     ),
                   ),
 
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 24),
+
+                  // Receiving Bank Account Card
+                  Obx(() {
+                    final bank = controller.driverBankDetails.value;
+                    final accData = controller.accountDetailsModel.value?.data;
+                    final bankName = bank?.bankName ?? accData?.bankName;
+                    final accountNo = bank?.accountNo ?? accData?.accountNo;
+                    final holderName = bank?.holderName ?? accData?.holderName;
+                    final ifsc = bank?.otherInfo ?? accData?.ifscCode ?? accData?.otherInfo;
+
+                    final hasBank = bankName != null && bankName.isNotEmpty && bankName != 'null';
+
+                    return Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.grey.shade900 : Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+                          width: 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 16,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: primaryColor.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Icon(
+                                      Icons.account_balance_rounded,
+                                      color: primaryColor,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    "Receiving Bank Account",
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      color: isDark ? Colors.white : Colors.grey.shade800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              InkWell(
+                                onTap: () {
+                                  showModalBottomSheet(
+                                    isDismissible: true,
+                                    isScrollControlled: true,
+                                    context: context,
+                                    backgroundColor: isDark ? AppThemeData.grey50Dark : AppThemeData.grey50,
+                                    builder: (context) => const AddBankAccount(),
+                                  ).then((_) => controller.fetchBankDetails());
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: primaryColor.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: primaryColor.withValues(alpha: 0.3)),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.edit_rounded, size: 14, color: primaryColor),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        hasBank ? "Change" : "+ Add",
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: primaryColor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          if (hasBank) ...[
+                            Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: isDark ? Colors.grey.shade800 : Colors.grey.shade50,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: isDark ? Colors.grey.shade700 : Colors.grey.shade200),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        bankName ?? '',
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.bold,
+                                          color: isDark ? Colors.white : Colors.grey.shade900,
+                                        ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.green.shade100,
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          "Linked",
+                                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.green.shade800),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    "Account No: ${accountNo ?? 'N/A'}",
+                                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: isDark ? Colors.grey.shade300 : Colors.grey.shade700),
+                                  ),
+                                  if (holderName != null && holderName.isNotEmpty) ...[
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      "Holder: $holderName",
+                                      style: TextStyle(fontSize: 12, color: isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                                    ),
+                                  ],
+                                  if (ifsc != null && ifsc.isNotEmpty) ...[
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      "IFSC / Info: $ifsc",
+                                      style: TextStyle(fontSize: 12, color: isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ] else ...[
+                            Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: Colors.amber.shade50,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: Colors.amber.shade200),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.warning_amber_rounded, color: Colors.amber.shade800, size: 20),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      "No bank account linked. Please tap '+ Add' to set up your payout destination.",
+                                      style: TextStyle(fontSize: 12, color: Colors.amber.shade900, fontWeight: FontWeight.w500),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    );
+                  }),
+
+                  const SizedBox(height: 24),
 
                   // Request Button
                   Obx(() => Container(

@@ -144,6 +144,11 @@ class AccountData {
         phone = _asString(json['phone']);
         statut = _asString(json['statut']);
         holderName = _asString(json['holder_name']);
+        bankName = _asString(json['bank_name']);
+        branchName = _asString(json['branch_name']);
+        accountNo = _asString(json['account_no']);
+        ifscCode = _asString(json['ifsc_code'] ?? json['other_info']);
+        otherInfo = _asString(json['other_info']);
         amount = _asString(json['amount']);
         earnAmount = _asString(json['earn_amount']);
         isVerified = _asInt(json['is_verified']);
