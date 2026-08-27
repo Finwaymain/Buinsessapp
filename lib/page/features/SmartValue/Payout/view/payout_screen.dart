@@ -5,7 +5,7 @@ import 'package:get/get.dart';
 import '../../../../../constant/constant.dart';
 import '../../../../../themes/constant_colors.dart';
 import '../../../../../themes/custom_base_widget.dart';
-import '../../../add_bank_details/add_bank_account.dart';
+import 'package:cabme_driver/page/add_bank_details/add_bank_account.dart';
 import '../controller/payout_controller.dart';
 
 class PayoutScreen extends StatelessWidget {
