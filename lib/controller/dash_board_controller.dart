@@ -275,6 +275,10 @@ class DashBoardController extends GetxController {
     updateToken();
     // Fetch latest wallet balance
     await getWalletBalance();
+    // Refresh Driver Kit Status
+    if (Get.isRegistered<DriverKitService>()) {
+      Get.find<DriverKitService>().fetchKitStatus();
+    }
     return refreshed;
   }
 

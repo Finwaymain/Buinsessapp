@@ -513,23 +513,21 @@ class InitialBinding extends Bindings {
 
 class AppRoutes {
   static Widget getInitialScreen(SettingsController controller) {
-    // Check if language is selected
+    // Ensure default language code
     if (Preferences.getString(Preferences.languageCodeKey).toString().isEmpty) {
       Preferences.setString(Preferences.languageCodeKey, 'en');
     }
 
-    // Check if onboarding is finished
-    if (!Preferences.getBoolean(Preferences.isFinishOnBoardingKey)) {
-      return const OnBoardingScreen();
-    }
+    // Check login status & user ID
+    final bool isLogin = Preferences.getBoolean(Preferences.isLogin);
+    final String userId = Preferences.getString(Preferences.userId);
 
-    // Check if user is logged in
-    if (Preferences.getBoolean(Preferences.isLogin)) {
+    if (isLogin && userId.isNotEmpty) {
       return MainDashboard();
     }
 
-    // Default to MainDashboard
-    return const MainDashboard();
+    // On fresh install or when not logged in, go straight to native PhoneEntryScreen
+    return const PhoneEntryScreen(mode: 'signup');
   }
 }
 
@@ -599,12 +597,18 @@ class _MyAppState extends State<MyApp> {
                 child: builtChild,
               );
             },
-            home: GetX(
+            home: GetX<SettingsController>(
               init: SettingsController(),
               builder: (controller) {
-                // Show loader while loading
+                // Show loader while settings are loading (max 1.5s)
                 if (controller.isLoading.value == true) {
+                  Future.delayed(const Duration(milliseconds: 1500), () {
+                    if (controller.isLoading.value) {
+                      controller.isLoading.value = false;
+                    }
+                  });
                   return Container(
+                    color: themeProvider.getThem() ? AppThemeData.surface50Dark : AppThemeData.surface50,
                     child: Constant.loader(
                       context,
                       isDarkMode: themeProvider.getThem(),

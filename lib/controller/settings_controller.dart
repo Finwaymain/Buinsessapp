@@ -19,6 +19,11 @@ class SettingsController extends GetxController {
     API.header['accesstoken'] = Preferences.getString(Preferences.accesstoken);
     getSettingsData();
     fetchPaymentSettings();
+    Future.delayed(const Duration(milliseconds: 2000), () {
+      if (isLoading.value) {
+        isLoading.value = false;
+      }
+    });
     super.onInit();
   }
 
