@@ -506,7 +506,7 @@ class InitialBinding extends Bindings {
   @override
   void dependencies() {
     Get.put(SettingsController());
-    Get.put(DashBoardController());
+    Get.lazyPut(() => DashBoardController());
     Get.lazyPut(() => AddUserController());
     Get.lazyPut(() => MPinChangeController());
   }

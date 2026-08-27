@@ -67,18 +67,21 @@ class DashBoardController extends GetxController {
 
   @override
   void onInit() {
-    checkCallPermissions();
-    getUsrData();
-    getPaymentSettingData();
-    initLocationTracking();
-    fetchDriverServices();
-    // Check for compulsory or optional Play Store updates for Driver Partners
-    AppVersionService.checkAppVersion(appType: 'business');
-    // Check for Driver Partner Welcome Kit & Popups
-    final kitService = Get.isRegistered<DriverKitService>()
-        ? Get.find<DriverKitService>()
-        : Get.put(DriverKitService());
-    kitService.fetchKitStatus();
+    final bool isLogin = Preferences.getBoolean(Preferences.isLogin);
+    if (isLogin) {
+      checkCallPermissions();
+      getUsrData();
+      getPaymentSettingData();
+      initLocationTracking();
+      fetchDriverServices();
+      // Check for compulsory or optional Play Store updates for Driver Partners
+      AppVersionService.checkAppVersion(appType: 'business');
+      // Check for Driver Partner Welcome Kit & Popups
+      final kitService = Get.isRegistered<DriverKitService>()
+          ? Get.find<DriverKitService>()
+          : Get.put(DriverKitService());
+      kitService.fetchKitStatus();
+    }
     super.onInit();
   }
 
