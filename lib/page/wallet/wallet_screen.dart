@@ -533,7 +533,7 @@ class WalletScreen extends StatelessWidget {
                               if (controller.bankDetails.bankName.toString() != 'null') {
                                 if (walletController.amountController.value.text.isNotEmpty) {
                                   double reqAmt = double.tryParse(walletController.amountController.value.text) ?? 0.0;
-                                  double userBal = double.tryParse(walletController.userAmount.value) ?? 0.0;
+                                  double userBal = walletController.walletAmount.value;
                                   if (reqAmt > userBal) {
                                     ShowToastDialog.showToast('Withdrawal amount (₹$reqAmt) exceeds available balance of ₹$userBal');
                                     return;
