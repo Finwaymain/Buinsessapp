@@ -17,6 +17,7 @@ class Preferences {
   static const driverCategoryId = "driverCategoryId";
 
   static SharedPreferences? _pref;
+  static SharedPreferences? get pref => _pref;
 
   static Future<void> setUserData(UserModel userModel) async {
     if (_pref != null) await _pref!.setString(user, jsonEncode(userModel));

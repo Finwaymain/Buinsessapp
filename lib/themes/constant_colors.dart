@@ -7,7 +7,7 @@ class ConstantColors {
 
   static bool get isDark {
     try {
-      int themeStatus = Preferences.pref.getInt("THEMESTATUS") ?? 2;
+      int themeStatus = Preferences.getInt("THEMESTATUS");
       if (themeStatus == 0) return true;
       if (themeStatus == 1) return false;
       return WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark;
@@ -42,7 +42,7 @@ class AppThemeData {
 
   static bool get isDark {
     try {
-      int themeStatus = Preferences.pref.getInt("THEMESTATUS") ?? 2;
+      int themeStatus = Preferences.getInt("THEMESTATUS");
       if (themeStatus == 0) return true;
       if (themeStatus == 1) return false;
       return WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark;
