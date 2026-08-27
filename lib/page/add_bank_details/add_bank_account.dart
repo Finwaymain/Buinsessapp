@@ -309,7 +309,9 @@ class AddBankAccount extends StatelessWidget {
                 ],
               ),
             ),
-          );
-        });
+          ),
+        );
+      },
+    );
   }
 }
