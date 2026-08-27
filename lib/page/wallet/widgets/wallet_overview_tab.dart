@@ -72,7 +72,7 @@ class WalletOverviewTab extends StatelessWidget {
           Row(
             children: [
               _quick(isDark, Icons.send_rounded, 'Transfer', () => _requireLogin(() => Get.to(() => ScannerAndTransferScreen()))),
-              _quick(isDark, Icons.account_balance_outlined, 'Payout', () => _requireLogin(() => Get.to(() => PayoutScreen()))),
+              _quick(isDark, Icons.account_balance_outlined, 'Payout', () => _requireLogin(onWithdraw)),
               _quick(isDark, Icons.qr_code_scanner_rounded, 'Scan', () => _requireLogin(() => Get.to(() => ScannerAndTransferScreen()))),
               _quick(isDark, Icons.qr_code_2_outlined, 'My QR', () => _requireLogin(() => Get.to(() => MyQRScreen()))),
             ],

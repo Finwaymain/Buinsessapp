@@ -125,30 +125,8 @@ class WalletScreen extends StatelessWidget {
                 walletController.amountController.value.clear();
                 addToWalletAmount(context, walletController, themeChange.getThem());
               }
-            } else if (action == 'withdraw') {
-              if (!Preferences.getBoolean(Preferences.isLogin)) {
-                Get.to(() => PhoneEntryScreen(mode: 'signup'));
-              } else {
-                walletController.getBankDetails().then((value) {
-                  if (value == null) {
-                    ShowToastDialog.showToast('Please Update bank Details');
-                  } else {
-                    buildShowBottomSheet(context, walletController, themeChange.getThem());
-                  }
-                });
-              }
-            } else if (action == 'bank') {
-              showModalBottomSheet(
-                isDismissible: true,
-                isScrollControlled: true,
-                context: context,
-                backgroundColor: themeChange.getThem() ? AppThemeData.grey50Dark : AppThemeData.grey50,
-                builder: (context) => const AddBankAccount(),
-              );
             } else if (action == 'transfer' || action == 'scan') {
               Get.to(() => ScannerAndTransferScreen());
-            } else if (action == 'payout') {
-              Get.to(() => PayoutScreen());
             } else if (action == 'my_qr') {
               Get.to(() => MyQRScreen());
             } else if (action == 'account_details') {
