@@ -42,6 +42,7 @@ import '../../wallet/payStackScreen.dart';
 import '../../wallet/payfast_screen.dart';
 import '../../wallet/paystack_url_generator.dart';
 import '../../wallet/wallet_sucess_screen.dart';
+import '../../wallet/wallet_screen.dart';
 import '../../features/Taxi/taxi_dashboard/taxi_dashboard.dart';
 
 import '../../wallet/xenditScreen.dart';
