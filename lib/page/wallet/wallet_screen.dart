@@ -125,6 +125,28 @@ class WalletScreen extends StatelessWidget {
                 walletController.amountController.value.clear();
                 addToWalletAmount(context, walletController, themeChange.getThem());
               }
+            } else if (action == 'withdraw') {
+              if (!Preferences.getBoolean(Preferences.isLogin)) {
+                Get.to(() => PhoneEntryScreen(mode: 'signup'));
+              } else {
+                walletController.getBankDetails().then((value) {
+                  if (value == null) {
+                    ShowToastDialog.showToast('Please Update bank Details');
+                  } else {
+                    buildShowBottomSheet(context, walletController, themeChange.getThem());
+                  }
+                });
+              }
+            } else if (action == 'bank') {
+              showModalBottomSheet(
+                isDismissible: true,
+                isScrollControlled: true,
+                context: context,
+                backgroundColor: themeChange.getThem() ? AppThemeData.grey50Dark : AppThemeData.grey50,
+                builder: (context) => const AddBankAccount(),
+              );
+            } else if (action == 'payout') {
+              Get.to(() => PayoutScreen());
             } else if (action == 'transfer' || action == 'scan') {
               Get.to(() => ScannerAndTransferScreen());
             } else if (action == 'my_qr') {
@@ -510,7 +532,13 @@ class WalletScreen extends StatelessWidget {
                             onPress: () async {
                               if (controller.bankDetails.bankName.toString() != 'null') {
                                 if (walletController.amountController.value.text.isNotEmpty) {
-                                  if (double.parse(Constant.minimumWithdrawalAmount.toString()) > double.parse(walletController.amountController.value.text)) {
+                                  double reqAmt = double.tryParse(walletController.amountController.value.text) ?? 0.0;
+                                  double userBal = double.tryParse(walletController.userAmount.value) ?? 0.0;
+                                  if (reqAmt > userBal) {
+                                    ShowToastDialog.showToast('Withdrawal amount (₹$reqAmt) exceeds available balance of ₹$userBal');
+                                    return;
+                                  }
+                                  if (double.parse(Constant.minimumWithdrawalAmount.toString()) > reqAmt) {
                                     ShowToastDialog.showToast(
                                         '${'Withdraw amount must be greater or equal to'.tr}${Constant().amountShow(amount: Constant.minimumWithdrawalAmount.toString())}');
                                   } else {
