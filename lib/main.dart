@@ -601,23 +601,16 @@ class _MyAppState extends State<MyApp> {
             home: GetX<SettingsController>(
               init: SettingsController(),
               builder: (controller) {
-                // Show loader while settings are loading (max 1.5s)
-                if (controller.isLoading.value == true) {
-                  Future.delayed(const Duration(milliseconds: 1500), () {
-                    if (controller.isLoading.value) {
-                      controller.isLoading.value = false;
-                    }
-                  });
-                  return Container(
-                    color: themeProvider.getThem() ? AppThemeData.surface50Dark : AppThemeData.surface50,
-                    child: Constant.loader(
+                if (controller.isLoading.value) {
+                  return Scaffold(
+                    backgroundColor: themeProvider.getThem() ? AppThemeData.surface50Dark : AppThemeData.surface50,
+                    body: Constant.loader(
                       context,
                       isDarkMode: themeProvider.getThem(),
                     ),
                   );
                 }
 
-                // Return initial screen based on app state
                 return AppRoutes.getInitialScreen(controller);
               },
             ),
