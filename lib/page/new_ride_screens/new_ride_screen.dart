@@ -531,9 +531,26 @@ class _NewRideScreenState extends State<NewRideScreen> with SingleTickerProvider
                         'driver_phone': data.driverPhone.toString(),
                         'from_id': Preferences.getInt(Preferences.userId).toString(),
                       };
-                      await controller.confirmedRide(bodyParams);
+                      final res = await controller.confirmedRide(bodyParams);
                       ShowToastDialog.closeLoader();
                       controller.getNewRide();
+                      if (res != null) {
+                        data.statut = "confirmed";
+                        var argumentData = {'type': 'confirmed', 'data': data};
+                        if (Constant.liveTrackingMapType == "inappmap") {
+                          if (Constant.selectedMapType == 'osm') {
+                            Get.to(() => const RouteOsmViewScreen(), arguments: argumentData);
+                          } else {
+                            Get.to(() => const RouteViewScreen(), arguments: argumentData);
+                          }
+                        } else {
+                          Constant.redirectMap(
+                            latitude: double.tryParse(data.latitudeDepart ?? '0') ?? 0,
+                            longLatitude: double.tryParse(data.longitudeDepart ?? '0') ?? 0,
+                            name: data.departName ?? 'Pickup Location',
+                          );
+                        }
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppThemeData.primary200,
@@ -650,15 +667,49 @@ class _NewRideScreenState extends State<NewRideScreen> with SingleTickerProvider
             const SizedBox(height: 16),
             if (!isOnRide) ...[
               ElevatedButton.icon(
-                onPressed: () => _showStartRideOtpModal(context, data, controller, isDark),
-                icon: const Icon(Icons.key_rounded, color: Colors.white, size: 18),
+                onPressed: () async {
+                  var argumentData = {'type': 'confirmed', 'data': data};
+                  if (Constant.liveTrackingMapType == "inappmap") {
+                    if (Constant.selectedMapType == 'osm') {
+                      await Get.to(() => const RouteOsmViewScreen(), arguments: argumentData);
+                    } else {
+                      await Get.to(() => const RouteViewScreen(), arguments: argumentData);
+                    }
+                    controller.getNewRide();
+                  } else {
+                    Constant.redirectMap(
+                      latitude: double.tryParse(data.latitudeDepart ?? '0') ?? 0,
+                      longLatitude: double.tryParse(data.longitudeDepart ?? '0') ?? 0,
+                      name: data.departName ?? 'Pickup Location',
+                    );
+                  }
+                },
+                icon: const Icon(Icons.navigation_rounded, color: Colors.white, size: 18),
                 label: Text(
-                  "START RIDE (Enter OTP)".tr,
+                  "Navigate to Pickup".tr,
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppThemeData.primary200,
                   minimumSize: const Size.fromHeight(46),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                onPressed: () => _showStartRideOtpModal(context, data, controller, isDark),
+                icon: Icon(Icons.key_rounded, color: isDark ? AppThemeData.grey900Dark : AppThemeData.grey900, size: 18),
+                label: Text(
+                  "START RIDE (Enter OTP)".tr,
+                  style: TextStyle(
+                    color: isDark ? AppThemeData.grey900Dark : AppThemeData.grey900,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(46),
+                  side: BorderSide(color: isDark ? AppThemeData.grey200Dark : AppThemeData.grey300),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
               ),

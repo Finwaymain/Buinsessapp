@@ -44,6 +44,7 @@ import 'package:flutter_callkit_incoming/entities/notification_params.dart';
 import 'package:cabme_driver/controller/my_booking_controller.dart';
 import 'package:cabme_driver/page/booking/my_booking_screen.dart';
 import 'package:cabme_driver/page/booking/service_flow/service_booking_flow.dart';
+import 'package:cabme_driver/service/in_app_sound_service.dart';
 
 
 
@@ -191,10 +192,26 @@ class FirebaseService {
     RemoteMessage? initialMessage =
         await FirebaseMessaging.instance.getInitialMessage();
     if (initialMessage != null) {
-      // Handle initial message if needed
+      log('Handling initialMessage from terminated state: ${initialMessage.data}');
+      _handleNotificationTap(initialMessage);
     }
 
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      log('Firebase onMessage received: ${message.data}');
+      final bool isHomeService = message.data['type'] == 'homeservice' ||
+          message.data['tag'] == 'homeservicerequest' ||
+          message.data['tag'] == 'homeservicenotif' ||
+          (message.data['booking_id'] != null && message.data['booking_id'].toString().isNotEmpty);
+
+      if (isHomeService) {
+        InAppSoundService.playIncomingBookingAlert();
+        if (Get.isRegistered<MyBookingController>()) {
+          Get.find<MyBookingController>().fetchBookings(showLoader: false);
+        }
+        NotificationService.display(message);
+        return;
+      }
+
       if (message.data['statut'] == 'new' ||
           message.data['tag'] == 'ridenewrider') {
         try {
@@ -202,6 +219,7 @@ class FirebaseService {
           if (rideData.id != null &&
               rideData.id!.isNotEmpty &&
               rideData.id != 'null') {
+            InAppSoundService.playIncomingBookingAlert();
             showCallkitIncoming(message.data);
           }
         } catch (e) {
@@ -220,6 +238,31 @@ class FirebaseService {
 
   static Future<void> _handleNotificationTap(RemoteMessage message) async {
     try {
+      log('Handling notification tap: ${message.data}');
+
+      // 1. Prioritize Home Service / Booking notifications
+      final bool isHomeService = message.data['type'] == "homeservice" ||
+          message.data['tag'] == "homeservicerequest" ||
+          message.data['tag'] == "homeservicenotif" ||
+          (message.data['booking_id'] != null && message.data['booking_id'].toString().isNotEmpty);
+
+      if (isHomeService) {
+        final bookingId = message.data['booking_id']?.toString() ?? '';
+        final myBookingCtrl = Get.isRegistered<MyBookingController>()
+            ? Get.find<MyBookingController>()
+            : Get.put(MyBookingController());
+        if (bookingId.isNotEmpty) {
+          final booking = await myBookingCtrl.fetchSingleBooking(bookingId);
+          if (booking != null) {
+            openServiceBookingFlow(booking, myBookingCtrl);
+            return;
+          }
+        }
+        await Get.to(() => const MyBookingScreen(initialTab: 0));
+        return;
+      }
+
+      // 2. Chat / Conversation notifications
       if (message.data['status'] == "done") {
         await Get.to(ConversationScreen(), arguments: {
           'receiverId': int.parse(
@@ -231,7 +274,11 @@ class FirebaseService {
           'receiverPhoto':
               json.decode(message.data['message'])['senderPhoto'].toString(),
         });
-      } else if (message.data['statut'] == "new" ||
+        return;
+      }
+
+      // 3. New Ride Request (Taxi)
+      if (message.data['statut'] == "new" ||
           message.data['tag'] == "ridenewrider") {
         try {
           final rideData = RideData.fromJson(message.data);
@@ -244,8 +291,12 @@ class FirebaseService {
         } catch (e) {
           log('Error parsing rideData on tap: $e');
         }
-        await Get.to(MainDashboard());
-      } else if (message.data['statut'] == "confirmed" ||
+        await Get.to(() => const MainDashboard());
+        return;
+      }
+
+      // 4. Confirmed / On Ride (Taxi)
+      if (message.data['statut'] == "confirmed" ||
           message.data['statut'] == "on ride") {
         try {
           final rideData = RideData.fromJson(message.data);
@@ -273,30 +324,24 @@ class FirebaseService {
         } catch (e) {
           log('Error parsing rideData on confirmed/on ride tap: $e');
         }
-        await Get.to(MainDashboard());
-      } else if (message.data['statut'] == "rejected") {
-        await Get.to(MainDashboard());
-      } else if (message.data['type'] == "payment received") {
+        await Get.to(() => const MainDashboard());
+        return;
+      }
+
+      if (message.data['statut'] == "rejected") {
+        await Get.to(() => const MainDashboard());
+        return;
+      }
+
+      if (message.data['type'] == "payment received") {
         DashBoardController dashBoardController =
             Get.put(DashBoardController());
         dashBoardController.selectedDrawerIndex.value = 4;
-        await Get.to(MainDashboard());
-      } else if (message.data['type'] == "homeservice" ||
-          message.data['tag'] == "homeservicerequest" ||
-          message.data['tag'] == "homeservicenotif") {
-        final bookingId = message.data['booking_id']?.toString() ?? '';
-        final myBookingCtrl = Get.isRegistered<MyBookingController>()
-            ? Get.find<MyBookingController>()
-            : Get.put(MyBookingController());
-        if (bookingId.isNotEmpty) {
-          final booking = await myBookingCtrl.fetchSingleBooking(bookingId);
-          if (booking != null) {
-            openServiceBookingFlow(booking, myBookingCtrl);
-            return;
-          }
-        }
-        await Get.to(() => const MyBookingScreen(initialTab: 0));
+        await Get.to(() => const MainDashboard());
+        return;
       }
+
+      await Get.to(() => const MainDashboard());
     } catch (e) {
       log('Error handling notification tap: $e');
     }
@@ -316,13 +361,14 @@ class NotificationService {
       importance: Importance.high,
     );
 
-    // Dedicated ride-request channel — max importance, full-screen alert
+    // Dedicated request channel — max importance, custom alert sound, full-screen alert
     AndroidNotificationChannel rideChannel = AndroidNotificationChannel(
       'ride_requests',
-      'New Ride Requests',
-      description: 'Alerts for incoming ride requests',
+      'New Ride & Booking Requests',
+      description: 'Alerts for incoming ride and home service booking requests',
       importance: Importance.max,
       playSound: true,
+      sound: const RawResourceAndroidNotificationSound('ride_request_sound'),
       enableVibration: true,
       vibrationPattern: Int64List.fromList([0, 500, 200, 500, 200, 500]),
     );
@@ -360,14 +406,15 @@ class NotificationService {
 
   static void display(RemoteMessage message) async {
     try {
+      final isHomeService = message.data['type'] == 'homeservice' ||
+          message.data['tag'] == 'homeservicerequest' ||
+          message.data['tag'] == 'homeservicenotif' ||
+          (message.data['booking_id'] != null && message.data['booking_id'].toString().isNotEmpty);
+
       final isRideRequest = message.data['statut'] == 'new' ||
           message.data['tag'] == 'ridenewrider';
 
-      // Skip display for ride requests because the native MyFirebaseMessagingService
-      // already handles showing the full-screen overlay and high-priority notification.
-      if (isRideRequest) {
-        return;
-      }
+      final bool isAlert = isHomeService || isRideRequest;
 
       final id = DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
@@ -377,25 +424,23 @@ class NotificationService {
 
       final NotificationDetails notificationDetails = NotificationDetails(
         android: AndroidNotificationDetails(
-          isRideRequest ? 'ride_requests' : 'high_importance_channel',
-          isRideRequest ? 'New Ride Requests' : 'High Importance Notifications',
-          channelDescription: isRideRequest
-              ? 'Alerts for incoming ride requests'
+          isAlert ? 'ride_requests' : 'high_importance_channel',
+          isAlert ? 'New Ride & Booking Requests' : 'High Importance Notifications',
+          channelDescription: isAlert
+              ? 'Alerts for incoming ride and booking requests'
               : 'General notifications',
           importance: Importance.max,
-          priority: Priority.high,
-          // Shows the notification over the lock screen and wakes the display
-          fullScreenIntent: isRideRequest,
-          // Keep the notification alive while the driver decides
-          autoCancel: !isRideRequest,
-          ongoing: isRideRequest,
-          // Notification drawer visibility
-          visibility: isRideRequest
+          priority: Priority.max,
+          sound: const RawResourceAndroidNotificationSound('ride_request_sound'),
+          fullScreenIntent: isAlert,
+          autoCancel: !isAlert,
+          ongoing: isAlert,
+          visibility: isAlert
               ? NotificationVisibility.public
               : NotificationVisibility.private,
-          ticker: isRideRequest ? 'New ride request arrived' : null,
+          ticker: isAlert ? 'New booking request arrived' : null,
           enableVibration: true,
-          vibrationPattern: isRideRequest
+          vibrationPattern: isAlert
               ? Int64List.fromList([0, 500, 200, 500, 200, 500])
               : null,
           playSound: true,

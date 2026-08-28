@@ -3,18 +3,36 @@ import 'package:cabme_driver/controller/my_booking_controller.dart';
 import 'package:cabme_driver/page/booking/service_flow/service_booking_flow.dart';
 import 'package:cabme_driver/page/booking/service_flow/service_flow_widgets.dart';
 import 'package:cabme_driver/page/MainDashBoard/screen/main_dashboard.dart';
+import 'package:cabme_driver/service/in_app_sound_service.dart';
 import 'package:cabme_driver/themes/constant_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-class ServiceIncomingRequestScreen extends StatelessWidget {
+class ServiceIncomingRequestScreen extends StatefulWidget {
   final String tag;
 
   const ServiceIncomingRequestScreen({super.key, required this.tag});
 
   @override
+  State<ServiceIncomingRequestScreen> createState() => _ServiceIncomingRequestScreenState();
+}
+
+class _ServiceIncomingRequestScreenState extends State<ServiceIncomingRequestScreen> {
+  @override
+  void initState() {
+    super.initState();
+    InAppSoundService.playIncomingBookingAlert();
+  }
+
+  @override
+  void dispose() {
+    InAppSoundService.stop();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final flow = serviceFlowFor(tag);
+    final flow = serviceFlowFor(widget.tag);
     final booking = flow.currentBooking.value;
 
     return ServiceFlowScaffold(
@@ -88,12 +106,13 @@ class ServiceIncomingRequestScreen extends StatelessWidget {
                     color: AppThemeData.error200,
                     icon: Icons.close_rounded,
                     onPressed: () async {
+                      await InAppSoundService.stop();
                       try {
                         await flow.rejectBooking();
                       } catch (e) {
                         debugPrint('Error rejecting booking: $e');
                       } finally {
-                        closeServiceFlow(tag);
+                        closeServiceFlow(widget.tag);
                         if (Get.isRegistered<MyBookingController>()) {
                           final ctrl = Get.find<MyBookingController>();
                           // Mark as locally rejected BEFORE any poll can re-add it
@@ -115,8 +134,9 @@ class ServiceIncomingRequestScreen extends StatelessWidget {
                   child: FlowPrimaryButton(
                     label: 'Accept'.tr,
                     onPressed: () async {
+                      await InAppSoundService.stop();
                       final ok = await flow.acceptBooking();
-                      if (ok) resumeServiceFlowAfterAccept(tag);
+                      if (ok) resumeServiceFlowAfterAccept(widget.tag);
                     },
                   ),
                 ),
