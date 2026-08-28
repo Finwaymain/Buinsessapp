@@ -23,9 +23,9 @@ class InAppSoundService {
               usageType: AndroidUsageType.alarm,
               audioFocus: AndroidAudioFocus.gainTransientExclusive,
             ),
-            iOS: const AudioContextIOS(
+            iOS: AudioContextIOS(
               category: AVAudioSessionCategory.playback,
-              options: [
+              options: const [
                 AVAudioSessionOptions.defaultToSpeaker,
               ],
             ),
