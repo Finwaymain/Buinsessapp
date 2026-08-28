@@ -25,7 +25,6 @@ import '../page/web_view_screen/web_view_screen.dart';
 
 import '../page/privacy_policy/privacy_policy_screen.dart';
 import '../page/referral/referral_earn_screen.dart';
-import '../page/referral/submit_aadhar_screen.dart';
 import '../page/terms_of_service/terms_of_service_screen.dart';
 import '../service/api.dart';
 import '../service/app_version_service.dart';
@@ -34,7 +33,6 @@ import '../utils/Preferences.dart';
 import '../utils/onboarding_url.dart';
 import '../utils/location_picker_helper.dart';
 import '../widget/permission_dialog.dart';
-import '../page/marketplace/view/marketplace_home_screen.dart';
 
 class DashBoardController extends GetxController {
   Location location = Location();

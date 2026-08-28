@@ -10,7 +10,6 @@ import '../../../controller/subscription_controller.dart';
 import '../../../themes/constant_colors.dart';
 import '../../../utils/Preferences.dart';
 import '../../../utils/dark_theme_provider.dart';
-import '../../auth_screens/phone_entry_screen.dart';
 import '../../subscription_plan_screen/subscription_plan_screen.dart' as subs;
 
 class CustomDrawer extends StatelessWidget {
@@ -18,7 +17,7 @@ class CustomDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isLogin = Preferences.getBoolean(Preferences.isLogin) ?? false;
+    final bool isLogin = Preferences.getBoolean(Preferences.isLogin);
     final themeChange = Provider.of<DarkThemeProvider>(context);
     final bool isDark = themeChange.getThem();
     final dashBoardController = Get.put(DashBoardController());
