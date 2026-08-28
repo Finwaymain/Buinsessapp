@@ -243,36 +243,39 @@ class _ServiceCompletionScreenState extends State<ServiceCompletionScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (!awaitingPayment && !isPaid)
+                if (!isPaid) ...[
                   FlowPrimaryButton(
-                    label: _submitting ? 'Sending...'.tr : 'Request Payment from Customer'.tr,
-                    icon: Icons.payments_outlined,
-                    onPressed: _submitting
-                        ? null
-                        : () async {
-                            setState(() => _submitting = true);
-                            final ok = await flow.requestPayment();
-                            setState(() => _submitting = false);
-                            if (ok) {
-                              Get.snackbar('Payment Requested'.tr, 'Customer will pay from their app.'.tr);
-                            }
-                          },
-                  ),
-                if (awaitingPayment && !isPaid) ...[
-                  FlowPrimaryButton(
-                    label: _submitting ? 'Completing...'.tr : 'Received Cash & Complete Job'.tr,
+                    label: _submitting
+                        ? 'Completing...'.tr
+                        : '${'Collect Cash from Customer'.tr} (${Constant().amountShow(amount: (flow.billTotal + Constant.calculateTotalTaxes(flow.billTotal, 'cash')).toStringAsFixed(0))})',
                     color: AppThemeData.success300,
-                    icon: Icons.payments_outlined,
+                    icon: Icons.payments_rounded,
                     onPressed: _submitting
                         ? null
                         : () => _confirmCashReceived(context, flow),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Or wait for customer to pay via Wallet / UPI in app.'.tr,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 12, color: AppThemeData.grey500),
-                  ),
+                  const SizedBox(height: 10),
+                  if (!awaitingPayment)
+                    FlowSecondaryButton(
+                      label: _submitting ? 'Sending...'.tr : 'Request Wallet / UPI Payment'.tr,
+                      icon: Icons.qr_code_rounded,
+                      onPressed: _submitting
+                          ? null
+                          : () async {
+                              setState(() => _submitting = true);
+                              final ok = await flow.requestPayment();
+                              setState(() => _submitting = false);
+                              if (ok) {
+                                Get.snackbar('Payment Requested'.tr, 'Customer can now pay via Wallet or UPI in their app.'.tr);
+                              }
+                            },
+                    )
+                  else
+                    Text(
+                      'Waiting for customer to pay via Wallet / UPI, or collect cash directly.'.tr,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 12, color: AppThemeData.grey500),
+                    ),
                 ],
                 if (isPaid)
                   FlowPrimaryButton(
