@@ -842,9 +842,7 @@ class MainHomeScreen extends StatelessWidget {
                                 ),
                                 VerticalIconWithText(
                                   icon: Icons.group_add_outlined,
-                                  text: (Preferences.getString('user_aadhar_number') ?? Preferences.getString('driver_aadhar_number') ?? '').isNotEmpty
-                                      ? 'Partner Dashboard'
-                                      : 'Join as a Partner',
+                                  text: 'Partner Dashboard',
                                   onTap: () {
                                     if (homeController.getLoginStatus(inProgress: false)) {
                                       Get.to(() => const ReferralEarnScreen(),

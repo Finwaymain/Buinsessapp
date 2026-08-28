@@ -40,7 +40,7 @@ class MainHomeController extends GetxController
       {
         "routeName": "/referral",
         "icon": Icons.card_giftcard,
-        "title": hasAadhar ? "Partner Dashboard" : "Join as a Partner",
+        "title": "Partner Dashboard",
         "status": 1,
       },
       {
@@ -62,10 +62,8 @@ class MainHomeController extends GetxController
       },
       {
         "routeName": "/referralProgram",
-        "title": hasAadhar ? "Partner Dashboard" : "Join as a Partner",
-        "subtitle": hasAadhar
-            ? "Manage team, track stats & earn lifetime cashback"
-            : "Submit Aadhaar to become a partner & earn rewards",
+        "title": "Partner Dashboard",
+        "subtitle": "Manage team, track stats & earn lifetime cashback",
         "status": 1,
       },
       {

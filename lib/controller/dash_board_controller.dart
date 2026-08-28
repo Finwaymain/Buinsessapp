@@ -602,10 +602,7 @@ class DashBoardController extends GetxController {
     Get.back();
     if (index >= drawerItems.length) return;
     var item = drawerItems[index];
-    final bool hasAadhar = (Preferences.getString('user_aadhar_number') ?? Preferences.getString('driver_aadhar_number') ?? '').isNotEmpty;
-    final String partnerTitle = hasAadhar ? 'Partner Dashboard'.tr : 'Join as a Partner'.tr;
-
-    if (item.title == 'Wallet'.tr || item.title == 'Smart Value'.tr || item.title == 'My Profile'.tr || item.title == 'Update Categories'.tr || item.title == 'Join as Partner'.tr || item.title == 'Join as a Partner'.tr || item.title == 'Partner Dashboard'.tr || item.title == 'Change Password'.tr || item.title == 'Refer a Friend'.tr || item.title == 'Marketplace'.tr) {
+    if (item.title == 'Wallet'.tr || item.title == 'Smart Value'.tr || item.title == 'My Profile'.tr || item.title == 'Update Categories'.tr || item.title == 'Partner Dashboard'.tr || item.title == 'Join as Partner'.tr || item.title == 'Join as a Partner'.tr || item.title == 'Change Password'.tr || item.title == 'Refer a Friend'.tr || item.title == 'Marketplace'.tr) {
       if (!isLogin) {
         Get.to(PhoneEntryScreen(mode: 'signup'));
         return;
@@ -628,7 +625,7 @@ class DashBoardController extends GetxController {
       );
     } else if (item.title == 'Change Password'.tr) {
       Get.to(ChangePasswordScreen());
-    } else if (item.title == 'Refer a Friend'.tr || item.title == 'Join as a Partner'.tr || item.title == 'Join as Partner'.tr || item.title == 'Partner Dashboard'.tr || item.title == partnerTitle) {
+    } else if (item.title == 'Partner Dashboard'.tr || item.title == 'Refer a Friend'.tr || item.title == 'Join as a Partner'.tr || item.title == 'Join as Partner'.tr) {
       Get.to(() => const ReferralEarnScreen());
     } else if (item.title == 'Terms & Conditions'.tr) {
       Get.to(const TermsOfServiceScreen());
@@ -678,11 +675,8 @@ class DashBoardController extends GetxController {
   }
 
   void getDrawerItems() {
-    final bool hasAadhar = (Preferences.getString('user_aadhar_number') ?? Preferences.getString('driver_aadhar_number') ?? '').isNotEmpty;
-    final String partnerTitle = hasAadhar ? 'Partner Dashboard'.tr : 'Join as a Partner'.tr;
-    final String partnerDesc = hasAadhar 
-        ? 'Manage your partner team, view earnings and rewards'.tr 
-        : 'Submit Aadhaar to become a partner and earn rewards'.tr;
+    final String partnerTitle = 'Partner Dashboard'.tr;
+    final String partnerDesc = 'Manage your partner team, view earnings and rewards'.tr;
 
     drawerItems = [
       DrawerItem(
