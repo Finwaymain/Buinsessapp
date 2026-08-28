@@ -136,7 +136,7 @@ class _ServiceExpertAssignedScreenState extends State<ServiceExpertAssignedScree
               'If you cancel this booked service now, the platform & cancellation fee will be added as a due charge to your next service bill.'.tr,
               style: TextStyle(
                 fontSize: 13,
-                color: isDarkMode ? AppThemeData.grey400Dark : AppThemeData.grey700,
+                color: isDarkMode ? AppThemeData.grey400Dark : const Color(0xFF334155),
                 height: 1.4,
               ),
             ),

@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 import 'package:cabme_driver/constant/constant.dart';
+import 'package:cabme_driver/constant/show_toast_dialog.dart';
 import 'package:cabme_driver/controller/service_booking_controller.dart';
 import 'package:cabme_driver/model/service_request_model.dart';
 import 'package:cabme_driver/page/MainDashBoard/screen/main_dashboard.dart';
@@ -146,7 +147,7 @@ class _ServicePaymentSuccessScreenState extends State<ServicePaymentSuccessScree
       totalTaxAmount += (t['amount'] as double? ?? 0.0);
     }
 
-    if (totalTaxAmount <= 0 && booking?.taxAmount != null && booking!.taxAmount! > 0) {
+    if (totalTaxAmount <= 0 && (booking?.taxAmount ?? 0) > 0) {
       totalTaxAmount = booking!.taxAmount!;
       activeTaxList.add({
         'label': 'Taxes & Platform Charges'.tr,
