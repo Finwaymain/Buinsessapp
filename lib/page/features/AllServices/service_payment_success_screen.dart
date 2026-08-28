@@ -75,7 +75,7 @@ class _ServicePaymentSuccessScreenState extends State<ServicePaymentSuccessScree
         .trim();
     if (method.contains('wallet')) return 'Fiinway Wallet'.tr;
     if (method.contains('upi') || method.contains('razorpay')) return 'UPI / Online'.tr;
-    if (method.contains('cash')) return 'Cash on Delivery'.tr;
+    if (method.contains('cash')) return 'Cash Paid'.tr;
     return 'Paid / Direct'.tr;
   }
 
@@ -100,10 +100,74 @@ class _ServicePaymentSuccessScreenState extends State<ServicePaymentSuccessScree
 
     // Calculate itemized breakdown
     final serviceItems = booking?.bookedServiceItems ?? [];
+    double serviceItemsTotal = 0.0;
+    for (var item in serviceItems) {
+      final itemPrice = item.minPrice > 0 ? item.minPrice : item.price;
+      serviceItemsTotal += itemPrice;
+    }
+
     final visitingCharge = booking?.visitingChargeAmount ?? (breakdown?.visitingCharge ?? 0);
     final materialCost = booking?.materialCostAmount ?? (breakdown?.materialCost ?? 0);
-    final platformFee = breakdown?.platformFee ?? 0;
-    final totalAmount = widget.amountPaid > 0 ? widget.amountPaid : (booking?.payableAmount ?? 0);
+    
+    double baseServiceCost = serviceItemsTotal > 0 ? serviceItemsTotal : (booking?.amount ?? 0);
+    if (baseServiceCost <= 0 && widget.amountPaid > 0) {
+      baseServiceCost = widget.amountPaid;
+    }
+
+    // Dynamic Admin Taxes & Fees from booking record or active tax settings
+    List<Map<String, dynamic>> activeTaxList = [];
+    if (booking?.tax != null && booking!.tax!.isNotEmpty) {
+      for (var item in booking.tax!) {
+        if (item is Map) {
+          final label = item['libelle'] ?? item['name'] ?? item['label'] ?? 'Tax';
+          final val = item['value']?.toString() ?? '';
+          final type = item['type']?.toString() ?? 'Percentage';
+          final amt = double.tryParse(item['amount']?.toString() ?? '0') ?? 0.0;
+          if (amt > 0) {
+            activeTaxList.add({
+              'label': type == 'Percentage' && val.isNotEmpty ? '$label ($val%)' : label.toString(),
+              'amount': amt,
+            });
+          }
+        }
+      }
+    }
+
+    if (activeTaxList.isEmpty) {
+      final paymentMethod = widget.paymentMethod.isNotEmpty ? widget.paymentMethod : (booking?.paymentStatus ?? 'wallet');
+      activeTaxList = Constant.getTaxBreakdown(
+        baseServiceCost + visitingCharge,
+        paymentMethod,
+      );
+    }
+
+    double totalTaxAmount = 0;
+    for (var t in activeTaxList) {
+      totalTaxAmount += (t['amount'] as double? ?? 0.0);
+    }
+
+    if (totalTaxAmount <= 0 && booking?.taxAmount != null && booking!.taxAmount! > 0) {
+      totalTaxAmount = booking!.taxAmount!;
+      activeTaxList.add({
+        'label': 'Taxes & Platform Charges'.tr,
+        'amount': totalTaxAmount,
+      });
+    }
+
+    final double baseSum = baseServiceCost + visitingCharge + materialCost;
+    if (activeTaxList.isEmpty && widget.amountPaid > baseSum) {
+      final diff = widget.amountPaid - baseSum;
+      if (diff > 0) {
+        totalTaxAmount = diff;
+        activeTaxList.add({
+          'label': 'Taxes & Platform Charges'.tr,
+          'amount': diff,
+        });
+      }
+    }
+
+    final double computedTotal = baseSum + totalTaxAmount;
+    final double totalAmount = (widget.amountPaid > computedTotal) ? widget.amountPaid : computedTotal;
 
     return PopScope(
       canPop: false,
@@ -510,11 +574,17 @@ class _ServicePaymentSuccessScreenState extends State<ServicePaymentSuccessScree
                                       isDarkMode,
                                     ),
 
-                                  // Platform Fee
-                                  if (platformFee > 0)
+                                  // GST and Taxes Breakdown (Dynamic from Admin Panel)
+                                  if (activeTaxList.isNotEmpty)
+                                    ...activeTaxList.map((tax) => _buildBreakdownRow(
+                                          tax['label'].toString().tr,
+                                          _money(tax['amount'] as double? ?? 0.0),
+                                          isDarkMode,
+                                        ))
+                                  else if (totalTaxAmount > 0)
                                     _buildBreakdownRow(
-                                      'Convenience & Platform Fee'.tr,
-                                      _money(platformFee),
+                                      'Taxes & GST'.tr,
+                                      _money(totalTaxAmount),
                                       isDarkMode,
                                     ),
 
@@ -527,7 +597,7 @@ class _ServicePaymentSuccessScreenState extends State<ServicePaymentSuccessScree
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
-                                        'Total Amount Received'.tr,
+                                        'Total Amount Paid'.tr,
                                         style: TextStyle(
                                           fontFamily: AppThemeData.bold,
                                           fontSize: 15,
@@ -554,6 +624,31 @@ class _ServicePaymentSuccessScreenState extends State<ServicePaymentSuccessScree
                       const SizedBox(height: 24),
 
                       // 5. Action Buttons
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF6AA720),
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size(double.infinity, 50),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            elevation: 2,
+                          ),
+                          icon: const Icon(Icons.receipt_long_rounded, size: 20),
+                          label: Text('Download Tax Invoice'.tr, style: const TextStyle(fontFamily: AppThemeData.bold, fontSize: 14)),
+                          onPressed: () async {
+                            try {
+                              final uri = Uri.parse('https://api.fiinway.com/invoice/${widget.bookingId}/download?ride_id=${widget.bookingId}&amount=${widget.amountPaid}');
+                              await launchUrl(uri, mode: LaunchMode.externalApplication);
+                            } catch (e) {
+                              ShowToastDialog.showToast('Could not open invoice'.tr);
+                            }
+                          },
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+
                       ButtonThem.buildButton(
                         context,
                         title: 'View Booking History'.tr,
