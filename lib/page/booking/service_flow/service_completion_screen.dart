@@ -216,8 +216,21 @@ class _ServiceCompletionScreenState extends State<ServiceCompletionScreen> {
                       _chargeRow('Service Charge'.tr, flow.labourTotal),
                     if (flow.visitingCharge.value > 0) _chargeRow('Visiting Charge'.tr, flow.visitingCharge.value),
                     if (flow.materialCost.value > 0) _chargeRow('Material Cost'.tr, flow.materialCost.value),
+                    if (Constant.calculateTotalTaxes(flow.billTotal, 'cash') > 0) ...[
+                      const Divider(height: 12),
+                      ...Constant.getTaxBreakdown(flow.billTotal, 'cash').map((t) => _chargeRow(
+                            t['label'] as String,
+                            t['amount'] as double,
+                            color: AppThemeData.primary200,
+                          )),
+                    ],
                     const Divider(height: 20),
-                    _chargeRow('Total Bill'.tr, flow.billTotal, bold: true, color: AppThemeData.success300),
+                    _chargeRow(
+                      'Total Cash to Collect'.tr,
+                      flow.billTotal + Constant.calculateTotalTaxes(flow.billTotal, 'cash'),
+                      bold: true,
+                      color: AppThemeData.success300,
+                    ),
                   ],
                 ),
               ),
@@ -291,7 +304,13 @@ class _ServiceCompletionScreenState extends State<ServiceCompletionScreen> {
   }
 
   void _confirmCashReceived(BuildContext context, ServiceBookingFlowController flow) {
-    final amountStr = Constant().amountShow(amount: flow.billTotal.toStringAsFixed(0));
+    final baseBill = flow.billTotal;
+    final cashTaxAmount = Constant.calculateTotalTaxes(baseBill, 'cash');
+    final totalCashToCollect = baseBill + cashTaxAmount;
+    final totalStr = Constant().amountShow(amount: totalCashToCollect.toStringAsFixed(0));
+    final baseStr = Constant().amountShow(amount: baseBill.toStringAsFixed(0));
+    final taxStr = Constant().amountShow(amount: cashTaxAmount.toStringAsFixed(0));
+
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -299,12 +318,61 @@ class _ServiceCompletionScreenState extends State<ServiceCompletionScreen> {
           children: [
             Icon(Icons.payments_rounded, color: AppThemeData.success300),
             const SizedBox(width: 8),
-            Text('Confirm Cash Payment'.tr, style: const TextStyle(fontSize: 16)),
+            Text('Collect Cash Payment'.tr, style: const TextStyle(fontSize: 16, fontFamily: AppThemeData.bold)),
           ],
         ),
-        content: Text(
-          'Did you receive $amountStr in cash directly from the customer?'.tr,
-          style: const TextStyle(fontSize: 14),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Please collect the total bill amount including applicable taxes & fees:'.tr,
+              style: const TextStyle(fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppThemeData.success300.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppThemeData.success300.withValues(alpha: 0.3)),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Service Charge:'.tr, style: const TextStyle(fontSize: 12)),
+                      Text(baseStr, style: const TextStyle(fontSize: 12, fontFamily: AppThemeData.semiBold)),
+                    ],
+                  ),
+                  if (cashTaxAmount > 0) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Taxes & Charges (Cash):'.tr, style: const TextStyle(fontSize: 12)),
+                        Text('+$taxStr', style: const TextStyle(fontSize: 12, fontFamily: AppThemeData.semiBold, color: AppThemeData.primary200)),
+                      ],
+                    ),
+                  ],
+                  const Divider(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Total Cash to Collect:'.tr, style: const TextStyle(fontSize: 13, fontFamily: AppThemeData.bold)),
+                      Text(totalStr, style: const TextStyle(fontSize: 15, fontFamily: AppThemeData.bold, color: AppThemeData.success300)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Note: Commission & applicable cash taxes will be deducted from your wallet.'.tr,
+              style: TextStyle(fontSize: 11, color: AppThemeData.grey500),
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -318,21 +386,21 @@ class _ServiceCompletionScreenState extends State<ServiceCompletionScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
             onPressed: () async {
-                Get.back();
-                setState(() => _submitting = true);
-                final ok = await flow.completeJobWithCash();
-                if (!mounted) return;
-                setState(() => _submitting = false);
-                if (ok) {
-                  _pollTimer?.cancel();
-                  try {
-                    Get.delete<ServiceBookingFlowController>(tag: widget.tag, force: true);
-                  } catch (_) {}
-                  Get.off(() => const MyBookingScreen());
-                  Get.snackbar('Job Completed'.tr, 'Service completed via Cash payment.'.tr);
-                }
-              },
-            child: Text('Yes, Received Cash'.tr),
+              Get.back();
+              setState(() => _submitting = true);
+              final ok = await flow.completeJobWithCash();
+              if (!mounted) return;
+              setState(() => _submitting = false);
+              if (ok) {
+                _pollTimer?.cancel();
+                try {
+                  Get.delete<ServiceBookingFlowController>(tag: widget.tag, force: true);
+                } catch (_) {}
+                Get.off(() => const MyBookingScreen());
+                Get.snackbar('Job Completed'.tr, 'Service completed via Cash payment.'.tr);
+              }
+            },
+            child: Text('Collected $totalStr in Cash'.tr),
           ),
         ],
       ),

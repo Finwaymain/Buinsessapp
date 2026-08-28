@@ -45,9 +45,57 @@ class Constant {
   static List<TaxModel> allTaxList = [];
   static AdminCommission? adminCommission;
 
-  // static String? taxValue = "0.0";
-  // static String? taxType = 'Percentage';
-  // static String? taxName = 'Tax';
+  /// Returns the list of active taxes optionally filtered by payment method
+  static List<TaxModel> getActiveTaxes([String? paymentMethod]) {
+    final list = taxList.isNotEmpty ? taxList : allTaxList;
+    return list.where((t) {
+      if (t.statut != null && t.statut != 'yes') return false;
+      if (paymentMethod == null || paymentMethod.isEmpty) return true;
+      return t.isApplicableFor(paymentMethod);
+    }).toList();
+  }
+
+  /// Calculates the tax amount for a single tax item
+  static double calculateTaxFor(TaxModel tax, double baseAmount) {
+    if (baseAmount <= 0) return 0.0;
+    final val = double.tryParse(tax.value?.toString() ?? '0') ?? 0.0;
+    if (val <= 0) return 0.0;
+    if (tax.type?.toLowerCase() == 'percentage' || tax.type == 'Percentage') {
+      return (baseAmount * val) / 100.0;
+    }
+    return val;
+  }
+
+  /// Calculates total taxes and platform fees combined for a specific payment method
+  static double calculateTotalTaxes(double baseAmount, [String? paymentMethod]) {
+    if (baseAmount <= 0) return 0.0;
+    double total = 0.0;
+    for (final tax in getActiveTaxes(paymentMethod)) {
+      total += calculateTaxFor(tax, baseAmount);
+    }
+    return total;
+  }
+
+  /// Returns breakdown of taxes optionally filtered by payment method
+  static List<Map<String, dynamic>> getTaxBreakdown(double baseAmount, [String? paymentMethod]) {
+    final List<Map<String, dynamic>> breakdown = [];
+    if (baseAmount <= 0) return breakdown;
+    for (final tax in getActiveTaxes(paymentMethod)) {
+      final amount = calculateTaxFor(tax, baseAmount);
+      if (amount > 0) {
+        final isPct = tax.type?.toLowerCase() == 'percentage' || tax.type == 'Percentage';
+        final label = isPct
+            ? '${tax.libelle ?? "Tax"} (${tax.value}%)'
+            : (tax.libelle ?? 'Fee');
+        breakdown.add({
+          'label': label,
+          'amount': amount,
+          'model': tax,
+        });
+      }
+    }
+    return breakdown;
+  }
   static String? distanceUnit = "KM";
   static String? contactUsEmail = "";
   static String? minimumWithdrawalAmount = "0";
