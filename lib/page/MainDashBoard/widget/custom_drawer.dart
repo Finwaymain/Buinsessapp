@@ -26,12 +26,17 @@ class CustomDrawer extends StatelessWidget {
     var drawerOptions = <Widget>[];
     for (var i = 0; i < dashBoardController.drawerItems.length; i++) {
       var d = dashBoardController.drawerItems[i];
-      if (d.title == 'Log Out' && !isLogin) {
+      final bool isLogout = d.title == 'Log Out'.tr || d.title == 'Log Out' || d.title.toLowerCase().contains('log out');
+      if (isLogout && !isLogin) {
         continue;
       }
       drawerOptions.add(InkWell(
         onTap: () {
-          dashBoardController.onSelectItem(i, isLogin);
+          if (isLogout) {
+            dashBoardController.performLogout();
+          } else {
+            dashBoardController.onSelectItem(i, isLogin);
+          }
         },
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -45,11 +50,13 @@ class CustomDrawer extends StatelessWidget {
                     width: 20,
                     height: 20,
                     colorFilter: ColorFilter.mode(
-                      dashBoardController.selectedDrawerIndex.value == i
-                          ? AppThemeData.primary200
-                          : themeChange.getThem()
-                              ? AppThemeData.grey400Dark
-                              : AppThemeData.grey400,
+                      isLogout
+                          ? AppThemeData.error200
+                          : dashBoardController.selectedDrawerIndex.value == i
+                              ? AppThemeData.primary200
+                              : themeChange.getThem()
+                                  ? AppThemeData.grey400Dark
+                                  : AppThemeData.grey400,
                       BlendMode.srcIn,
                     ),
                   ),
@@ -57,11 +64,13 @@ class CustomDrawer extends StatelessWidget {
                   Text(
                     d.title,
                     style: TextStyle(
-                      color: dashBoardController.selectedDrawerIndex.value == i
-                          ? AppThemeData.primary200
-                          : themeChange.getThem()
-                              ? AppThemeData.grey900Dark
-                              : AppThemeData.grey900,
+                      color: isLogout
+                          ? AppThemeData.error200
+                          : dashBoardController.selectedDrawerIndex.value == i
+                              ? AppThemeData.primary200
+                              : themeChange.getThem()
+                                  ? AppThemeData.grey900Dark
+                                  : AppThemeData.grey900,
                       fontSize: 15,
                       fontFamily: AppThemeData.medium,
                     ),

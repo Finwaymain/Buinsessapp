@@ -649,28 +649,65 @@ class DashBoardController extends GetxController {
           await launchUrl(fallbackUri, mode: LaunchMode.externalApplication);
         } catch (_) {}
       }
-    } else if (item.title == 'Log Out'.tr) {
-      ShowToastDialog.showLoader("Logging out...".tr);
-      try {
-        final driverId = Preferences.getInt(Preferences.userId);
-        if (driverId != 0) {
-          await changeOnlineStatus({'id_driver': driverId, 'online': 'no'});
-        }
-      } catch (_) {}
-      try {
-        await updateFCMToken('');
-      } catch (_) {}
-      try {
-        await FirebaseMessaging.instance.unsubscribeFromTopic('cabme_driver');
-        await FirebaseMessaging.instance.deleteToken();
-      } catch (_) {}
-      ShowToastDialog.closeLoader();
-      Preferences.clearKeyData(Preferences.isLogin);
-      Preferences.clearKeyData(Preferences.user);
-      Preferences.clearKeyData(Preferences.userId);
-      Get.offAll(PhoneEntryScreen(mode: 'signup'));
+    } else if (item.title == 'Log Out'.tr || item.title == 'Log Out' || item.title.toLowerCase().contains('log out') || item.title.toLowerCase().contains('logout')) {
+      await performLogout();
     } else {
       selectedDrawerIndex.value = index;
+    }
+  }
+
+  Future<void> performLogout() async {
+    ShowToastDialog.showLoader("Logging out...".tr);
+    try {
+      final driverId = Preferences.getInt(Preferences.userId);
+      if (driverId != 0) {
+        try {
+          await http
+              .post(
+                Uri.parse(API.changeStatus),
+                headers: API.header,
+                body: jsonEncode({'id_driver': driverId, 'online': 'no'}),
+              )
+              .timeout(const Duration(seconds: 3));
+        } catch (_) {}
+
+        try {
+          await updateActiveStatusInRTDB(false).timeout(const Duration(seconds: 2));
+        } catch (_) {}
+      }
+
+      try {
+        locationSubscription?.cancel();
+        locationSubscription = null;
+      } catch (_) {}
+
+      try {
+        await updateFCMToken('').timeout(const Duration(seconds: 2));
+      } catch (_) {}
+      try {
+        await FirebaseMessaging.instance.unsubscribeFromTopic('cabme_driver').timeout(const Duration(seconds: 2));
+        await FirebaseMessaging.instance.deleteToken().timeout(const Duration(seconds: 2));
+      } catch (_) {}
+    } catch (e) {
+      log("Error during logout: $e");
+    } finally {
+      final bool isFinishOnboarding = Preferences.getBoolean(Preferences.isFinishOnBoardingKey);
+      final String languageCode = Preferences.getString(Preferences.languageCodeKey);
+
+      await Preferences.clearSharPreference();
+
+      await Preferences.setBoolean(Preferences.isFinishOnBoardingKey, isFinishOnboarding);
+      if (languageCode.isNotEmpty) {
+        await Preferences.setString(Preferences.languageCodeKey, languageCode);
+      }
+      await Preferences.setBoolean(Preferences.isLogin, false);
+
+      userModel.value = UserModel();
+      isActive.value = false;
+
+      ShowToastDialog.closeLoader();
+
+      Get.offAll(() => const PhoneEntryScreen(mode: 'signup'));
     }
   }
 
