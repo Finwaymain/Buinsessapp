@@ -258,6 +258,32 @@ class FlowPrimaryButton extends StatelessWidget {
   }
 }
 
+class FlowSecondaryButton extends StatelessWidget {
+  final String label;
+  final VoidCallback? onPressed;
+  final Color? color;
+  final IconData? icon;
+
+  const FlowSecondaryButton({
+    super.key,
+    required this.label,
+    this.onPressed,
+    this.color,
+    this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return FlowPrimaryButton(
+      label: label,
+      onPressed: onPressed,
+      color: color,
+      icon: icon,
+      outlined: true,
+    );
+  }
+}
+
 class PhotoUploadRow extends StatelessWidget {
   final List<String> photos;
   final VoidCallback onAdd;
