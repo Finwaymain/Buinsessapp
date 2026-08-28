@@ -352,7 +352,7 @@ class _ServiceCompletionScreenState extends State<ServiceCompletionScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text('Taxes & Charges (Cash):'.tr, style: const TextStyle(fontSize: 12)),
-                        Text('+$taxStr', style: const TextStyle(fontSize: 12, fontFamily: AppThemeData.semiBold, color: AppThemeData.primary200)),
+                        Text('+$taxStr', style: TextStyle(fontSize: 12, fontFamily: AppThemeData.semiBold, color: AppThemeData.primary200)),
                       ],
                     ),
                   ],
@@ -361,7 +361,7 @@ class _ServiceCompletionScreenState extends State<ServiceCompletionScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text('Total Cash to Collect:'.tr, style: const TextStyle(fontSize: 13, fontFamily: AppThemeData.bold)),
-                      Text(totalStr, style: const TextStyle(fontSize: 15, fontFamily: AppThemeData.bold, color: AppThemeData.success300)),
+                      Text(totalStr, style: TextStyle(fontSize: 15, fontFamily: AppThemeData.bold, color: AppThemeData.success300)),
                     ],
                   ),
                 ],
