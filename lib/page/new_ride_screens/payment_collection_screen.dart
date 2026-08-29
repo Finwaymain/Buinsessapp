@@ -1,7 +1,12 @@
+import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:cabme_driver/constant/constant.dart';
 import 'package:cabme_driver/model/ride_model.dart';
+import 'package:cabme_driver/service/api.dart';
 import 'package:cabme_driver/themes/button_them.dart';
 import 'package:cabme_driver/themes/constant_colors.dart';
+import 'package:cabme_driver/themes/custom_dialog_box.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -23,10 +28,66 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
   String selectedMethod = 'Cash';
   bool isSwiped = false;
   bool _isConfirming = false;
+  Timer? _paymentPollTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startPaymentPolling();
+  }
+
+  @override
+  void dispose() {
+    _paymentPollTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startPaymentPolling() {
+    _paymentPollTimer = Timer.periodic(const Duration(seconds: 2), (_) async {
+      if (widget.rideData.id == null || !mounted || _isConfirming) return;
+      try {
+        final response = await http.get(
+          Uri.parse("${API.rideDetails}?ride_id=${widget.rideData.id}"),
+          headers: API.header,
+        ).timeout(const Duration(seconds: 4));
+
+        if (response.statusCode == 200) {
+          Map<String, dynamic> rawJson = jsonDecode(response.body);
+          dynamic rawItem = rawJson['data'] ?? rawJson['rideDetailsdata'];
+          if (rawItem != null && rawItem is Map) {
+            String paymentStatus = (rawItem['statut_paiement'] ?? '').toString().toLowerCase();
+            if (paymentStatus == "yes" || paymentStatus == "paid") {
+              _paymentPollTimer?.cancel();
+              _isConfirming = true;
+              if (mounted) {
+                Get.back(); // close PaymentCollectionScreen
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return CustomDialogBox(
+                      title: "Payment Received".tr,
+                      descriptions: "Customer has successfully completed payment.".tr,
+                      text: "Ok".tr,
+                      onPress: () {
+                        Get.back();
+                        Get.back();
+                      },
+                      img: Image.asset('assets/images/green_checked.png'),
+                    );
+                  },
+                );
+              }
+            }
+          }
+        }
+      } catch (_) {}
+    });
+  }
 
   void _handleConfirm() {
     if (_isConfirming) return;
     _isConfirming = true;
+    _paymentPollTimer?.cancel();
     setState(() {
       isSwiped = true;
     });
