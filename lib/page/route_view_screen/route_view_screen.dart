@@ -240,7 +240,7 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
       destPoint = PointLatLng(destLat, destLng);
     }
 
-    // 1. First attempt: Direct Google Directions API call (exact same API that user app uses)
+    // 1. First attempt: Direct Google Directions API call with Android package headers
     try {
       final apiKey = Constant.kGoogleApiKey ?? '';
       if (apiKey.isNotEmpty) {
@@ -255,7 +255,16 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
           url += "&waypoints=$waypointsStr";
         }
 
-        final response = await Dio().get(url).timeout(const Duration(seconds: 6));
+        final response = await Dio().get(
+          url,
+          options: Options(
+            headers: {
+              'X-Android-Package': 'com.fiinwaybusiness',
+              'X-Android-Cert': '427CAACCD854958730B0A3187C9E986DDCA86726',
+            },
+          ),
+        ).timeout(const Duration(seconds: 5));
+
         if (response.statusCode == 200 &&
             response.data['routes'] != null &&
             (response.data['routes'] as List).isNotEmpty) {
@@ -270,7 +279,7 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
       }
     } catch (_) {}
 
-    // 2. Second attempt: flutter_polyline_points package helper
+    // 2. Second attempt: flutter_polyline_points with Google API Key (identical to user app)
     if (polylineCoordinates.isEmpty) {
       try {
         PolylineRequest requestData = PolylineRequest(
@@ -281,7 +290,10 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
           wayPoints: wayPointList,
         );
 
-        final result = await polylinePoints.getRouteBetweenCoordinates(request: requestData);
+        final result = await polylinePoints.getRouteBetweenCoordinates(
+          googleApiKey: Constant.kGoogleApiKey.toString(),
+          request: requestData,
+        );
         if (result.points.isNotEmpty) {
           for (var point in result.points) {
             polylineCoordinates.add(LatLng(point.latitude, point.longitude));
@@ -290,7 +302,30 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
       } catch (_) {}
     }
 
-    // 3. Fallback line guarantee: connect endpoints directly so map is NEVER blank
+    // 3. Third attempt: High-resolution Road Router (OSRM) to guarantee real road navigation polyline
+    if (polylineCoordinates.isEmpty) {
+      try {
+        String osrmUrl = "https://router.project-osrm.org/route/v1/driving/"
+            "${originPoint.longitude},${originPoint.latitude};"
+            "${destPoint.longitude},${destPoint.latitude}"
+            "?overview=full&geometries=polyline";
+
+        final osrmRes = await Dio().get(osrmUrl).timeout(const Duration(seconds: 5));
+        if (osrmRes.statusCode == 200 &&
+            osrmRes.data['routes'] != null &&
+            (osrmRes.data['routes'] as List).isNotEmpty) {
+          final geometry = osrmRes.data['routes'][0]['geometry'];
+          if (geometry != null && geometry.toString().isNotEmpty) {
+            final decoded = PolylinePoints.decodePolyline(geometry.toString());
+            for (var pt in decoded) {
+              polylineCoordinates.add(LatLng(pt.latitude, pt.longitude));
+            }
+          }
+        }
+      } catch (_) {}
+    }
+
+    // 4. Fallback line guarantee only if all 3 route providers fail
     if (polylineCoordinates.isEmpty) {
       polylineCoordinates = [
         LatLng(originPoint.latitude, originPoint.longitude),
