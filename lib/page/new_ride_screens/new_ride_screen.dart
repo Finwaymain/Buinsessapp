@@ -757,38 +757,62 @@ class _NewRideScreenState extends State<NewRideScreen> with SingleTickerProvider
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: () async {
-                        Get.to(() => PaymentCollectionScreen(
-                          rideData: data,
-                          onConfirm: (String paymethod) {
-                            Map<String, String> bodyParams = {
-                              'id_ride': data.id.toString(),
-                              'id_user': data.idUserApp.toString(),
-                              'driver_name': '${data.prenomConducteur ?? ''} ${data.nomConducteur ?? ''}'.trim(),
-                              'from_id': Preferences.getInt(Preferences.userId).toString(),
-                            };
-                            controller.setCompletedRequest(bodyParams, data, paymethod: paymethod).then((value) {
-                              if (value != null) {
-                                Get.back();
-                                showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return CustomDialogBox(
-                                      title: "Completed Successfully".tr,
-                                      descriptions: "Ride successfully completed.".tr,
-                                      text: "Ok".tr,
-                                      onPress: () {
-                                        Get.back();
-                                        controller.getNewRide();
-                                        _tabController.animateTo(2);
-                                      },
-                                      img: Image.asset('assets/images/green_checked.png'),
-                                    );
-                                  },
-                                );
-                              }
-                            });
-                          },
-                        ));
+                        Map<String, String> bodyParams = {
+                          'id_ride': data.id.toString(),
+                          'id_user': data.idUserApp.toString(),
+                          'driver_name': '${data.prenomConducteur ?? ''} ${data.nomConducteur ?? ''}'.trim(),
+                          'from_id': Preferences.getInt(Preferences.userId).toString(),
+                        };
+                        controller.setCompletedRequest(bodyParams, data, paymethod: "Pending").then((value) {
+                          if (value != null) {
+                            Get.to(() => PaymentCollectionScreen(
+                              rideData: data,
+                              onConfirm: (String paymethod) {
+                                if (paymethod.toLowerCase() == "cash") {
+                                  controller.cashPaymentRequest(data, paymethod: "Cash").then((cashVal) {
+                                    if (cashVal != null) {
+                                      Get.back();
+                                      showDialog(
+                                        context: context,
+                                        builder: (BuildContext context) {
+                                          return CustomDialogBox(
+                                            title: "Completed Successfully".tr,
+                                            descriptions: "Cash payment collected successfully.".tr,
+                                            text: "Ok".tr,
+                                            onPress: () {
+                                              Get.back();
+                                              controller.getNewRide();
+                                              _tabController.animateTo(2);
+                                            },
+                                            img: Image.asset('assets/images/green_checked.png'),
+                                          );
+                                        },
+                                      );
+                                    }
+                                  });
+                                } else {
+                                  Get.back();
+                                  showDialog(
+                                    context: context,
+                                    builder: (BuildContext context) {
+                                      return CustomDialogBox(
+                                        title: "Completed Successfully".tr,
+                                        descriptions: "Ride successfully completed.".tr,
+                                        text: "Ok".tr,
+                                        onPress: () {
+                                          Get.back();
+                                          controller.getNewRide();
+                                          _tabController.animateTo(2);
+                                        },
+                                        img: Image.asset('assets/images/green_checked.png'),
+                                      );
+                                    },
+                                  );
+                                }
+                              },
+                            ));
+                          }
+                        });
                       },
                       icon: const Icon(Icons.check_circle_rounded, color: Colors.white, size: 16),
                       label: Text(
