@@ -356,7 +356,7 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
     polyLines[id] = polyline;
 
     if (polylineCoordinates.isNotEmpty) {
-      updateCameraLocation(polylineCoordinates, _mapcontroller);
+      updateCameraLocation(polylineCoordinates.first, polylineCoordinates.last, _mapcontroller);
     }
 
     if (mounted) {
@@ -365,38 +365,39 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
   }
 
   Future<void> updateCameraLocation(
-    List<LatLng> coordinates,
+    LatLng source,
+    LatLng destination,
     GoogleMapController? mapController,
   ) async {
-    if (mapController == null || coordinates.isEmpty) return;
+    if (mapController == null) return;
 
-    try {
-      if (coordinates.length == 1) {
-        mapController.animateCamera(CameraUpdate.newLatLngZoom(coordinates.first, 15));
-        return;
-      }
+    LatLngBounds bounds;
 
-      double minLat = coordinates.first.latitude;
-      double maxLat = coordinates.first.latitude;
-      double minLng = coordinates.first.longitude;
-      double maxLng = coordinates.first.longitude;
-
-      for (LatLng point in coordinates) {
-        if (point.latitude < minLat) minLat = point.latitude;
-        if (point.latitude > maxLat) maxLat = point.latitude;
-        if (point.longitude < minLng) minLng = point.longitude;
-        if (point.longitude > maxLng) maxLng = point.longitude;
-      }
-
-      LatLngBounds bounds = LatLngBounds(
-        southwest: LatLng(minLat, minLng),
-        northeast: LatLng(maxLat, maxLng),
-      );
-
-      mapController.animateCamera(CameraUpdate.newLatLngBounds(bounds, 60));
-    } catch (_) {
-      mapController.animateCamera(CameraUpdate.newLatLngZoom(coordinates.first, 14));
+    if (source.latitude > destination.latitude && source.longitude > destination.longitude) {
+      bounds = LatLngBounds(southwest: destination, northeast: source);
+    } else if (source.longitude > destination.longitude) {
+      bounds = LatLngBounds(southwest: LatLng(source.latitude, destination.longitude), northeast: LatLng(destination.latitude, source.longitude));
+    } else if (source.latitude > destination.latitude) {
+      bounds = LatLngBounds(southwest: LatLng(destination.latitude, source.longitude), northeast: LatLng(source.latitude, destination.longitude));
+    } else {
+      bounds = LatLngBounds(southwest: source, northeast: destination);
     }
+
+    CameraUpdate cameraUpdate = CameraUpdate.newLatLngBounds(bounds, 50);
+
+    return checkCameraLocation(cameraUpdate, mapController);
+  }
+
+  Future<void> checkCameraLocation(CameraUpdate cameraUpdate, GoogleMapController mapController) async {
+    try {
+      await mapController.animateCamera(cameraUpdate);
+      LatLngBounds l1 = await mapController.getVisibleRegion();
+      LatLngBounds l2 = await mapController.getVisibleRegion();
+
+      if (l1.southwest.latitude == -90 || l2.southwest.latitude == -90) {
+        return checkCameraLocation(cameraUpdate, mapController);
+      }
+    } catch (_) {}
   }
 
   @override
@@ -408,8 +409,6 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
     }
 
     final themeChange = Provider.of<DarkThemeProvider>(context);
-    final initLat = double.tryParse(rideData?.latitudeDepart?.toString() ?? '0') ?? 48.8561;
-    final initLng = double.tryParse(rideData?.longitudeDepart?.toString() ?? '0') ?? 2.2930;
 
     return Scaffold(
       body: Stack(
@@ -417,18 +416,18 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
         children: [
           GoogleMap(
             zoomControlsEnabled: false,
-            myLocationButtonEnabled: true,
-            myLocationEnabled: true,
-            initialCameraPosition: CameraPosition(
-              target: LatLng(initLat, initLng),
+            myLocationButtonEnabled: false,
+            myLocationEnabled: false,
+            initialCameraPosition: const CameraPosition(
+              target: LatLng(48.8561, 2.2930),
               zoom: 14.0,
             ),
             onMapCreated: (GoogleMapController controller) {
               _mapcontroller = controller;
+              _mapcontroller!.moveCamera(CameraUpdate.newLatLngZoom(departureLatLong, 12));
               if (polyLines.isNotEmpty && polyLines.values.first.points.isNotEmpty) {
-                updateCameraLocation(polyLines.values.first.points, _mapcontroller);
-              } else if (departureLatLong.latitude != 0.0) {
-                _mapcontroller!.moveCamera(CameraUpdate.newLatLngZoom(departureLatLong, 14));
+                final pts = polyLines.values.first.points;
+                updateCameraLocation(pts.first, pts.last, _mapcontroller);
               }
             },
             polylines: Set<Polyline>.of(polyLines.values),
