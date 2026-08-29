@@ -40,8 +40,7 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
 
   Map<PolylineId, Polyline> polyLines = {};
 
-  // PolylinePoints polylinePoints = PolylinePoints();
-  PolylinePoints polylinePoints = PolylinePoints(apiKey: Constant.kGoogleApiKey.toString());
+  PolylinePoints polylinePoints = PolylinePoints();
 
   BitmapDescriptor? departureIcon;
   BitmapDescriptor? destinationIcon;
@@ -62,6 +61,8 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
   @override
   void initState() {
     super.initState();
+    departureLatLong = const LatLng(0, 0);
+    destinationLatLong = const LatLng(0, 0);
     setIcons().then((_) {
       getArgumentData();
     });
@@ -111,14 +112,12 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
             if (mounted) {
               setState(() {
                 departureLatLong = LatLng(dLat, dLng);
-                if (taxiIcon != null) {
-                  _markers[rideData!.id.toString()] = Marker(
-                      markerId: MarkerId(rideData!.id.toString()),
-                      infoWindow: InfoWindow(title: rideData!.prenomConducteur.toString()),
-                      position: departureLatLong,
-                      icon: taxiIcon!,
-                      rotation: 0.0);
-                }
+                _markers[rideData!.id.toString()] = Marker(
+                    markerId: MarkerId(rideData!.id.toString()),
+                    infoWindow: InfoWindow(title: rideData!.prenomConducteur.toString()),
+                    position: departureLatLong,
+                    icon: taxiIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+                    rotation: 0.0);
                 getDirections(dLat: dLat, dLng: dLng);
               });
             }
@@ -135,8 +134,14 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
       type = argumentData['type'];
       rideData = argumentData['data'];
 
-      departureLatLong = LatLng(double.parse(rideData!.latitudeDepart.toString()), double.parse(rideData!.longitudeDepart.toString()));
-      destinationLatLong = LatLng(double.parse(rideData!.latitudeArrivee.toString()), double.parse(rideData!.longitudeArrivee.toString()));
+      departureLatLong = LatLng(
+        double.tryParse(rideData?.latitudeDepart?.toString() ?? '0') ?? 0.0,
+        double.tryParse(rideData?.longitudeDepart?.toString() ?? '0') ?? 0.0,
+      );
+      destinationLatLong = LatLng(
+        double.tryParse(rideData?.latitudeArrivee?.toString() ?? '0') ?? 0.0,
+        double.tryParse(rideData?.longitudeArrivee?.toString() ?? '0') ?? 0.0,
+      );
 
       if (rideData!.statut == "on ride" || rideData!.statut == 'confirmed') {
         _fetchDriverLocation();
@@ -151,51 +156,18 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
 
   Future<void> setIcons() async {
     try {
-      departureIcon = await BitmapDescriptor.fromAssetImage(const ImageConfiguration(size: Size(24, 24)), "assets/icons/pickup.png");
+      departureIcon = await BitmapDescriptor.fromAssetImage(const ImageConfiguration(size: Size(10, 10)), "assets/icons/pickup.png");
     } catch (_) {}
     try {
-      destinationIcon = await BitmapDescriptor.fromAssetImage(const ImageConfiguration(size: Size(24, 24)), "assets/icons/location.png");
+      destinationIcon = await BitmapDescriptor.fromAssetImage(const ImageConfiguration(size: Size(10, 10)), "assets/icons/dropoff.png");
     } catch (_) {}
     try {
-      taxiIcon = await BitmapDescriptor.fromAssetImage(const ImageConfiguration(size: Size(24, 24)), "assets/images/ic_taxi.png");
+      taxiIcon = await BitmapDescriptor.fromAssetImage(const ImageConfiguration(size: Size(10, 10)), "assets/icons/ic_taxi.png");
     } catch (_) {}
     try {
-      stopIcon = await BitmapDescriptor.fromAssetImage(const ImageConfiguration(size: Size(24, 24)), "assets/icons/location.png");
+      stopIcon = await BitmapDescriptor.fromAssetImage(const ImageConfiguration(size: Size(10, 10)), "assets/icons/location.png");
     } catch (_) {}
   }
-
-
-  // getDriver() async {
-  //   String orderId = (rideData!.idUserApp! < rideData!.idConducteur!)
-  //       ? '${rideData!.idUserApp}-${rideData!.id}-${rideData!.idConducteur}'
-  //       : '${rideData!.idConducteur}-${rideData!.id}-${rideData!.idUserApp}';
-  //   Constant.location_update.doc(orderId).get().then((value) {
-  //     dynamic driverData = value.data();
-
-  //     driverLatLong = LatLng(
-  //         double.parse(driverData['driver_latitude'].toString()),
-  //         double.parse(driverData['driver_longitude'].toString()));
-
-  //     rotation = driverData['rotation'];
-  //     print('\x1b[92m --------> ${value.data()}');
-  //   });
-  //   // driverStream.listen((event) {
-  //   //   print("--->${event.location.latitude} ${event.location.longitude}");
-  //   //   setState(() => _driverModel = event);
-  //   //   setState(() => MyAppState.currentUser = _driverModel);
-
-  //   //   getDirections();
-  //   //   if (_driverModel!.isActive) {
-  //   //     if (_driverModel!.orderRequestData != null) {
-  //   //       showDriverBottomSheet(_driverModel!);
-  //   //       startTimer(_driverModel!);
-  //   //     }
-  //   //   }
-  //   //   if (_driverModel!.inProgressOrderID != null) {
-  //   //     getCurrentOrder();
-  //   //   }
-  //   // });
-  // }
 
   final controllerRideDetails = Get.put(RideDetailsController());
   final controllerDashBoard = Get.put(DashBoardController());
@@ -203,23 +175,30 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
   @override
   Widget build(BuildContext context) {
     final themeChange = Provider.of<DarkThemeProvider>(context);
+    final initLat = double.tryParse(rideData?.latitudeDepart?.toString() ?? '0') ?? 48.8561;
+    final initLng = double.tryParse(rideData?.longitudeDepart?.toString() ?? '0') ?? 2.2930;
+
     return Scaffold(
       body: Stack(
         alignment: Alignment.bottomCenter,
         children: [
           GoogleMap(
-            zoomControlsEnabled: true,
+            zoomControlsEnabled: false,
             myLocationButtonEnabled: false,
+            myLocationEnabled: false,
             initialCameraPosition: CameraPosition(
-              target: LatLng(double.parse(rideData!.latitudeDepart!), double.parse(rideData!.longitudeDepart!)),
+              target: LatLng(initLat, initLng),
               zoom: 14.0,
             ),
             onMapCreated: (GoogleMapController controller) {
               _mapcontroller = controller;
-              _mapcontroller!.moveCamera(CameraUpdate.newLatLngZoom(departureLatLong, 12));
+              if (polyLines.isNotEmpty && polyLines.values.first.points.isNotEmpty) {
+                updateCameraLocation(polyLines.values.first.points, _mapcontroller);
+              } else if (departureLatLong.latitude != 0.0) {
+                _mapcontroller!.moveCamera(CameraUpdate.newLatLngZoom(departureLatLong, 14));
+              }
             },
             polylines: Set<Polyline>.of(polyLines.values),
-            myLocationEnabled: false,
             markers: _markers.values.toSet(),
           ),
           Positioned(
@@ -965,10 +944,12 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
         ),
         mode: TravelMode.driving,
         optimizeWaypoints: true,
-        // wayPoints: wayPointList,
       );
 
-      result = await polylinePoints.getRouteBetweenCoordinates(request: resultdata);
+      result = await polylinePoints.getRouteBetweenCoordinates(
+        googleApiKey: Constant.kGoogleApiKey.toString(),
+        request: resultdata,
+      );
     } else if (rideData!.statut == "on ride") {
       PolylineRequest resultdata = PolylineRequest(
         origin: PointLatLng(dLat, dLng),
@@ -978,7 +959,10 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
         wayPoints: wayPointList,
       );
 
-      result = await polylinePoints.getRouteBetweenCoordinates(request: resultdata);
+      result = await polylinePoints.getRouteBetweenCoordinates(
+        googleApiKey: Constant.kGoogleApiKey.toString(),
+        request: resultdata,
+      );
     } else {
       PolylineRequest resultdata = PolylineRequest(
         origin: PointLatLng(departureLatLong.latitude, departureLatLong.longitude),
@@ -988,8 +972,12 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
         wayPoints: wayPointList,
       );
 
-      result = await polylinePoints.getRouteBetweenCoordinates(request: resultdata);
+      result = await polylinePoints.getRouteBetweenCoordinates(
+        googleApiKey: Constant.kGoogleApiKey.toString(),
+        request: resultdata,
+      );
     }
+
 
     if (result.points.isNotEmpty) {
       for (var point in result.points) {

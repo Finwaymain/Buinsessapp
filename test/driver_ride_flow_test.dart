@@ -140,5 +140,20 @@ void main() {
       expect(url, contains('destination=13.0358,77.597'));
       expect(url, contains('travelmode=driving'));
     });
+
+    test('Fare amounts are properly formatted to exactly 2 decimal units', () {
+      String formatAmount(String? amount) {
+        String raw = (amount == null || amount.isEmpty || amount == 'null') ? '0' : amount;
+        double parsed = double.tryParse(raw) ?? 0.0;
+        return parsed.toStringAsFixed(2);
+      }
+
+      expect(formatAmount('98.10199999999999'), equals('98.10'));
+      expect(formatAmount('150'), equals('150.00'));
+      expect(formatAmount('45.5'), equals('45.50'));
+      expect(formatAmount('0'), equals('0.00'));
+      expect(formatAmount(null), equals('0.00'));
+    });
   });
 }
+

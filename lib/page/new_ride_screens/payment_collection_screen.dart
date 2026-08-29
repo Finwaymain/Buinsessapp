@@ -61,7 +61,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
               child: Column(
                 children: [
                   Text(
-                    "${widget.rideData.montant ?? '0'}",
+                    Constant().amountShow(amount: widget.rideData.montant),
                     style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 4),
@@ -75,7 +75,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
             const SizedBox(height: 24),
             Text(
               "Select Payment Method",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             _buildOption('Wallet', hasCashback: true),
@@ -89,7 +89,8 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                 btnColor: AppThemeData.primary200,
                 txtColor: Colors.white,
                 onPress: () {
-                  String amountStr = widget.rideData.montant ?? "0";
+                  String rawAmount = widget.rideData.montant ?? "0";
+                  String amountStr = Constant().amountShowWithoutSymbol(amount: rawAmount);
                   String acNo = Constant.getUserData().userData?.acNo ?? "";
                   String qrPayload = '{"ac_no":"$acNo", "amount":"$amountStr"}';
                   Get.to(() => const MyQRScreen(), arguments: {'qrData': qrPayload});
