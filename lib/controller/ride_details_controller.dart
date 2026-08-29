@@ -181,7 +181,7 @@ class RideDetailsController extends GetxController {
       Map<String, dynamic> responseBody = json.decode(response.body);
 
       if (response.statusCode == 200 && responseBody['success'] == "success") {
-        if (data.rideType!.toString() == "driver") {
+        if (paymethod.toLowerCase() == "cash") {
           await cashPaymentRequest(data, paymethod: paymethod);
         }
         ShowToastDialog.closeLoader();
