@@ -279,7 +279,7 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
       }
     } catch (_) {}
 
-    // 2. Second attempt: flutter_polyline_points with Google API Key (identical to user app)
+    // 2. Second attempt: flutter_polyline_points with Google API Key
     if (polylineCoordinates.isEmpty) {
       try {
         PolylineRequest requestData = PolylineRequest(
@@ -290,10 +290,8 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
           wayPoints: wayPointList,
         );
 
-        final result = await polylinePoints.getRouteBetweenCoordinates(
-          googleApiKey: Constant.kGoogleApiKey.toString(),
-          request: requestData,
-        );
+        final pp = PolylinePoints(apiKey: Constant.kGoogleApiKey ?? '');
+        final result = await pp.getRouteBetweenCoordinates(request: requestData);
         if (result.points.isNotEmpty) {
           for (var point in result.points) {
             polylineCoordinates.add(LatLng(point.latitude, point.longitude));
