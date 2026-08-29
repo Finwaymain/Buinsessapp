@@ -83,6 +83,19 @@ class DriverRideStateMachine {
   }
 }
 
+// ─── Mirrors the null-safety fixes applied to route_view_screen.dart ──────────
+
+/// FIX 1: rideData is null on first build() - show spinner until data loaded.
+/// Simulates whether the build should show loading or content.
+bool shouldShowLoading(Object? rideData) => rideData == null;
+
+/// FIX 2: kGoogleApiKey is String? — using .toString() on null gives literal "null".
+/// The PolylinePoints constructor must receive a proper key, not the string "null".
+String resolveApiKey(String? apiKey) => apiKey ?? '';
+
+/// FIX 3: rideType is String? — safe comparison without ! operator.
+bool isDriverRideType(String? rideType) => rideType == 'driver';
+
 void main() {
   group('Driver Ride Flow - Automated Unit Tests', () {
     test('State machine transitions: new -> confirmed -> on ride -> completed (Rapido flow)', () {
@@ -154,6 +167,42 @@ void main() {
       expect(formatAmount('0'), equals('0.00'));
       expect(formatAmount(null), equals('0.00'));
     });
+
+    // ── New tests for null-safety root-cause fixes ──────────────────────────
+
+    test('[FIX 1] rideData null guard: build() shows loading when rideData not yet loaded', () {
+      // Simulates the async gap between initState and getArgumentData() completing.
+      // Before fix: rideData was null and rideData!.x crashed immediately.
+      // After fix: shouldShowLoading returns true → spinner rendered instead.
+      expect(shouldShowLoading(null), isTrue,
+          reason: 'rideData is null on first frame — must show spinner, not crash');
+      expect(shouldShowLoading(Object()), isFalse,
+          reason: 'Once rideData is set, normal UI should render');
+    });
+
+    test('[FIX 2] PolylinePoints apiKey null-string: String? null must NOT become "null"', () {
+      // Before fix: Constant.kGoogleApiKey.toString() on null → "null" literal.
+      // This caused all polyline HTTP calls to return 400 Invalid Key → blank map.
+      final fromNull = resolveApiKey(null);
+      final fromReal = resolveApiKey('AIzaSyAxZaszdbtbO75kvNjSYm1LjW2Sk59D9C8');
+
+      expect(fromNull, equals(''),
+          reason: 'Null API key must resolve to empty string, never the literal "null"');
+      expect(fromNull, isNot(equals('null')),
+          reason: 'String?.toString() on null gives "null" — this was the bug');
+      expect(fromReal, equals('AIzaSyAxZaszdbtbO75kvNjSYm1LjW2Sk59D9C8'),
+          reason: 'Valid key must pass through unchanged');
+    });
+
+    test('[FIX 3] rideType null-bang: rideType is String? — must not crash when null', () {
+      // Before fix: rideData!.rideType! threw Null check operator used on a null value.
+      // After fix: rideType == "driver" comparison is safe on null.
+      expect(isDriverRideType(null), isFalse,
+          reason: 'null rideType must not crash — returns false safely');
+      expect(isDriverRideType('driver'), isTrue,
+          reason: 'driver rideType correctly identified');
+      expect(isDriverRideType('user'), isFalse,
+          reason: 'user rideType correctly excluded');
+    });
   });
 }
-

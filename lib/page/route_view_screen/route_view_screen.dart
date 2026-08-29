@@ -40,7 +40,10 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
 
   Map<PolylineId, Polyline> polyLines = {};
 
-  PolylinePoints polylinePoints = PolylinePoints();
+  // CRITICAL FIX: kGoogleApiKey is String? — using .toString() on null gives literal "null"
+  // which causes all polyline API calls to fail (HTTP 400 invalid key) → no route drawn → blank map.
+  PolylinePoints polylinePoints = PolylinePoints(apiKey: Constant.kGoogleApiKey ?? '');
+
 
   BitmapDescriptor? departureIcon;
   BitmapDescriptor? destinationIcon;
@@ -132,24 +135,30 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
   Future<void> getArgumentData() async {
     if (argumentData != null) {
       type = argumentData['type'];
-      rideData = argumentData['data'];
+      final loadedRide = argumentData['data'] as RideData;
 
-      departureLatLong = LatLng(
-        double.tryParse(rideData?.latitudeDepart?.toString() ?? '0') ?? 0.0,
-        double.tryParse(rideData?.longitudeDepart?.toString() ?? '0') ?? 0.0,
-      );
-      destinationLatLong = LatLng(
-        double.tryParse(rideData?.latitudeArrivee?.toString() ?? '0') ?? 0.0,
-        double.tryParse(rideData?.longitudeArrivee?.toString() ?? '0') ?? 0.0,
-      );
+      final depLat = double.tryParse(loadedRide.latitudeDepart?.toString() ?? '0') ?? 0.0;
+      final depLng = double.tryParse(loadedRide.longitudeDepart?.toString() ?? '0') ?? 0.0;
+      final destLat = double.tryParse(loadedRide.latitudeArrivee?.toString() ?? '0') ?? 0.0;
+      final destLng = double.tryParse(loadedRide.longitudeArrivee?.toString() ?? '0') ?? 0.0;
 
-      if (rideData!.statut == "on ride" || rideData!.statut == 'confirmed') {
+      // CRITICAL FIX: setState here so the null-guard in build() triggers a rebuild
+      // with real data. Without this, the spinner never disappears.
+      if (mounted) {
+        setState(() {
+          rideData = loadedRide;
+          departureLatLong = LatLng(depLat, depLng);
+          destinationLatLong = LatLng(destLat, destLng);
+        });
+      }
+
+      if (loadedRide.statut == "on ride" || loadedRide.statut == 'confirmed') {
         _fetchDriverLocation();
         _driverLocationTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
           _fetchDriverLocation();
         });
       } else {
-        getDirections(dLat: departureLatLong.latitude, dLng: departureLatLong.longitude);
+        getDirections(dLat: depLat, dLng: depLng);
       }
     }
   }
@@ -174,6 +183,15 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // CRITICAL FIX: rideData is loaded asynchronously in initState via getArgumentData().
+    // On the very first frame rideData is still null — any rideData!.x call crashes.
+    // Show a loading indicator until data is ready.
+    if (rideData == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     final themeChange = Provider.of<DarkThemeProvider>(context);
     final initLat = double.tryParse(rideData?.latitudeDepart?.toString() ?? '0') ?? 48.8561;
     final initLng = double.tryParse(rideData?.longitudeDepart?.toString() ?? '0') ?? 2.2930;
@@ -335,17 +353,17 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
                                 Expanded(
                                   child: Padding(
                                     padding: const EdgeInsets.only(left: 8.0),
-                                    child: rideData!.rideType! == 'driver' && rideData!.existingUserId.toString() == "null"
+                                    child: rideData!.rideType == 'driver' && rideData!.existingUserId.toString() == "null"
                                         ? Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              Text('${rideData!.userInfo!.name}',
+                                              Text(rideData!.userInfo?.name ?? '',
                                                   style: TextStyle(
                                                     color: themeChange.getThem() ? AppThemeData.grey900Dark : AppThemeData.grey900,
                                                     fontSize: 16,
                                                     fontFamily: AppThemeData.semiBold,
                                                   )),
-                                              Text('${rideData!.userInfo!.email}',
+                                              Text(rideData!.userInfo?.email ?? '',
                                                   style: TextStyle(
                                                     color: themeChange.getThem() ? AppThemeData.grey900Dark : AppThemeData.grey900,
                                                     fontSize: 14,
@@ -550,7 +568,7 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
                                       },
                                       onPressPositive: () {
                                         Get.back();
-                                        if (Constant.rideOtp.toString() != 'yes' || rideData!.rideType! == 'driver') {
+                                        if (Constant.rideOtp.toString() != 'yes' || rideData!.rideType == 'driver') {
                                           Map<String, String> bodyParams = {
                                             'id_ride': rideData!.id.toString(),
                                             'id_user': rideData!.idUserApp.toString(),
@@ -929,10 +947,11 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
     PolylineResult result;
     List<PolylineWayPoint> wayPointList = [];
 
-    for (var i = 0; i < rideData!.stops!.length; i++) {
-      wayPointList.add(
-        PolylineWayPoint(location: rideData!.stops![i].location!),
-      );
+    for (var i = 0; i < (rideData!.stops?.length ?? 0); i++) {
+      final loc = rideData!.stops![i].location;
+      if (loc != null && loc.isNotEmpty) {
+        wayPointList.add(PolylineWayPoint(location: loc));
+      }
     }
 
     if (rideData!.statut == "confirmed") {
@@ -946,10 +965,7 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
         optimizeWaypoints: true,
       );
 
-      result = await polylinePoints.getRouteBetweenCoordinates(
-        googleApiKey: Constant.kGoogleApiKey.toString(),
-        request: resultdata,
-      );
+      result = await polylinePoints.getRouteBetweenCoordinates(request: resultdata);
     } else if (rideData!.statut == "on ride") {
       PolylineRequest resultdata = PolylineRequest(
         origin: PointLatLng(dLat, dLng),
@@ -959,10 +975,7 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
         wayPoints: wayPointList,
       );
 
-      result = await polylinePoints.getRouteBetweenCoordinates(
-        googleApiKey: Constant.kGoogleApiKey.toString(),
-        request: resultdata,
-      );
+      result = await polylinePoints.getRouteBetweenCoordinates(request: resultdata);
     } else {
       PolylineRequest resultdata = PolylineRequest(
         origin: PointLatLng(departureLatLong.latitude, departureLatLong.longitude),
@@ -972,11 +985,9 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
         wayPoints: wayPointList,
       );
 
-      result = await polylinePoints.getRouteBetweenCoordinates(
-        googleApiKey: Constant.kGoogleApiKey.toString(),
-        request: resultdata,
-      );
+      result = await polylinePoints.getRouteBetweenCoordinates(request: resultdata);
     }
+
 
 
     if (result.points.isNotEmpty) {
