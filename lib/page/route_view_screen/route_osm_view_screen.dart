@@ -323,17 +323,17 @@ class _RouteOsmViewScreenState extends State<RouteOsmViewScreen> {
                                 Expanded(
                                   child: Padding(
                                     padding: const EdgeInsets.only(left: 8.0),
-                                    child: rideData!.rideType! == 'driver' && rideData!.existingUserId.toString() == "null"
+                                    child: rideData!.rideType == 'driver' && rideData!.existingUserId.toString() == "null"
                                         ? Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              Text('${rideData!.userInfo!.name}',
+                                              Text('${rideData!.userInfo?.name ?? ''}',
                                                   style: TextStyle(
                                                     color: themeChange.getThem() ? AppThemeData.grey900Dark : AppThemeData.grey900,
                                                     fontSize: 16,
                                                     fontFamily: AppThemeData.semiBold,
                                                   )),
-                                              Text('${rideData!.userInfo!.email}',
+                                              Text('${rideData!.userInfo?.email ?? ''}',
                                                   style: TextStyle(
                                                     color: themeChange.getThem() ? AppThemeData.grey900Dark : AppThemeData.grey900,
                                                     fontSize: 14,
@@ -912,14 +912,14 @@ class _RouteOsmViewScreenState extends State<RouteOsmViewScreen> {
 
   Future<void> getDirections({required double dLat, required double dLng}) async {
     List<GeoPoint> wayPointList = [];
-    for (var i = 0; i < rideData!.stops!.length; i++) {
-      wayPointList.add(
-        GeoPoint(
-            latitude: double.parse(rideData!.stops![i].latitude.toString()),
-            longitude: double.parse(
-              rideData!.stops![i].longitude.toString(),
-            )),
-      );
+    if (rideData?.stops != null) {
+      for (var i = 0; i < rideData!.stops!.length; i++) {
+        final stopLat = double.tryParse(rideData!.stops![i].latitude?.toString() ?? '0') ?? 0.0;
+        final stopLng = double.tryParse(rideData!.stops![i].longitude?.toString() ?? '0') ?? 0.0;
+        if (stopLat != 0.0 && stopLng != 0.0) {
+          wayPointList.add(GeoPoint(latitude: stopLat, longitude: stopLng));
+        }
+      }
     }
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (markers.containsKey('Departure')) {
