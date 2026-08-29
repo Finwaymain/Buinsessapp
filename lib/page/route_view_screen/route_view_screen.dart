@@ -21,6 +21,7 @@ import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:location/location.dart';
 import 'package:pinput/pinput.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -39,11 +40,7 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
   GoogleMapController? _mapcontroller;
 
   Map<PolylineId, Polyline> polyLines = {};
-
-  // CRITICAL FIX: kGoogleApiKey is String? — using .toString() on null gives literal "null"
-  // which causes all polyline API calls to fail (HTTP 400 invalid key) → no route drawn → blank map.
   PolylinePoints polylinePoints = PolylinePoints(apiKey: Constant.kGoogleApiKey ?? '');
-
 
   BitmapDescriptor? departureIcon;
   BitmapDescriptor? destinationIcon;
@@ -52,6 +49,7 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
 
   late LatLng departureLatLong;
   late LatLng destinationLatLong;
+  LatLng? driverCurrentLocation;
 
   final Map<String, Marker> _markers = {};
 
@@ -59,13 +57,20 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
   RideData? rideData;
   double rotation = 0.0;
   String driverEstimateArrivalTime = '';
-  Timer? _driverLocationTimer;
+  Timer? _rideSyncTimer;
+  StreamSubscription<LocationData>? _locationSubscription;
+  final Location _location = Location();
+
+  final controllerRideDetails = Get.put(RideDetailsController());
+  final controllerDashBoard = Get.put(DashBoardController());
+  final resonController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     departureLatLong = const LatLng(0, 0);
     destinationLatLong = const LatLng(0, 0);
+
     setIcons().then((_) {
       getArgumentData();
     });
@@ -73,63 +78,24 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
 
   @override
   void dispose() {
-    _driverLocationTimer?.cancel();
+    _rideSyncTimer?.cancel();
+    _locationSubscription?.cancel();
     super.dispose();
   }
 
-  Future<void> _fetchDriverLocation() async {
+  Future<void> setIcons() async {
     try {
-      final response = await Dio().get(
-        "${API.rideDetails}?ride_id=${rideData!.id}",
-        options: Options(headers: API.header),
-      );
-      if (response.statusCode == 200) {
-        RideDetailsModel rideDetails = RideDetailsModel.fromJson(response.data);
-        if (rideDetails.success == 'success' && rideDetails.rideDetailsdata != null) {
-          var data = rideDetails.rideDetailsdata!;
-          if (mounted) {
-            setState(() {
-              rideData!.statut = data.statut;
-            });
-            if (data.statut != 'confirmed' && data.statut != 'on ride') {
-              _driverLocationTimer?.cancel();
-              ShowToastDialog.showToast("Ride is ${data.statut}");
-              Get.back();
-              return;
-            }
-          }
-          if (data.driverLatitude != null && data.driverLatitude!.isNotEmpty &&
-              data.driverLongitude != null && data.driverLongitude!.isNotEmpty) {
-            double dLat = double.parse(data.driverLatitude!);
-            double dLng = double.parse(data.driverLongitude!);
-
-            try {
-              Dio dio = Dio();
-              dynamic distRes = await dio.get(
-                  "https://maps.googleapis.com/maps/api/distancematrix/json?units=imperial&origins=${rideData!.latitudeDepart},${rideData!.longitudeDepart}&destinations=$dLat,$dLng&key=${Constant.kGoogleApiKey}");
-              driverEstimateArrivalTime = distRes.data['rows'][0]['elements'][0]['duration']['text'].toString();
-            } catch (distErr) {
-              print("Distance matrix calculation error: $distErr");
-            }
-
-            if (mounted) {
-              setState(() {
-                departureLatLong = LatLng(dLat, dLng);
-                _markers[rideData!.id.toString()] = Marker(
-                    markerId: MarkerId(rideData!.id.toString()),
-                    infoWindow: InfoWindow(title: rideData!.prenomConducteur.toString()),
-                    position: departureLatLong,
-                    icon: taxiIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
-                    rotation: 0.0);
-                getDirections(dLat: dLat, dLng: dLng);
-              });
-            }
-          }
-        }
-      }
-    } catch (e) {
-      print("Error fetching driver location: $e");
-    }
+      departureIcon = await BitmapDescriptor.fromAssetImage(const ImageConfiguration(size: Size(25, 25)), "assets/icons/pickup.png");
+    } catch (_) {}
+    try {
+      destinationIcon = await BitmapDescriptor.fromAssetImage(const ImageConfiguration(size: Size(25, 25)), "assets/icons/dropoff.png");
+    } catch (_) {}
+    try {
+      taxiIcon = await BitmapDescriptor.fromAssetImage(const ImageConfiguration(size: Size(25, 25)), "assets/icons/ic_taxi.png");
+    } catch (_) {}
+    try {
+      stopIcon = await BitmapDescriptor.fromAssetImage(const ImageConfiguration(size: Size(25, 25)), "assets/icons/location.png");
+    } catch (_) {}
   }
 
   Future<void> getArgumentData() async {
@@ -142,50 +108,265 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
       final destLat = double.tryParse(loadedRide.latitudeArrivee?.toString() ?? '0') ?? 0.0;
       final destLng = double.tryParse(loadedRide.longitudeArrivee?.toString() ?? '0') ?? 0.0;
 
-      // CRITICAL FIX: setState here so the null-guard in build() triggers a rebuild
-      // with real data. Without this, the spinner never disappears.
+      departureLatLong = LatLng(depLat, depLng);
+      destinationLatLong = LatLng(destLat, destLng);
+
+      try {
+        if (Constant.currentLocation != null && Constant.currentLocation!.latitude != null) {
+          driverCurrentLocation = LatLng(Constant.currentLocation!.latitude!, Constant.currentLocation!.longitude!);
+        } else {
+          final loc = await _location.getLocation().timeout(const Duration(seconds: 3));
+          if (loc.latitude != null && loc.longitude != null) {
+            driverCurrentLocation = LatLng(loc.latitude!, loc.longitude!);
+          }
+        }
+      } catch (_) {
+        driverCurrentLocation = departureLatLong;
+      }
+
+      driverCurrentLocation ??= departureLatLong;
+
       if (mounted) {
         setState(() {
           rideData = loadedRide;
-          departureLatLong = LatLng(depLat, depLng);
-          destinationLatLong = LatLng(destLat, destLng);
         });
       }
 
+      final dLat = driverCurrentLocation!.latitude;
+      final dLng = driverCurrentLocation!.longitude;
+      await getDirections(dLat: dLat, dLng: dLng);
+
+      _startLiveLocationTracking();
+
       if (loadedRide.statut == "on ride" || loadedRide.statut == 'confirmed') {
-        _fetchDriverLocation();
-        _driverLocationTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
-          _fetchDriverLocation();
+        _rideSyncTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+          _syncRideStatus();
         });
-      } else {
-        getDirections(dLat: depLat, dLng: depLng);
       }
     }
   }
 
-  Future<void> setIcons() async {
+  void _startLiveLocationTracking() {
+    _locationSubscription?.cancel();
+    _locationSubscription = _location.onLocationChanged.listen((locData) {
+      if (locData.latitude != null && locData.longitude != null) {
+        final newLoc = LatLng(locData.latitude!, locData.longitude!);
+        driverCurrentLocation = newLoc;
+
+        if (mounted && rideData != null) {
+          setState(() {
+            _markers['DriverTaxi'] = Marker(
+              markerId: const MarkerId('DriverTaxi'),
+              infoWindow: InfoWindow(title: "My Location".tr),
+              position: newLoc,
+              icon: taxiIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+              rotation: locData.heading ?? 0.0,
+            );
+          });
+        }
+      }
+    });
+  }
+
+  Future<void> _syncRideStatus() async {
+    if (rideData == null) return;
     try {
-      departureIcon = await BitmapDescriptor.fromAssetImage(const ImageConfiguration(size: Size(10, 10)), "assets/icons/pickup.png");
-    } catch (_) {}
-    try {
-      destinationIcon = await BitmapDescriptor.fromAssetImage(const ImageConfiguration(size: Size(10, 10)), "assets/icons/dropoff.png");
-    } catch (_) {}
-    try {
-      taxiIcon = await BitmapDescriptor.fromAssetImage(const ImageConfiguration(size: Size(10, 10)), "assets/icons/ic_taxi.png");
-    } catch (_) {}
-    try {
-      stopIcon = await BitmapDescriptor.fromAssetImage(const ImageConfiguration(size: Size(10, 10)), "assets/icons/location.png");
+      final response = await Dio().get(
+        "${API.rideDetails}?ride_id=${rideData!.id}",
+        options: Options(headers: API.header),
+      );
+      if (response.statusCode == 200) {
+        RideDetailsModel rideDetails = RideDetailsModel.fromJson(response.data);
+        if (rideDetails.success == 'success' && rideDetails.rideDetailsdata != null) {
+          var data = rideDetails.rideDetailsdata!;
+          if (mounted && data.statut != null && data.statut != rideData!.statut) {
+            setState(() {
+              rideData!.statut = data.statut;
+            });
+            if (data.statut != 'confirmed' && data.statut != 'on ride') {
+              _rideSyncTimer?.cancel();
+              ShowToastDialog.showToast("Ride is ${data.statut}");
+              Get.back();
+            }
+          }
+        }
+      }
     } catch (_) {}
   }
 
-  final controllerRideDetails = Get.put(RideDetailsController());
-  final controllerDashBoard = Get.put(DashBoardController());
+  Future<void> getDirections({required double dLat, required double dLng}) async {
+    if (rideData == null) return;
+
+    List<LatLng> polylineCoordinates = [];
+    List<PolylineWayPoint> wayPointList = [];
+
+    for (var i = 0; i < (rideData!.stops?.length ?? 0); i++) {
+      final loc = rideData!.stops![i].location;
+      if (loc != null && loc.isNotEmpty) {
+        wayPointList.add(PolylineWayPoint(location: loc));
+      }
+    }
+
+    final pLat = double.tryParse(rideData!.latitudeDepart?.toString() ?? '0') ?? departureLatLong.latitude;
+    final pLng = double.tryParse(rideData!.longitudeDepart?.toString() ?? '0') ?? departureLatLong.longitude;
+    final destLat = destinationLatLong.latitude;
+    final destLng = destinationLatLong.longitude;
+
+    PointLatLng originPoint;
+    PointLatLng destPoint;
+
+    if (rideData!.statut == "confirmed") {
+      originPoint = PointLatLng(dLat != 0.0 ? dLat : pLat, dLng != 0.0 ? dLng : pLng);
+      destPoint = PointLatLng(pLat, pLng);
+
+      try {
+        Dio dio = Dio();
+        dynamic distRes = await dio.get(
+          "https://maps.googleapis.com/maps/api/distancematrix/json?units=imperial&origins=${originPoint.latitude},${originPoint.longitude}&destinations=$pLat,$pLng&key=${Constant.kGoogleApiKey}",
+        );
+        if (distRes.data['rows'] != null &&
+            distRes.data['rows'].isNotEmpty &&
+            distRes.data['rows'][0]['elements'] != null &&
+            distRes.data['rows'][0]['elements'].isNotEmpty &&
+            distRes.data['rows'][0]['elements'][0]['duration'] != null) {
+          driverEstimateArrivalTime = distRes.data['rows'][0]['elements'][0]['duration']['text'].toString();
+        }
+      } catch (_) {}
+    } else if (rideData!.statut == "on ride") {
+      originPoint = PointLatLng(dLat != 0.0 ? dLat : pLat, dLng != 0.0 ? dLng : pLng);
+      destPoint = PointLatLng(destLat, destLng);
+    } else {
+      originPoint = PointLatLng(pLat, pLng);
+      destPoint = PointLatLng(destLat, destLng);
+    }
+
+    try {
+      PolylineRequest requestData = PolylineRequest(
+        origin: originPoint,
+        destination: destPoint,
+        mode: TravelMode.driving,
+        optimizeWaypoints: true,
+        wayPoints: wayPointList,
+      );
+
+      final result = await polylinePoints.getRouteBetweenCoordinates(request: requestData);
+      if (result.points.isNotEmpty) {
+        for (var point in result.points) {
+          polylineCoordinates.add(LatLng(point.latitude, point.longitude));
+        }
+      }
+    } catch (_) {}
+
+    if (polylineCoordinates.isEmpty) {
+      polylineCoordinates = [
+        LatLng(originPoint.latitude, originPoint.longitude),
+        LatLng(destPoint.latitude, destPoint.longitude),
+      ];
+    }
+
+    _markers.clear();
+
+    final driverPos = LatLng(originPoint.latitude, originPoint.longitude);
+    _markers['DriverTaxi'] = Marker(
+      markerId: const MarkerId('DriverTaxi'),
+      infoWindow: InfoWindow(title: "Driver Location".tr),
+      position: driverPos,
+      icon: taxiIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+    );
+
+    _markers['Departure'] = Marker(
+      markerId: const MarkerId('Departure'),
+      infoWindow: InfoWindow(title: "Pickup Point".tr, snippet: rideData!.departName ?? ''),
+      position: LatLng(pLat, pLng),
+      icon: departureIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+    );
+
+    if (destLat != 0.0 && destLng != 0.0) {
+      _markers['Destination'] = Marker(
+        markerId: const MarkerId('Destination'),
+        infoWindow: InfoWindow(title: "Destination".tr, snippet: rideData!.destinationName ?? ''),
+        position: LatLng(destLat, destLng),
+        icon: destinationIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+      );
+    }
+
+    if (rideData!.stops != null) {
+      for (var i = 0; i < rideData!.stops!.length; i++) {
+        if (rideData!.stops![i].latitude != null && rideData!.stops![i].longitude != null) {
+          final sLat = double.tryParse(rideData!.stops![i].latitude!) ?? 0.0;
+          final sLng = double.tryParse(rideData!.stops![i].longitude!) ?? 0.0;
+          if (sLat != 0.0 && sLng != 0.0) {
+            _markers['stop_$i'] = Marker(
+              markerId: MarkerId('stop_$i'),
+              infoWindow: InfoWindow(title: rideData!.stops![i].location ?? "Stop"),
+              position: LatLng(sLat, sLng),
+              icon: stopIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow),
+            );
+          }
+        }
+      }
+    }
+
+    addPolyLine(polylineCoordinates);
+  }
+
+  void addPolyLine(List<LatLng> polylineCoordinates) {
+    PolylineId id = const PolylineId("poly");
+    Polyline polyline = Polyline(
+      polylineId: id,
+      color: AppThemeData.primary200,
+      points: polylineCoordinates,
+      width: 6,
+      geodesic: true,
+    );
+    polyLines[id] = polyline;
+
+    if (polylineCoordinates.isNotEmpty) {
+      updateCameraLocation(polylineCoordinates, _mapcontroller);
+    }
+
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  Future<void> updateCameraLocation(
+    List<LatLng> coordinates,
+    GoogleMapController? mapController,
+  ) async {
+    if (mapController == null || coordinates.isEmpty) return;
+
+    try {
+      if (coordinates.length == 1) {
+        mapController.animateCamera(CameraUpdate.newLatLngZoom(coordinates.first, 15));
+        return;
+      }
+
+      double minLat = coordinates.first.latitude;
+      double maxLat = coordinates.first.latitude;
+      double minLng = coordinates.first.longitude;
+      double maxLng = coordinates.first.longitude;
+
+      for (LatLng point in coordinates) {
+        if (point.latitude < minLat) minLat = point.latitude;
+        if (point.latitude > maxLat) maxLat = point.latitude;
+        if (point.longitude < minLng) minLng = point.longitude;
+        if (point.longitude > maxLng) maxLng = point.longitude;
+      }
+
+      LatLngBounds bounds = LatLngBounds(
+        southwest: LatLng(minLat, minLng),
+        northeast: LatLng(maxLat, maxLng),
+      );
+
+      mapController.animateCamera(CameraUpdate.newLatLngBounds(bounds, 60));
+    } catch (_) {
+      mapController.animateCamera(CameraUpdate.newLatLngZoom(coordinates.first, 14));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    // CRITICAL FIX: rideData is loaded asynchronously in initState via getArgumentData().
-    // On the very first frame rideData is still null — any rideData!.x call crashes.
-    // Show a loading indicator until data is ready.
     if (rideData == null) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -202,8 +383,8 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
         children: [
           GoogleMap(
             zoomControlsEnabled: false,
-            myLocationButtonEnabled: false,
-            myLocationEnabled: false,
+            myLocationButtonEnabled: true,
+            myLocationEnabled: true,
             initialCameraPosition: CameraPosition(
               target: LatLng(initLat, initLng),
               zoom: 14.0,
@@ -230,9 +411,16 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
                     onTap: () {
                       Get.back();
                     },
-                    child: const Padding(
-                      padding: EdgeInsets.only(left: 8, top: 3, right: 8),
-                      child: Icon(Icons.arrow_back_ios_outlined, color: Colors.black),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 8),
+                        ],
+                      ),
+                      child: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 20),
                     ),
                   ),
                 ),
@@ -414,7 +602,7 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
                                               if (rideData!.existingUserId.toString() != "null") {
                                                 Constant.makePhoneCall(rideData!.phone.toString());
                                               } else {
-                                                Constant.makePhoneCall(rideData!.userInfo!.phone.toString());
+                                                Constant.makePhoneCall(rideData!.userInfo?.phone?.toString() ?? '');
                                               }
                                             },
                                             child: Container(
@@ -583,7 +771,9 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
                                                 });
                                               }
                                               ShowToastDialog.showToast("Trip started! Navigating to destination.");
-                                              getDirections(dLat: departureLatLong.latitude, dLng: departureLatLong.longitude);
+                                              final dLat = driverCurrentLocation?.latitude ?? departureLatLong.latitude;
+                                              final dLng = driverCurrentLocation?.longitude ?? departureLatLong.longitude;
+                                              getDirections(dLat: dLat, dLng: dLng);
                                             }
                                           });
                                         } else {
@@ -618,7 +808,6 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
                                                           height: 50,
                                                           width: 50,
                                                           textStyle: const TextStyle(letterSpacing: 0.60, fontSize: 16, color: Colors.black, fontWeight: FontWeight.w600),
-                                                          // margin: EdgeInsets.all(10),
                                                           decoration: BoxDecoration(
                                                             borderRadius: BorderRadius.circular(10),
                                                             shape: BoxShape.rectangle,
@@ -658,14 +847,16 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
                                                                       };
                                                                       controllerRideDetails.setOnRideRequest(bodyParams).then((value) {
                                                                         if (value != null) {
-                                                                          Get.back(); // close OTP dialog only
+                                                                          Get.back(); 
                                                                           if (mounted) {
                                                                             setState(() {
                                                                               rideData!.statut = "on ride";
                                                                             });
                                                                           }
                                                                           ShowToastDialog.showToast("Trip started! Navigating to destination.");
-                                                                          getDirections(dLat: departureLatLong.latitude, dLng: departureLatLong.longitude);
+                                                                          final dLat = driverCurrentLocation?.latitude ?? departureLatLong.latitude;
+                                                                          final dLng = driverCurrentLocation?.longitude ?? departureLatLong.longitude;
+                                                                          getDirections(dLat: dLat, dLng: dLng);
                                                                         }
                                                                       });
                                                                     }
@@ -762,7 +953,7 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
                                     };
                                     controllerRideDetails.setCompletedRequest(bodyParams, rideData!, paymethod: paymethod).then((value) {
                                       if (value != null) {
-                                        Get.back(); // close PaymentCollectionScreen
+                                        Get.back();
                                         showDialog(
                                             context: context,
                                             builder: (BuildContext context) {
@@ -797,8 +988,6 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
     );
   }
 
-  final resonController = TextEditingController();
-
   Future<dynamic> buildShowBottomSheet(BuildContext context, bool isDarkMode) {
     return showModalBottomSheet(
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.only(topRight: Radius.circular(15), topLeft: Radius.circular(15))),
@@ -819,29 +1008,32 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       child: Text(
                         "Cancel Trip".tr,
-                        style: const TextStyle(fontSize: 18),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontFamily: AppThemeData.semiBold,
+                          color: isDarkMode ? AppThemeData.grey900Dark : AppThemeData.grey900,
+                        ),
                       ),
                     ),
                     Padding(
                       padding: const EdgeInsets.only(top: 10),
                       child: Text(
                         "Write a reason for trip cancellation".tr,
-                        style: TextStyle(fontSize: 16),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontFamily: AppThemeData.regular,
+                          color: isDarkMode ? AppThemeData.grey400 : AppThemeData.grey300Dark,
+                        ),
                       ),
                     ),
                     Padding(
                       padding: const EdgeInsets.only(top: 8),
                       child: TextField(
                         controller: resonController,
-                        keyboardType: TextInputType.text,
-                        textInputAction: TextInputAction.done,
-                        decoration: const InputDecoration(
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.grey, width: 1.0),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.grey, width: 1.0),
-                          ),
+                        maxLines: 3,
+                        decoration: InputDecoration(
+                          hintText: 'Enter reason...'.tr,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         ),
                       ),
                     ),
@@ -858,7 +1050,7 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
                                 btnHeight: 45,
                                 btnWidthRatio: 0.8,
                                 btnColor: AppThemeData.primary200,
-                                txtColor: !isDarkMode ? AppThemeData.grey900 : AppThemeData.grey900Dark,
+                                txtColor: Colors.black,
                                 onPress: () async {
                                   if (resonController.text.isNotEmpty) {
                                     Get.back();
@@ -867,7 +1059,7 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
                                       context: context,
                                       builder: (context) {
                                         return CustomAlertDialog(
-                                          title: "Do you want to reject this booking?".tr,
+                                          title: "Do you want to cancel this booking?".tr,
                                           onPressNegative: () {
                                             Get.back();
                                           },
@@ -877,9 +1069,12 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
                                             Map<String, String> bodyParams = {
                                               'id_ride': rideData!.id.toString(),
                                               'id_user': rideData!.idUserApp.toString(),
-                                              'name': '${rideData!.prenomConducteur.toString()} ${rideData!.nomConducteur.toString()}',
+                                              'driver_name': '${rideData!.prenomConducteur.toString()} ${rideData!.nomConducteur.toString()}',
+                                              'lat_conducteur': rideData!.latitudeDepart.toString(),
+                                              'lng_conducteur': rideData!.longitudeDepart.toString(),
+                                              'lat_client': rideData!.latitudeArrivee.toString(),
+                                              'lng_client': rideData!.longitudeArrivee.toString(),
                                               'from_id': Preferences.getInt(Preferences.userId).toString(),
-                                              'user_cat': controllerRideDetails.userModel!.userData!.userCat.toString(),
                                               'reason': resonController.text.toString(),
                                             };
                                             controllerRideDetails.canceledRide(bodyParams).then((value) {
@@ -889,8 +1084,8 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
                                                     context: context,
                                                     builder: (BuildContext context) {
                                                       return CustomDialogBox(
-                                                        title: "Reject Successfully".tr,
-                                                        descriptions: "Ride Successfully rejected.".tr,
+                                                        title: "Cancel Successfully".tr,
+                                                        descriptions: "Ride Successfully cancel.".tr,
                                                         text: "Ok".tr,
                                                         onPress: () {
                                                           Get.back();
@@ -912,7 +1107,7 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
                               ),
                             ),
                           ),
-                          SizedBox(width: 5),
+                          const SizedBox(width: 5),
                           Expanded(
                             child: Padding(
                               padding: const EdgeInsets.only(bottom: 5, left: 10),
@@ -940,148 +1135,4 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
           });
         });
   }
-
-
-  Future<void> getDirections({required double dLat, required double dLng}) async {
-    List<LatLng> polylineCoordinates = [];
-    PolylineResult result;
-    List<PolylineWayPoint> wayPointList = [];
-
-    for (var i = 0; i < (rideData!.stops?.length ?? 0); i++) {
-      final loc = rideData!.stops![i].location;
-      if (loc != null && loc.isNotEmpty) {
-        wayPointList.add(PolylineWayPoint(location: loc));
-      }
-    }
-
-    if (rideData!.statut == "confirmed") {
-      PolylineRequest resultdata = PolylineRequest(
-        origin: PointLatLng(dLat, dLng),
-        destination: PointLatLng(
-          double.parse(rideData!.latitudeDepart.toString()),
-          double.parse(rideData!.longitudeDepart.toString()),
-        ),
-        mode: TravelMode.driving,
-        optimizeWaypoints: true,
-      );
-
-      result = await polylinePoints.getRouteBetweenCoordinates(request: resultdata);
-    } else if (rideData!.statut == "on ride") {
-      PolylineRequest resultdata = PolylineRequest(
-        origin: PointLatLng(dLat, dLng),
-        destination: PointLatLng(destinationLatLong.latitude, destinationLatLong.longitude),
-        mode: TravelMode.driving,
-        optimizeWaypoints: true,
-        wayPoints: wayPointList,
-      );
-
-      result = await polylinePoints.getRouteBetweenCoordinates(request: resultdata);
-    } else {
-      PolylineRequest resultdata = PolylineRequest(
-        origin: PointLatLng(departureLatLong.latitude, departureLatLong.longitude),
-        destination: PointLatLng(destinationLatLong.latitude, destinationLatLong.longitude),
-        mode: TravelMode.driving,
-        optimizeWaypoints: true,
-        wayPoints: wayPointList,
-      );
-
-      result = await polylinePoints.getRouteBetweenCoordinates(request: resultdata);
-    }
-
-
-
-    if (result.points.isNotEmpty) {
-      for (var point in result.points) {
-        polylineCoordinates.add(LatLng(point.latitude, point.longitude));
-      }
-    }
-
-    // Departure (Pickup) Marker
-    final pLat = double.parse(rideData!.latitudeDepart.toString());
-    final pLng = double.parse(rideData!.longitudeDepart.toString());
-    _markers['Departure'] = Marker(
-      markerId: const MarkerId('Departure'),
-      infoWindow: InfoWindow(title: "Pickup Point".tr, snippet: rideData!.departName),
-      position: LatLng(pLat, pLng),
-      icon: departureIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-    );
-
-    // Destination (Dropoff) Marker
-    _markers['Destination'] = Marker(
-      markerId: const MarkerId('Destination'),
-      infoWindow: InfoWindow(title: "Destination".tr, snippet: rideData!.destinationName),
-      position: destinationLatLong,
-      icon: destinationIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
-    );
-
-    if (rideData!.stops != null) {
-      for (var i = 0; i < rideData!.stops!.length; i++) {
-        if (rideData!.stops![i].latitude != null && rideData!.stops![i].longitude != null) {
-          _markers['stop_$i'] = Marker(
-            markerId: MarkerId('stop_$i'),
-            infoWindow: InfoWindow(title: rideData!.stops![i].location ?? "Stop"),
-            position: LatLng(double.parse(rideData!.stops![i].latitude!), double.parse(rideData!.stops![i].longitude!)),
-            icon: stopIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow),
-          );
-        }
-      }
-    }
-
-    addPolyLine(polylineCoordinates);
-  }
-
-  void addPolyLine(List<LatLng> polylineCoordinates) {
-    PolylineId id = const PolylineId("poly");
-    Polyline polyline = Polyline(
-      polylineId: id,
-      color: AppThemeData.primary200,
-      points: polylineCoordinates,
-      width: 6,
-      geodesic: true,
-    );
-    polyLines[id] = polyline;
-    if (polylineCoordinates.isNotEmpty) {
-      updateCameraLocation(polylineCoordinates, _mapcontroller);
-    }
-
-    if (mounted) {
-      setState(() {});
-    }
-  }
-
-  Future<void> updateCameraLocation(
-    List<LatLng> coordinates,
-    GoogleMapController? mapController,
-  ) async {
-    if (mapController == null || coordinates.isEmpty) return;
-
-    try {
-      if (coordinates.length == 1) {
-        mapController.animateCamera(CameraUpdate.newLatLngZoom(coordinates.first, 15));
-        return;
-      }
-
-      double minLat = coordinates.first.latitude;
-      double maxLat = coordinates.first.latitude;
-      double minLng = coordinates.first.longitude;
-      double maxLng = coordinates.first.longitude;
-
-      for (LatLng point in coordinates) {
-        if (point.latitude < minLat) minLat = point.latitude;
-        if (point.latitude > maxLat) maxLat = point.latitude;
-        if (point.longitude < minLng) minLng = point.longitude;
-        if (point.longitude > maxLng) maxLng = point.longitude;
-      }
-
-      LatLngBounds bounds = LatLngBounds(
-        southwest: LatLng(minLat, minLng),
-        northeast: LatLng(maxLat, maxLng),
-      );
-
-      mapController.animateCamera(CameraUpdate.newLatLngBounds(bounds, 70));
-    } catch (_) {
-      mapController.animateCamera(CameraUpdate.newLatLngZoom(coordinates.first, 14));
-    }
-  }
 }
-

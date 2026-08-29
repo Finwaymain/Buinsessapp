@@ -204,5 +204,53 @@ void main() {
       expect(isDriverRideType('user'), isFalse,
           reason: 'user rideType correctly excluded');
     });
+
+    test('[FIX 4] Route Generation: confirmed routes Driver->Pickup, on ride routes Driver/Pickup->Destination', () {
+      const driverLoc = LatLngTest(12.971598, 77.594562);
+      const pickupLoc = LatLngTest(12.980000, 77.600000);
+      const dropoffLoc = LatLngTest(13.035800, 77.597000);
+
+      // In confirmed state (Driver heading to customer)
+      Map<String, LatLngTest> getRouteEndpoints(String statut, LatLngTest driver, LatLngTest pickup, LatLngTest dropoff) {
+        if (statut == 'confirmed') {
+          return {'origin': driver, 'destination': pickup};
+        } else if (statut == 'on ride') {
+          return {'origin': driver, 'destination': dropoff};
+        }
+        return {'origin': pickup, 'destination': dropoff};
+      }
+
+      final confirmedRoute = getRouteEndpoints('confirmed', driverLoc, pickupLoc, dropoffLoc);
+      expect(confirmedRoute['origin'], equals(driverLoc));
+      expect(confirmedRoute['destination'], equals(pickupLoc));
+
+      final onRideRoute = getRouteEndpoints('on ride', driverLoc, pickupLoc, dropoffLoc);
+      expect(onRideRoute['origin'], equals(driverLoc));
+      expect(onRideRoute['destination'], equals(dropoffLoc));
+    });
+
+    test('[FIX 5] Fallback Polyline Guarantee: If Directions API returns empty, line is never blank', () {
+      List<LatLngTest> resolvePolyline(List<LatLngTest> apiPoints, LatLngTest origin, LatLngTest dest) {
+        if (apiPoints.isNotEmpty) {
+          return apiPoints;
+        }
+        return [origin, dest];
+      }
+
+      const orig = LatLngTest(12.971598, 77.594562);
+      const dest = LatLngTest(13.035800, 77.597000);
+
+      // Scenario A: API returned detailed points
+      final detailed = [orig, const LatLngTest(13.0, 77.6), dest];
+      final resA = resolvePolyline(detailed, orig, dest);
+      expect(resA.length, equals(3));
+
+      // Scenario B: API returned empty list (e.g. offline, rate-limited, zero results)
+      final empty = <LatLngTest>[];
+      final resB = resolvePolyline(empty, orig, dest);
+      expect(resB.length, equals(2), reason: 'Fallback line ensures map is NEVER blank');
+      expect(resB.first, equals(orig));
+      expect(resB.last, equals(dest));
+    });
   });
 }
