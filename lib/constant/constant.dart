@@ -32,7 +32,7 @@ import 'show_toast_dialog.dart';
 
 class Constant {
   static String? appName = "Fiinway Business";
-  static String? kGoogleApiKey = "AIzaSyAxZaszdbtbO75kvNjSYm1LjW2Sk59D9C8";
+  static String? kGoogleApiKey = "AIzaSyBw7w6Sdryp7JAloPV0fBdAA-eFCtNv060";
   static String? rideOtp = "yes";
   static String? appVersion = "0.0";
   static String? minimumWalletBalance = "0";

@@ -184,13 +184,13 @@ void main() {
       // Before fix: Constant.kGoogleApiKey.toString() on null → "null" literal.
       // This caused all polyline HTTP calls to return 400 Invalid Key → blank map.
       final fromNull = resolveApiKey(null);
-      final fromReal = resolveApiKey('AIzaSyAxZaszdbtbO75kvNjSYm1LjW2Sk59D9C8');
+      final fromReal = resolveApiKey('AIzaSyBw7w6Sdryp7JAloPV0fBdAA-eFCtNv060');
 
       expect(fromNull, equals(''),
           reason: 'Null API key must resolve to empty string, never the literal "null"');
       expect(fromNull, isNot(equals('null')),
           reason: 'String?.toString() on null gives "null" — this was the bug');
-      expect(fromReal, equals('AIzaSyAxZaszdbtbO75kvNjSYm1LjW2Sk59D9C8'),
+      expect(fromReal, equals('AIzaSyBw7w6Sdryp7JAloPV0fBdAA-eFCtNv060'),
           reason: 'Valid key must pass through unchanged');
     });
 
