@@ -548,21 +548,13 @@ class _RouteOsmViewScreenState extends State<RouteOsmViewScreen> {
                                           };
                                           controllerRideDetails.setOnRideRequest(bodyParams).then((value) {
                                             if (value != null) {
-                                              Get.back();
-                                              showDialog(
-                                                  context: context,
-                                                  builder: (BuildContext context) {
-                                                    return CustomDialogBox(
-                                                      title: "On ride Successfully".tr,
-                                                      descriptions: "Ride Successfully On ride.".tr,
-                                                      text: "Ok".tr,
-                                                      onPress: () {
-                                                        Get.back();
-                                                        Get.back();
-                                                      },
-                                                      img: Image.asset('assets/images/green_checked.png'),
-                                                    );
-                                                  });
+                                              if (mounted) {
+                                                setState(() {
+                                                  rideData!.statut = "on ride";
+                                                });
+                                              }
+                                              ShowToastDialog.showToast("Trip started! Navigating to destination.");
+                                              getDirections(dLat: departureLatLong?.latitude ?? 0.0, dLng: departureLatLong?.longitude ?? 0.0);
                                             }
                                           });
                                         } else {
@@ -578,7 +570,7 @@ class _RouteOsmViewScreenState extends State<RouteOsmViewScreen> {
                                                 elevation: 0,
                                                 backgroundColor: Colors.transparent,
                                                 child: Container(
-                                                  height: 200,
+                                                  height: 250,
                                                   padding: const EdgeInsets.only(left: 10, top: 20, right: 10, bottom: 20),
                                                   decoration:
                                                       BoxDecoration(shape: BoxShape.rectangle, color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: const [
@@ -587,16 +579,16 @@ class _RouteOsmViewScreenState extends State<RouteOsmViewScreen> {
                                                   child: Column(
                                                     children: [
                                                       Text(
-                                                        "Enter OTP".tr,
-                                                        style: TextStyle(color: Colors.black.withValues(alpha: 0.60)),
+                                                        "Enter Start OTP".tr,
+                                                        style: TextStyle(color: Colors.black.withValues(alpha: 0.80), fontWeight: FontWeight.bold, fontSize: 16),
                                                       ),
+                                                      const SizedBox(height: 10),
                                                       Pinput(
                                                         controller: controllerRideDetails.otpController,
                                                         defaultPinTheme: PinTheme(
                                                           height: 50,
                                                           width: 50,
                                                           textStyle: const TextStyle(letterSpacing: 0.60, fontSize: 16, color: Colors.black, fontWeight: FontWeight.w600),
-                                                          // margin: EdgeInsets.all(10),
                                                           decoration: BoxDecoration(
                                                             borderRadius: BorderRadius.circular(10),
                                                             shape: BoxShape.rectangle,
@@ -608,12 +600,13 @@ class _RouteOsmViewScreenState extends State<RouteOsmViewScreen> {
                                                         textInputAction: TextInputAction.done,
                                                         length: 6,
                                                       ),
+                                                      const SizedBox(height: 12),
                                                       Row(
                                                         children: [
                                                           Expanded(
                                                             child: ButtonThem.buildButton(
                                                               context,
-                                                              title: 'done'.tr,
+                                                              title: 'VERIFY & START'.tr,
                                                               btnHeight: 45,
                                                               btnWidthRatio: 0.8,
                                                               btnColor: AppThemeData.primary200,
@@ -635,21 +628,14 @@ class _RouteOsmViewScreenState extends State<RouteOsmViewScreen> {
                                                                       };
                                                                       controllerRideDetails.setOnRideRequest(bodyParams).then((value) {
                                                                         if (value != null) {
-                                                                          Get.back();
-                                                                          showDialog(
-                                                                              context: context,
-                                                                              builder: (BuildContext context) {
-                                                                                return CustomDialogBox(
-                                                                                  title: "On ride Successfully".tr,
-                                                                                  descriptions: "Ride Successfully On ride.".tr,
-                                                                                  text: "Ok".tr,
-                                                                                  onPress: () {
-                                                                                    Get.back();
-                                                                                    Get.back();
-                                                                                  },
-                                                                                  img: Image.asset('assets/images/green_checked.png'),
-                                                                                );
-                                                                              });
+                                                                          Get.back(); // close OTP dialog only
+                                                                          if (mounted) {
+                                                                            setState(() {
+                                                                              rideData!.statut = "on ride";
+                                                                            });
+                                                                          }
+                                                                          ShowToastDialog.showToast("Trip started! Navigating to destination.");
+                                                                          getDirections(dLat: departureLatLong?.latitude ?? 0.0, dLng: departureLatLong?.longitude ?? 0.0);
                                                                         }
                                                                       });
                                                                     }
@@ -686,15 +672,6 @@ class _RouteOsmViewScreenState extends State<RouteOsmViewScreen> {
                                             },
                                           );
                                         }
-                                        // if (rideData!.carDriverConfirmed == 1) {
-                                        //
-                                        // } else if (rideData!.carDriverConfirmed == 2) {
-                                        //   Get.back();
-                                        //   ShowToastDialog.showToast("Customer decline the confirmation of driver and car information.");
-                                        // } else if (rideData!.carDriverConfirmed == 0) {
-                                        //   Get.back();
-                                        //   ShowToastDialog.showToast("Customer needs to verify driver and car before you can start trip.");
-                                        // }
                                       },
                                     );
                                   },
@@ -711,29 +688,20 @@ class _RouteOsmViewScreenState extends State<RouteOsmViewScreen> {
                             padding: const EdgeInsets.only(bottom: 5),
                             child: ButtonThem.buildBorderButton(
                               context,
-                              title: 'START RIDE'.tr,
+                              title: 'NAVIGATE'.tr,
                               btnHeight: 45,
                               btnWidthRatio: 0.8,
                               btnColor: Colors.white,
-                              txtColor: Colors.black.withValues(alpha: 0.60),
-                              btnBorderColor: Colors.black.withValues(alpha: 0.20),
+                              txtColor: AppThemeData.primary200,
+                              btnBorderColor: AppThemeData.primary200,
                               onPress: () async {
-                                if (Constant.liveTrackingMapType == "inappmap") {
-                                  if (destinationLatLong != null) {
-                                    await mapController.moveTo(
-                                      destinationLatLong!,
-                                      animate: true,
-                                    );
-                                  }
-                                  ShowToastDialog.showToast('Navigating to destination');
+                                String googleUrl =
+                                    'https://www.google.com/maps/dir/?api=1&destination=${double.parse(rideData!.latitudeArrivee.toString())},${double.parse(rideData!.longitudeArrivee.toString())}&travelmode=driving';
+                                final uri = Uri.parse(googleUrl);
+                                if (await canLaunchUrl(uri)) {
+                                  await launchUrl(uri, mode: LaunchMode.externalApplication);
                                 } else {
-                                  String googleUrl =
-                                      'https://www.google.com/maps/search/?api=1&query=${double.parse(rideData!.latitudeArrivee.toString())},${double.parse(rideData!.longitudeArrivee.toString())}';
-                                  if (await canLaunch(googleUrl)) {
-                                    await launch(googleUrl);
-                                  } else {
-                                    throw 'Could not open the map.';
-                                  }
+                                  ShowToastDialog.showToast("Could not open maps");
                                 }
                               },
                             ),
