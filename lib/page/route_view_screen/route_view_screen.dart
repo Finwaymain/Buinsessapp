@@ -240,23 +240,57 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
       destPoint = PointLatLng(destLat, destLng);
     }
 
+    // 1. First attempt: Direct Google Directions API call (exact same API that user app uses)
     try {
-      PolylineRequest requestData = PolylineRequest(
-        origin: originPoint,
-        destination: destPoint,
-        mode: TravelMode.driving,
-        optimizeWaypoints: true,
-        wayPoints: wayPointList,
-      );
+      final apiKey = Constant.kGoogleApiKey ?? '';
+      if (apiKey.isNotEmpty) {
+        String url = "https://maps.googleapis.com/maps/api/directions/json"
+            "?origin=${originPoint.latitude},${originPoint.longitude}"
+            "&destination=${destPoint.latitude},${destPoint.longitude}"
+            "&mode=driving"
+            "&key=$apiKey";
 
-      final result = await polylinePoints.getRouteBetweenCoordinates(request: requestData);
-      if (result.points.isNotEmpty) {
-        for (var point in result.points) {
-          polylineCoordinates.add(LatLng(point.latitude, point.longitude));
+        if (wayPointList.isNotEmpty) {
+          final waypointsStr = wayPointList.map((w) => w.location).join('|');
+          url += "&waypoints=$waypointsStr";
+        }
+
+        final response = await Dio().get(url).timeout(const Duration(seconds: 6));
+        if (response.statusCode == 200 &&
+            response.data['routes'] != null &&
+            (response.data['routes'] as List).isNotEmpty) {
+          final overview = response.data['routes'][0]['overview_polyline']?['points'];
+          if (overview != null && overview.toString().isNotEmpty) {
+            final decoded = PolylinePoints.decodePolyline(overview.toString());
+            for (var pt in decoded) {
+              polylineCoordinates.add(LatLng(pt.latitude, pt.longitude));
+            }
+          }
         }
       }
     } catch (_) {}
 
+    // 2. Second attempt: flutter_polyline_points package helper
+    if (polylineCoordinates.isEmpty) {
+      try {
+        PolylineRequest requestData = PolylineRequest(
+          origin: originPoint,
+          destination: destPoint,
+          mode: TravelMode.driving,
+          optimizeWaypoints: true,
+          wayPoints: wayPointList,
+        );
+
+        final result = await polylinePoints.getRouteBetweenCoordinates(request: requestData);
+        if (result.points.isNotEmpty) {
+          for (var point in result.points) {
+            polylineCoordinates.add(LatLng(point.latitude, point.longitude));
+          }
+        }
+      } catch (_) {}
+    }
+
+    // 3. Fallback line guarantee: connect endpoints directly so map is NEVER blank
     if (polylineCoordinates.isEmpty) {
       polylineCoordinates = [
         LatLng(originPoint.latitude, originPoint.longitude),
