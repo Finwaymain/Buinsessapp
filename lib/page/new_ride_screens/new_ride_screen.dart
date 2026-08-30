@@ -76,12 +76,14 @@ class _NewRideScreenState extends State<NewRideScreen> with SingleTickerProvider
 
         final pendingRides = controller.rideList.where((r) {
           final s = (r.statut ?? '').toLowerCase().trim();
-          return s == 'confirmed' || s == 'on ride' || s == 'on_ride' || s == 'started' || s == 'in_progress';
+          final pay = (r.statutPaiement ?? '').toLowerCase().trim();
+          return s == 'confirmed' || s == 'on ride' || s == 'on_ride' || s == 'started' || s == 'in_progress' || (s == 'completed' && pay != 'yes');
         }).toList();
 
         final completedRides = controller.rideList.where((r) {
           final s = (r.statut ?? '').toLowerCase().trim();
-          return s == 'completed' || s == 'rejected' || s == 'canceled' || s == 'driver_rejected';
+          final pay = (r.statutPaiement ?? '').toLowerCase().trim();
+          return (s == 'completed' && pay == 'yes') || s == 'rejected' || s == 'canceled' || s == 'driver_rejected';
         }).toList();
 
         return Scaffold(
@@ -757,70 +759,82 @@ class _NewRideScreenState extends State<NewRideScreen> with SingleTickerProvider
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: () async {
-                        Map<String, String> bodyParams = {
-                          'id_ride': data.id.toString(),
-                          'id_user': data.idUserApp.toString(),
-                          'driver_name': '${data.prenomConducteur ?? ''} ${data.nomConducteur ?? ''}'.trim(),
-                          'from_id': Preferences.getInt(Preferences.userId).toString(),
-                        };
-                        controller.setCompletedRequest(bodyParams, data, paymethod: "Pending").then((value) {
-                          if (value != null) {
-                            Get.to(() => PaymentCollectionScreen(
-                              rideData: data,
-                              onConfirm: (String paymethod) {
-                                if (paymethod.toLowerCase() == "cash") {
-                                  controller.cashPaymentRequest(data, paymethod: "Cash").then((cashVal) {
-                                    if (cashVal != null) {
-                                      Get.back();
-                                      showDialog(
-                                        context: context,
-                                        builder: (BuildContext context) {
-                                          return CustomDialogBox(
-                                            title: "Completed Successfully".tr,
-                                            descriptions: "Cash payment collected successfully.".tr,
-                                            text: "Ok".tr,
-                                            onPress: () {
-                                              Get.back();
-                                              controller.getNewRide();
-                                              _tabController.animateTo(2);
-                                            },
-                                            img: Image.asset('assets/images/green_checked.png'),
-                                          );
-                                        },
-                                      );
-                                    }
-                                  });
-                                } else {
-                                  Get.back();
-                                  showDialog(
-                                    context: context,
-                                    builder: (BuildContext context) {
-                                      return CustomDialogBox(
-                                        title: "Completed Successfully".tr,
-                                        descriptions: "Ride successfully completed.".tr,
-                                        text: "Ok".tr,
-                                        onPress: () {
-                                          Get.back();
-                                          controller.getNewRide();
-                                          _tabController.animateTo(2);
-                                        },
-                                        img: Image.asset('assets/images/green_checked.png'),
-                                      );
-                                    },
-                                  );
-                                }
-                              },
-                            ));
-                          }
-                        });
+                        void openPaymentCollection() {
+                          Get.to(() => PaymentCollectionScreen(
+                            rideData: data,
+                            onConfirm: (String paymethod) {
+                              if (paymethod.toLowerCase() == "cash") {
+                                controller.cashPaymentRequest(data, paymethod: "Cash").then((cashVal) {
+                                  if (cashVal != null) {
+                                    Get.back();
+                                    showDialog(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        return CustomDialogBox(
+                                          title: "Completed Successfully".tr,
+                                          descriptions: "Cash payment collected successfully.".tr,
+                                          text: "Ok".tr,
+                                          onPress: () {
+                                            Get.back();
+                                            controller.getNewRide();
+                                            _tabController.animateTo(2);
+                                          },
+                                          img: Image.asset('assets/images/green_checked.png'),
+                                        );
+                                      },
+                                    );
+                                  }
+                                });
+                              } else {
+                                Get.back();
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return CustomDialogBox(
+                                      title: "Completed Successfully".tr,
+                                      descriptions: "Ride successfully completed.".tr,
+                                      text: "Ok".tr,
+                                      onPress: () {
+                                        Get.back();
+                                        controller.getNewRide();
+                                        _tabController.animateTo(2);
+                                      },
+                                      img: Image.asset('assets/images/green_checked.png'),
+                                    );
+                                  },
+                                );
+                              }
+                            },
+                          ));
+                        }
+
+                        if ((data.statut ?? '').toLowerCase().trim() == 'completed') {
+                          openPaymentCollection();
+                        } else {
+                          Map<String, String> bodyParams = {
+                            'id_ride': data.id.toString(),
+                            'id_user': data.idUserApp.toString(),
+                            'driver_name': '${data.prenomConducteur ?? ''} ${data.nomConducteur ?? ''}'.trim(),
+                            'from_id': Preferences.getInt(Preferences.userId).toString(),
+                          };
+                          controller.setCompletedRequest(bodyParams, data, paymethod: "Pending").then((value) {
+                            if (value != null) {
+                              openPaymentCollection();
+                            }
+                          });
+                        }
                       },
-                      icon: const Icon(Icons.check_circle_rounded, color: Colors.white, size: 16),
+                      icon: Icon(
+                        (data.statut ?? '').toLowerCase().trim() == 'completed' ? Icons.payments_rounded : Icons.check_circle_rounded,
+                        color: Colors.white,
+                        size: 16,
+                      ),
                       label: Text(
-                        "COMPLETE".tr,
+                        (data.statut ?? '').toLowerCase().trim() == 'completed' ? "COLLECT CASH".tr : "COMPLETE".tr,
                         style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppThemeData.success300,
+                        backgroundColor: (data.statut ?? '').toLowerCase().trim() == 'completed' ? AppThemeData.primary200 : AppThemeData.success300,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
