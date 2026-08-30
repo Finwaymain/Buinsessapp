@@ -10,8 +10,10 @@ import 'package:http/http.dart' as http;
 import '../../../../../constant/constant.dart';
 import '../../../../../constant/logdata.dart';
 import '../../../../../constant/show_toast_dialog.dart';
+import '../../../../../controller/wallet_controller.dart';
 import '../../../../../model/user_model.dart';
 import '../../../../../service/api.dart';
+import '../../../../../utils/Preferences.dart';
 import '../model/account_details_model.dart';
 
 class AccountDetailsController extends GetxController with GetTickerProviderStateMixin {
@@ -22,6 +24,9 @@ class AccountDetailsController extends GetxController with GetTickerProviderStat
   var isFront = true.obs;
   var isLoading = false.obs;
   Rx<AccountDetailsModel?> accountDetailsModel = Rx<AccountDetailsModel?>(null);
+
+  var liveWalletAmount = 0.0.obs;
+  var liveEarnAmount = 0.0.obs;
 
   late AnimationController flipController;
   late AnimationController shimmerController;
@@ -62,12 +67,69 @@ class AccountDetailsController extends GetxController with GetTickerProviderStat
     _applyCachedProfile();
     isLoading.value = accountDetailsModel.value == null;
 
+    fetchLiveWallet();
+
     final acNo = Constant.getUserData().userData?.acNo;
     if (acNo != null && acNo.isNotEmpty) {
       getAccountDetails(acNo);
     } else {
       isLoading.value = false;
     }
+  }
+
+  Future<void> fetchLiveWallet() async {
+    final userId = Preferences.getInt(Preferences.userId);
+    if (userId <= 0) return;
+
+    if (Get.isRegistered<WalletController>()) {
+      final wCtrl = Get.find<WalletController>();
+      if (wCtrl.walletAmount.value > 0 || wCtrl.earnAmount.value > 0) {
+        liveWalletAmount.value = wCtrl.walletAmount.value;
+        liveEarnAmount.value = wCtrl.earnAmount.value;
+      }
+    }
+
+    try {
+      final acNo = Constant.getUserData().userData?.acNo;
+      final response = await http.post(
+        Uri.parse(API.showWalletAmount),
+        headers: API.header,
+        body: jsonEncode({
+          'ac_no': acNo ?? '',
+          'user_id': userId,
+          'driver_id': userId,
+          'user_type': 'driver',
+        }),
+      ).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final body = json.decode(response.body);
+        if (body['res'] == 'success' && body['data'] != null) {
+          final amt = double.tryParse(body['data']['amount']?.toString() ?? body['data']['wallet_amount']?.toString() ?? '0') ?? 0.0;
+          final earned = double.tryParse(body['data']['earn_amount']?.toString() ?? body['data']['total_earnings']?.toString() ?? '0') ?? 0.0;
+          liveWalletAmount.value = amt;
+          liveEarnAmount.value = earned;
+          return;
+        }
+      }
+    } catch (_) {}
+
+    try {
+      final response = await http.get(
+        Uri.parse("${API.wallet}?id_user=$userId&user_cat=driver"),
+        headers: API.header,
+      ).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final body = json.decode(response.body);
+        if (body['success'] == 'success' && body['data'] != null) {
+          final amt = double.tryParse(body['data']['amount']?.toString() ?? '0') ?? 0.0;
+          final earned = double.tryParse(body['data']['earn_amount']?.toString() ?? '0') ?? 0.0;
+          liveWalletAmount.value = amt;
+          liveEarnAmount.value = earned;
+        }
+      }
+    } catch (_) {}
   }
 
   void flipCard() {
@@ -101,15 +163,49 @@ class AccountDetailsController extends GetxController with GetTickerProviderStat
   String get cardType => 'PLATINUM';
   String get bank => 'Smart Value';
   String get cvv => _profile()?.mPin ?? '00/00';
-  String get amount => _profile()?.amount ?? '0.00';
+
+  String get amount {
+    if (liveWalletAmount.value > 0) {
+      return liveWalletAmount.value.toStringAsFixed(2);
+    }
+    final rawAmt = _profile()?.amount;
+    if (rawAmt != null && rawAmt.trim().isNotEmpty && rawAmt != 'null') {
+      final parsed = double.tryParse(rawAmt) ?? 0.0;
+      if (parsed > 0) return parsed.toStringAsFixed(2);
+    }
+    if (Get.isRegistered<WalletController>()) {
+      final wCtrl = Get.find<WalletController>();
+      if (wCtrl.walletAmount.value > 0) {
+        return wCtrl.walletAmount.value.toStringAsFixed(2);
+      }
+    }
+    final cached = Constant.getUserData().userData?.amount;
+    if (cached != null && cached.trim().isNotEmpty && cached != 'null') {
+      final parsed = double.tryParse(cached) ?? 0.0;
+      if (parsed > 0) return parsed.toStringAsFixed(2);
+    }
+    return '0.00';
+  }
+
   String get earnAmount {
+    if (liveEarnAmount.value > 0) {
+      return liveEarnAmount.value.toStringAsFixed(2);
+    }
     final val = _profile()?.earnAmount;
     if (val != null && val.trim().isNotEmpty && val != 'null') {
-      return val;
+      final parsed = double.tryParse(val) ?? 0.0;
+      if (parsed > 0) return parsed.toStringAsFixed(2);
+    }
+    if (Get.isRegistered<WalletController>()) {
+      final wCtrl = Get.find<WalletController>();
+      if (wCtrl.earnAmount.value > 0) {
+        return wCtrl.earnAmount.value.toStringAsFixed(2);
+      }
     }
     final cached = Constant.getUserData().userData?.earnAmount;
     if (cached != null && cached.trim().isNotEmpty && cached != 'null') {
-      return cached;
+      final parsed = double.tryParse(cached) ?? 0.0;
+      if (parsed > 0) return parsed.toStringAsFixed(2);
     }
     return "0.00";
   }
@@ -265,9 +361,15 @@ class AccountDetailsController extends GetxController with GetTickerProviderStat
 
   String get totalAmount {
     try {
-      final amt = double.parse(amount);
-      final earned = double.parse(earnAmount);
-      return (amt + earned).toStringAsFixed(2);
+      final amt = double.tryParse(amount) ?? 0.0;
+      final earned = double.tryParse(earnAmount) ?? 0.0;
+      final total = amt + earned;
+      if (total > 0) {
+        return total.toStringAsFixed(2);
+      }
+      if (amt > 0) return amt.toStringAsFixed(2);
+      if (earned > 0) return earned.toStringAsFixed(2);
+      return '0.00';
     } catch (_) {
       return '0.00';
     }
