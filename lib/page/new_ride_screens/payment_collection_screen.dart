@@ -183,88 +183,49 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
             const SizedBox(height: 20),
 
             Text(
-              "Select Collection Method".tr,
+              "Collection Method".tr,
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
 
-            // 1. Collect Cash Option
+            // Collect Cash Option (Only choice)
             _buildOption(
               'Cash',
               title: 'Collect Cash'.tr,
-              subtitle: 'Collect ${Constant().amountShow(amount: totalPayable.toString())} directly in cash'.tr,
+              subtitle: 'Collect ${Constant().amountShow(amount: totalPayable.toString())} directly in cash from customer'.tr,
               icon: Icons.money_rounded,
             ),
 
-            // 2. Wallet Payment Option
-            _buildOption(
-              'Wallet',
-              title: 'Wallet Payment'.tr,
-              subtitle: 'Customer pays via Fiinway Wallet directly in user app'.tr,
-              icon: Icons.account_balance_wallet_rounded,
+            const SizedBox(height: 24),
+
+            // Cash Confirmation Actions
+            Text(
+              "Cash Collected?".tr,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
             ),
-
-            const SizedBox(height: 28),
-
-            // Confirmation Actions
-            if (selectedMethod == 'Cash') ...[
-              Text(
-                "Cash Collected?".tr,
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-              GestureDetector(
-                onHorizontalDragEnd: (details) {
-                  if (details.primaryVelocity != null && details.primaryVelocity! > 200) {
-                    _handleConfirm();
-                  }
-                },
-                child: Container(
-                  height: 56,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: isSwiped ? AppThemeData.success300 : AppThemeData.primary200,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Center(
-                    child: Text(
-                      isSwiped ? "Payment Confirmed ✓".tr : "Swipe / Tap to Confirm Cash →".tr,
-                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-                onTap: _handleConfirm,
-              ),
-            ] else ...[
-              Container(
-                padding: const EdgeInsets.all(14),
+            const SizedBox(height: 12),
+            GestureDetector(
+              onHorizontalDragEnd: (details) {
+                if (details.primaryVelocity != null && details.primaryVelocity! > 200) {
+                  _handleConfirm();
+                }
+              },
+              child: Container(
+                height: 56,
+                width: double.infinity,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEFF8F0),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppThemeData.primary200.withValues(alpha: 0.3)),
+                  color: isSwiped ? AppThemeData.success300 : AppThemeData.primary200,
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                child: Row(
-                  children: [
-                    Icon(Icons.info_outline, color: AppThemeData.primary200, size: 22),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        "The customer will pay ${Constant().amountShow(amount: totalPayable.toString())} from their wallet. Confirm once completed.".tr,
-                        style: TextStyle(fontSize: 12.5, color: Colors.grey.shade800),
-                      ),
-                    ),
-                  ],
+                child: Center(
+                  child: Text(
+                    isSwiped ? "Payment Confirmed ✓".tr : "Swipe / Tap to Confirm Cash →".tr,
+                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
-              const SizedBox(height: 16),
-              ButtonThem.buildButton(
-                context,
-                title: 'Confirm Payment Received'.tr,
-                btnColor: _isConfirming ? Colors.grey : AppThemeData.success300,
-                txtColor: Colors.white,
-                onPress: () => _handleConfirm(),
-              ),
-            ],
+              onTap: _handleConfirm,
+            ),
             const SizedBox(height: 20),
           ],
         ),
