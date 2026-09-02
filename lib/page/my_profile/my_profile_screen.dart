@@ -59,7 +59,7 @@ class MyProfileScreen extends StatelessWidget {
         final address = uData?.address ?? '';
         final acNo = uData?.acNo ?? '';
         final isOnline = uData?.online == 'yes';
-        final isVerified = uData?.isVerified == '1' || uData?.isVerified == 'yes' || uData?.statut == 'yes';
+        final isVerified = uData?.isVerified == '1' || uData?.isVerified == 'yes' || uData?.statut == 'yes' || uData?.isHomeServiceProvider == true;
 
         // Vehicle info
         final vBrand = uData?.brand ?? '';

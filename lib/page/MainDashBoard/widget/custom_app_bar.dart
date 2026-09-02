@@ -76,9 +76,10 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                   return;
                 }
                 final refreshedUserData = controllerDashBoard.userModel.value.userData!;
-                if (refreshedUserData.statutVehicule == "no") {
+                final isHomeService = refreshedUserData.isHomeServiceProvider == true;
+                if (!isHomeService && refreshedUserData.statutVehicule == "no") {
                   showAlertDialog(context, "vehicleInformation");
-                } else if (refreshedUserData.isVerified != "yes") {
+                } else if (!isHomeService && refreshedUserData.isVerified != "yes") {
                   showAlertDialog(context, "pendingApproval");
                 } else {
                   showActiveServicesDialog(context, controllerDashBoard, isDarkMode);
@@ -206,9 +207,10 @@ void showActiveServicesDialog(BuildContext context, DashBoardController controll
                           inactiveTrackColor: isDarkMode ? const Color(0xFF333333) : const Color(0xFFCCCCCC),
                           onChanged: (value) async {
                             final userData = controllerDashBoard.userModel.value.userData!;
-                            if (userData.statutVehicule == "no") {
+                            final isHomeService = userData.isHomeServiceProvider == true;
+                            if (!isHomeService && userData.statutVehicule == "no") {
                               showAlertDialog(context, "vehicleInformation");
-                            } else if (userData.isVerified != "yes") {
+                            } else if (!isHomeService && userData.isVerified != "yes") {
                               showAlertDialog(context, "pendingApproval");
                             } else {
                               ShowToastDialog.showLoader("Please wait");

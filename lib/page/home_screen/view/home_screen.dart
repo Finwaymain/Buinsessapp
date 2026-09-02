@@ -218,7 +218,7 @@ class MainHomeScreen extends StatelessWidget {
                                             color: isDark ? AppThemeData.grey900Dark : AppThemeData.grey900,
                                           ),
                                         ),
-                                        if ((controller.userModel.value.userData?.isVerified == "1" || controller.userModel.value.userData?.isVerified == "yes") && controller.userModel.value.userData?.statut == "yes") ...[
+                                         if (((controller.userModel.value.userData?.isVerified == "1" || controller.userModel.value.userData?.isVerified == "yes") || controller.userModel.value.userData?.isHomeServiceProvider == true) && controller.userModel.value.userData?.statut == "yes") ...[
                                           const SizedBox(height: 6),
                                           Row(
                                             children: [
@@ -385,6 +385,7 @@ class MainHomeScreen extends StatelessWidget {
                             // complete but admin hasn't verified yet. No re-open link.
                             if (controller.userModel.value.userData != null &&
                                 controller.userModel.value.userData?.onboardingCompleted == 'yes' &&
+                                controller.userModel.value.userData?.isHomeServiceProvider != true &&
                                 (controller.userModel.value.userData!.isVerified != "yes"))
                               Container(
                                 margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),

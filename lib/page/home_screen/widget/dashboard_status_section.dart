@@ -44,7 +44,7 @@ class _DashboardStatusSectionState extends State<DashboardStatusSection> {
       Get.to(() => WebViewScreen(url: finalUrl, title: 'Complete Onboarding'))?.then((_) => controller.getUsrData());
       return;
     }
-    if (userData.isVerified != "yes") {
+    if (userData.isVerified != "yes" && userData.isHomeServiceProvider != true) {
       ShowToastDialog.showToast("Your account is pending verification approval.".tr);
       return;
     }
