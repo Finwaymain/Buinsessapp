@@ -10,6 +10,8 @@ import '../../../themes/constant_colors.dart';
 import '../../../utils/Preferences.dart';
 import '../../../utils/driver_dashboard_route.dart';
 import '../../../utils/dark_theme_provider.dart';
+import '../../../utils/onboarding_url.dart';
+import '../../web_view_screen/web_view_screen.dart';
 import 'package:get/get.dart';
 
 import '../../features/Taxi/taxi_dashboard/taxi_dashboard.dart';
@@ -77,7 +79,12 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 }
                 final refreshedUserData = controllerDashBoard.userModel.value.userData!;
                 final isHomeService = refreshedUserData.isHomeServiceProvider == true;
-                if (!isHomeService && refreshedUserData.statutVehicule == "no") {
+                if (!isHomeService && refreshedUserData.onboardingCompleted != 'yes') {
+                  final finalUrl = OnboardingUrl.build('/onboarding');
+                  Get.to(() => WebViewScreen(url: finalUrl, title: 'Complete Onboarding'))?.then((_) {
+                    controllerDashBoard.getUsrData();
+                  });
+                } else if (!isHomeService && refreshedUserData.statutVehicule == "no") {
                   showAlertDialog(context, "vehicleInformation");
                 } else if (!isHomeService && refreshedUserData.isVerified != "yes") {
                   showAlertDialog(context, "pendingApproval");
@@ -208,7 +215,12 @@ void showActiveServicesDialog(BuildContext context, DashBoardController controll
                           onChanged: (value) async {
                             final userData = controllerDashBoard.userModel.value.userData!;
                             final isHomeService = userData.isHomeServiceProvider == true;
-                            if (!isHomeService && userData.statutVehicule == "no") {
+                            if (!isHomeService && userData.onboardingCompleted != 'yes') {
+                              final finalUrl = OnboardingUrl.build('/onboarding');
+                              Get.to(() => WebViewScreen(url: finalUrl, title: 'Complete Onboarding'))?.then((_) {
+                                controllerDashBoard.getUsrData();
+                              });
+                            } else if (!isHomeService && userData.statutVehicule == "no") {
                               showAlertDialog(context, "vehicleInformation");
                             } else if (!isHomeService && userData.isVerified != "yes") {
                               showAlertDialog(context, "pendingApproval");
