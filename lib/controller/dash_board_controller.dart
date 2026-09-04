@@ -33,10 +33,16 @@ import '../utils/Preferences.dart';
 import '../utils/onboarding_url.dart';
 import '../utils/location_picker_helper.dart';
 import '../widget/permission_dialog.dart';
+import '../service/location_connectivity_manager.dart';
+import '../service/in_app_sound_service.dart';
+import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 
-class DashBoardController extends GetxController {
+import 'package:geolocator/geolocator.dart';
+
+class DashBoardController extends GetxController with WidgetsBindingObserver {
   Location location = Location();
   StreamSubscription<LocationData>? locationSubscription;
+  StreamSubscription<ServiceStatus>? _gpsServiceStatusSub;
 
   bool _isLocationInitialized = false;
 
@@ -48,23 +54,70 @@ class DashBoardController extends GetxController {
 
     ever(isActive, (bool active) {
       if (active) {
-        getCurrentLocation();
         updateCurrentLocation();
       } else {
         locationSubscription?.cancel();
+        LocationConnectivityManager.stopLocationTracking();
         updateActiveStatusInRTDB(false);
       }
     });
 
     if (isActive.value) {
-      locationSubscription = location.onLocationChanged.listen((event) {});
-      getCurrentLocation();
       updateCurrentLocation();
     }
   }
 
+  void _listenGpsServiceStatus() {
+    try {
+      _gpsServiceStatusSub?.cancel();
+      _gpsServiceStatusSub = Geolocator.getServiceStatusStream().listen((status) {
+        if (status == ServiceStatus.disabled && isActive.value) {
+          isActive.value = false;
+          LocationConnectivityManager.stopLocationTracking();
+          updateActiveStatusInRTDB(false);
+          final driverId = Preferences.getInt(Preferences.userId);
+          if (driverId > 0) {
+            changeOnlineStatus({'id_driver': driverId, 'online': 'no'});
+          }
+          ShowToastDialog.showToast("GPS was turned off. You are now offline.".tr);
+        }
+      });
+    } catch (e) {
+      log("Error listening to GPS service status in DashBoardController: $e");
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && isActive.value) {
+      Geolocator.isLocationServiceEnabled().then((enabled) {
+        if (!enabled && isActive.value) {
+          isActive.value = false;
+          LocationConnectivityManager.stopLocationTracking();
+          updateActiveStatusInRTDB(false);
+          final driverId = Preferences.getInt(Preferences.userId);
+          if (driverId > 0) {
+            changeOnlineStatus({'id_driver': driverId, 'online': 'no'});
+          }
+          ShowToastDialog.showToast("GPS is disabled. You have been set Offline.".tr);
+        }
+      });
+    }
+  }
+
+  @override
+  void onClose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _gpsServiceStatusSub?.cancel();
+    locationSubscription?.cancel();
+    LocationConnectivityManager.stopLocationTracking();
+    super.onClose();
+  }
+
   @override
   void onInit() {
+    WidgetsBinding.instance.addObserver(this);
+    _listenGpsServiceStatus();
     final bool isLogin = Preferences.getBoolean(Preferences.isLogin);
     if (isLogin) {
       checkCallPermissions();
@@ -108,11 +161,10 @@ class DashBoardController extends GetxController {
 
   Future<void> getCurrentLocation() async {
     try {
-      final hasAccess = await LocationPickerHelper.ensureLocationAccess(showPromptDialog: true);
-      if (!hasAccess) return;
+      final position = await LocationConnectivityManager.getCurrentPosition();
+      if (position == null) return;
 
-      LocationData locationVal = await location.getLocation();
-      List<geocoding.Placemark> placeMarks = await geocoding.placemarkFromCoordinates(locationVal.latitude ?? 0.0, locationVal.longitude ?? 0.0);
+      List<geocoding.Placemark> placeMarks = await geocoding.placemarkFromCoordinates(position.latitude, position.longitude);
       if (placeMarks.isNotEmpty) {
         String currentCountry = placeMarks.first.country?.toString().toUpperCase() ?? '';
         for (var i = 0; i < Constant.allTaxList.length; i++) {
@@ -122,8 +174,7 @@ class DashBoardController extends GetxController {
           }
         }
       }
-      print(Constant.taxList.length);
-      setCurrentLocation(locationVal.latitude.toString(), locationVal.longitude.toString());
+      setCurrentLocation(position.latitude.toString(), position.longitude.toString());
     } catch (e) {
       log("getCurrentLocation error in DashBoardController: $e");
     }
@@ -388,25 +439,50 @@ class DashBoardController extends GetxController {
   Future<void> updateCurrentLocation() async {
     if (userModel.value.userData == null) return;
     if (isActive.value) {
-      PermissionStatus permissionStatus = await location.hasPermission();
-      if (permissionStatus == PermissionStatus.granted) {
-        _enableBackgroundLocationTracking();
+      // Step 1: Check Internet connection
+      final hasInternet = await LocationConnectivityManager.checkInternet();
+      if (!hasInternet) {
+        ShowToastDialog.showToast("No internet connection. Please check your data or Wi-Fi.".tr);
+        isActive.value = false;
+        return;
+      }
+
+      // Step 2: Check Location Permission (never prompt if already granted)
+      final hasPermission = await LocationConnectivityManager.isPermissionGranted();
+      if (hasPermission) {
+        // Step 3: Check GPS hardware status
+        final isGpsOn = await LocationConnectivityManager.checkGpsStatus(requestIfDisabled: true);
+        if (isGpsOn) {
+          getCurrentLocation();
+          _enableBackgroundLocationTracking();
+        } else {
+          ShowToastDialog.showToast("Please enable GPS/Location to go online.".tr);
+          isActive.value = false;
+        }
       } else {
+        // Only show disclosure dialog if permission is genuinely not yet granted
         Get.dialog(
           LocationPermissionDisclosureDialog(
             onAccept: () async {
               Get.back();
-              PermissionStatus newStatus = await location.requestPermission();
-              if (newStatus == PermissionStatus.granted) {
-                _enableBackgroundLocationTracking();
+              final granted = await LocationConnectivityManager.ensurePermission(promptSettingsIfPermanentlyDenied: true);
+              if (granted) {
+                final isGpsOn = await LocationConnectivityManager.checkGpsStatus(requestIfDisabled: true);
+                if (isGpsOn) {
+                  getCurrentLocation();
+                  _enableBackgroundLocationTracking();
+                } else {
+                  ShowToastDialog.showToast("Please enable GPS/Location to go online.".tr);
+                  isActive.value = false;
+                }
               } else {
-                ShowToastDialog.showToast("Permission Denied");
+                ShowToastDialog.showToast("Location permission is required to receive incoming bookings.".tr);
                 isActive.value = false;
               }
             },
             onDecline: () {
               Get.back();
-              ShowToastDialog.showToast("Permission Denied");
+              ShowToastDialog.showToast("Location permission is required to receive incoming bookings.".tr);
               isActive.value = false;
             },
           ),
@@ -415,28 +491,32 @@ class DashBoardController extends GetxController {
       }
     } else {
       locationSubscription?.cancel();
+      LocationConnectivityManager.stopLocationTracking();
       updateActiveStatusInRTDB(false);
     }
   }
 
   void _enableBackgroundLocationTracking() {
-    location.enableBackgroundMode(enable: true).catchError((e) { log("Error enabling background mode: $e"); return false; });
-    location.changeSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: double.parse(Constant.driverLocationUpdateUnit.toString()),
+    try {
+      location.enableBackgroundMode(enable: true).catchError((e) {
+        log("Error enabling background mode: $e");
+        return false;
+      });
+    } catch (_) {}
+
+    final updateUnit = double.tryParse(Constant.driverLocationUpdateUnit.toString()) ?? 10.0;
+    LocationConnectivityManager.startLocationTracking(
+      distanceFilter: updateUnit,
+      onLocationUpdate: (position) {
+        updateLocationInRTDB(
+          latitude: position.latitude.toString(),
+          longitude: position.longitude.toString(),
+          rotation: position.heading.toString(),
+          active: true,
+        );
+        setCurrentLocation(position.latitude.toString(), position.longitude.toString());
+      },
     );
-    locationSubscription?.cancel();
-    locationSubscription = location.onLocationChanged.listen((locationData) {
-      LocationData currentLocation = locationData;
-      Constant.currentLocation = locationData;
-      updateLocationInRTDB(
-        latitude: currentLocation.latitude.toString(),
-        longitude: currentLocation.longitude.toString(),
-        rotation: currentLocation.heading.toString(),
-        active: true,
-      );
-      setCurrentLocation(currentLocation.latitude.toString(), currentLocation.longitude.toString());
-    });
   }
 
   // deleteCurrentOrderLocation() {
@@ -679,6 +759,11 @@ class DashBoardController extends GetxController {
         locationSubscription = null;
       } catch (_) {}
 
+      try {
+        LocationConnectivityManager.stopLocationTracking();
+        InAppSoundService.stop();
+        await FlutterCallkitIncoming.endAllCalls();
+      } catch (_) {}
       try {
         await updateFCMToken('').timeout(const Duration(seconds: 2));
       } catch (_) {}

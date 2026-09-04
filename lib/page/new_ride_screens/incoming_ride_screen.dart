@@ -18,6 +18,8 @@ import 'package:cabme_driver/page/route_view_screen/route_view_screen.dart';
 import 'package:cabme_driver/page/route_view_screen/route_osm_view_screen.dart';
 import 'package:http/http.dart' as http;
 import 'package:cabme_driver/service/api.dart';
+import 'package:cabme_driver/service/in_app_sound_service.dart';
+import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 
 class IncomingRideScreen extends StatefulWidget {
   final RideData rideData;
@@ -117,6 +119,10 @@ class _IncomingRideScreenState extends State<IncomingRideScreen> with TickerProv
     _pulseController.dispose();
     _countdownController.dispose();
     _timer?.cancel();
+    InAppSoundService.stop();
+    if (widget.rideData.id != null) {
+      FlutterCallkitIncoming.endCall(widget.rideData.id!);
+    }
     try {
       const MethodChannel('com.fiinwaybusiness/ride_overlay')
           .invokeMethod('dismissRideOverlay');
@@ -128,6 +134,10 @@ class _IncomingRideScreenState extends State<IncomingRideScreen> with TickerProv
 
   void _handleTimeout() {
     if (_isAccepted) return;
+    InAppSoundService.stop();
+    if (widget.rideData.id != null) {
+      FlutterCallkitIncoming.endCall(widget.rideData.id!);
+    }
     ShowToastDialog.showToast("Ride request expired");
     _declineRide(reason: "Time out - no response");
   }
@@ -163,6 +173,10 @@ class _IncomingRideScreenState extends State<IncomingRideScreen> with TickerProv
     _timer?.cancel();
     _pulseController.stop();
     _countdownController.stop();
+    InAppSoundService.stop();
+    if (widget.rideData.id != null) {
+      FlutterCallkitIncoming.endCall(widget.rideData.id!);
+    }
 
     try {
       const MethodChannel('com.fiinwaybusiness/ride_overlay')
@@ -183,6 +197,7 @@ class _IncomingRideScreenState extends State<IncomingRideScreen> with TickerProv
 
     try {
       await controller.canceledRide(bodyParams);
+      Get.back();
     } catch (e) {
       log('Error declining ride: $e');
     }
@@ -218,6 +233,10 @@ class _IncomingRideScreenState extends State<IncomingRideScreen> with TickerProv
     };
 
     controller.confirmedRide(bodyParams).then((value) {
+      InAppSoundService.stop();
+      if (widget.rideData.id != null) {
+        FlutterCallkitIncoming.endCall(widget.rideData.id!);
+      }
       if (value != null && mounted) {
         showDialog(
           context: context,
@@ -258,6 +277,9 @@ class _IncomingRideScreenState extends State<IncomingRideScreen> with TickerProv
           _dragPosition = 0.0;
         });
         controller.getNewRide();
+        if (mounted) {
+          Get.back();
+        }
       }
     });
   }

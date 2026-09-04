@@ -12,6 +12,9 @@ import '../../booking/my_booking_screen.dart';
 import '../../features/Taxi/taxi_dashboard/taxi_dashboard.dart';
 import '../../web_view_screen/web_view_screen.dart';
 import '../../../service/driver_kit_service.dart';
+import '../../../service/device_readiness_service.dart';
+import '../../../service/location_connectivity_manager.dart';
+import '../../../widget/device_readiness_bar.dart';
 
 /// Online toggle + today's stats, shown on the driver home screen right
 /// below the greeting/onboarding-status header. Kept as a standalone
@@ -54,6 +57,48 @@ class _DashboardStatusSectionState extends State<DashboardStatusSection> {
           ? Get.find<DriverKitService>()
           : Get.put(DriverKitService());
       if (!kitService.checkBookingAccessWithPrompt()) {
+        return;
+      }
+
+      // Step 1: Internet Connection Check
+      final hasInternet = await LocationConnectivityManager.checkInternet();
+      if (!hasInternet) {
+        ShowToastDialog.showToast("No internet connection. Please check your network.".tr);
+        return;
+      }
+
+      // Step 2: Notification Permission Check
+      final readiness = DeviceReadinessService.to;
+      await readiness.checkAllReadiness();
+      if (!readiness.isNotificationReady.value) {
+        final notifGranted = await readiness.requestNotificationPermission();
+        if (!notifGranted) {
+          ShowToastDialog.showToast("Notification permission is required to receive booking alerts.".tr);
+          return;
+        }
+      }
+
+      // Step 3: Location Permission Check
+      final locPerm = await LocationConnectivityManager.isPermissionGranted();
+      if (!locPerm) {
+        final granted = await LocationConnectivityManager.ensurePermission(promptSettingsIfPermanentlyDenied: true);
+        if (!granted) {
+          ShowToastDialog.showToast("Location permission is required to go Online.".tr);
+          return;
+        }
+      }
+
+      // Step 4: GPS Hardware Status Check
+      final gpsOn = await LocationConnectivityManager.checkGpsStatus(requestIfDisabled: true);
+      if (!gpsOn) {
+        ShowToastDialog.showToast("Please enable GPS / Location to go Online.".tr);
+        return;
+      }
+
+      // Step 5: Verify Actual GPS Location Fix
+      final pos = await LocationConnectivityManager.getCurrentPosition();
+      if (pos == null || (pos.latitude == 0.0 && pos.longitude == 0.0)) {
+        ShowToastDialog.showToast("Waiting for GPS signal. Please try again in a few seconds.".tr);
         return;
       }
     }
@@ -126,6 +171,7 @@ class _DashboardStatusSectionState extends State<DashboardStatusSection> {
                   ],
                 ),
               ),
+              const DeviceReadinessBar(),
               const SizedBox(height: 16),
             ],
 

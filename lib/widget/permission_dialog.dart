@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:location/location.dart';
 import 'package:provider/provider.dart';
 import 'package:get/get.dart';
+import '../service/location_connectivity_manager.dart';
 import '../constant/show_toast_dialog.dart';
 import '../themes/constant_colors.dart';
 import '../utils/dark_theme_provider.dart';
@@ -136,8 +137,8 @@ class LocationPermissionDisclosureDialog extends StatelessWidget {
           ),
           onPressed: onAccept ?? () async {
             Get.back();
-            PermissionStatus status = await Location().requestPermission();
-            if (status == PermissionStatus.granted) {
+            bool granted = await LocationConnectivityManager.ensurePermission(promptSettingsIfPermanentlyDenied: true);
+            if (granted) {
               ShowToastDialog.showToast("Permission Granted");
             } else {
               ShowToastDialog.showToast("Permission Denied");

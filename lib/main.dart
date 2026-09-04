@@ -50,18 +50,67 @@ import 'package:cabme_driver/service/in_app_sound_service.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  if (message.data['statut'] == 'new' || message.data['tag'] == 'ridenewrider') {
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {
+    log('Firebase initializeApp in background error: $e');
+  }
+
+  final bool isCancelled = message.data['tag'] == 'booking_taken' ||
+      message.data['tag'] == 'booking_cancelled' ||
+      message.data['statut'] == 'taken' ||
+      message.data['statut'] == 'cancelled';
+
+  if (isCancelled) {
+    try {
+      final bookingId = message.data['id_ride']?.toString() ??
+          message.data['booking_id']?.toString() ??
+          message.data['id']?.toString() ?? '';
+      if (bookingId.isNotEmpty) {
+        await FlutterCallkitIncoming.endCall(bookingId);
+        final notifId = bookingId.hashCode & 0x7FFFFFFF;
+        await NotificationService.cancelNotification(notifId);
+      } else {
+        await FlutterCallkitIncoming.endAllCalls();
+      }
+    } catch (e) {
+      log('Error handling booking cancellation in background: $e');
+    }
+    return;
+  }
+
+  final bool isHomeService = message.data['type'] == 'homeservice' ||
+      message.data['tag'] == 'homeservicerequest' ||
+      message.data['tag'] == 'homeservicenotif' ||
+      (message.data['booking_id'] != null && message.data['booking_id'].toString().isNotEmpty);
+
+  final bool isRideRequest = message.data['statut'] == 'new' ||
+      message.data['tag'] == 'ridenewrider' ||
+      message.data['tag'] == 'parcelnew';
+
+  if (isRideRequest) {
     try {
       final rideData = RideData.fromJson(message.data);
       if (rideData.id != null && rideData.id!.isNotEmpty && rideData.id != 'null') {
         await showCallkitIncoming(message.data);
       }
     } catch (e) {
-      log('Error showing callkit in background: $e');
+      log('Error showing callkit in background for ride: $e');
     }
+  } else if (isHomeService) {
+    try {
+      await showCallkitIncomingForHomeService(message.data);
+    } catch (e) {
+      log('Error showing callkit in background for home service: $e');
+    }
+  }
+
+  try {
+    await NotificationService.display(message);
+  } catch (e) {
+    log('Error displaying background notification: $e');
   }
 }
 
@@ -69,7 +118,9 @@ Future<void> showCallkitIncoming(Map<String, dynamic> data) async {
   final rideData = RideData.fromJson(data);
   CallKitParams callKitParams = CallKitParams(
     id: rideData.id ?? "unknown_id",
-    nameCaller: '${rideData.prenom ?? ''} ${rideData.nom ?? ''}'.trim().isNotEmpty ? '${rideData.prenom ?? ''} ${rideData.nom ?? ''}' : 'New Passenger',
+    nameCaller: '${rideData.prenom ?? ''} ${rideData.nom ?? ''}'.trim().isNotEmpty
+        ? '${rideData.prenom ?? ''} ${rideData.nom ?? ''}'
+        : 'New Customer',
     appName: 'Fiinway Driver',
     avatar: 'https://i.pravatar.cc/100', // You can use rideData.photoPath if available
     handle: '${rideData.departName ?? 'Pickup'} -> ${rideData.destinationName ?? 'Dropoff'}',
@@ -78,21 +129,21 @@ Future<void> showCallkitIncoming(Map<String, dynamic> data) async {
       showNotification: true,
       isShowCallback: false,
       subtitle: 'Missed ride request',
-      callbackText: 'Call back',
+      callbackText: 'View',
     ),
     extra: data,
     headers: <String, dynamic>{},
     android: const AndroidParams(
       isCustomNotification: true,
       isShowLogo: false,
-      ringtonePath: 'system_ringtone_default',
+      ringtonePath: 'ride_request_sound',
       backgroundColor: '#0955fa',
       actionColor: '#4CAF50',
       textColor: '#ffffff',
       textAccept: 'Accept',
       textDecline: 'Decline',
-      isShowFullLockedScreen: true,
-      isFullScreen: true,
+      isShowFullLockedScreen: false,
+      isFullScreen: false,
     ),
     ios: const IOSParams(
       iconName: 'CallKitLogo',
@@ -108,7 +159,58 @@ Future<void> showCallkitIncoming(Map<String, dynamic> data) async {
       supportsHolding: true,
       supportsGrouping: false,
       supportsUngrouping: false,
-      ringtonePath: 'system_ringtone_default',
+      ringtonePath: 'ride_request_sound',
+    ),
+  );
+  await FlutterCallkitIncoming.showCallkitIncoming(callKitParams);
+}
+
+Future<void> showCallkitIncomingForHomeService(Map<String, dynamic> data) async {
+  final bookingId = data['booking_id']?.toString() ?? 'booking_${DateTime.now().millisecondsSinceEpoch}';
+  final serviceName = data['service_name']?.toString() ?? 'Home Service Request';
+  final address = data['service_address']?.toString() ?? data['address']?.toString() ?? 'Service Location';
+  CallKitParams callKitParams = CallKitParams(
+    id: bookingId,
+    nameCaller: serviceName,
+    appName: 'Fiinway Partner',
+    avatar: 'https://i.pravatar.cc/100',
+    handle: address,
+    type: 0,
+    missedCallNotification: const NotificationParams(
+      showNotification: true,
+      isShowCallback: false,
+      subtitle: 'Missed booking request',
+      callbackText: 'View',
+    ),
+    extra: data,
+    headers: <String, dynamic>{},
+    android: const AndroidParams(
+      isCustomNotification: true,
+      isShowLogo: false,
+      ringtonePath: 'ride_request_sound',
+      backgroundColor: '#0955fa',
+      actionColor: '#4CAF50',
+      textColor: '#ffffff',
+      textAccept: 'Accept',
+      textDecline: 'Decline',
+      isShowFullLockedScreen: false,
+      isFullScreen: false,
+    ),
+    ios: const IOSParams(
+      iconName: 'CallKitLogo',
+      handleType: '',
+      supportsVideo: false,
+      maximumCallGroups: 2,
+      maximumCallsPerCallGroup: 1,
+      audioSessionMode: 'default',
+      audioSessionActive: true,
+      audioSessionPreferredSampleRate: 44100.0,
+      audioSessionPreferredIOBufferDuration: 0.005,
+      supportsDTMF: true,
+      supportsHolding: true,
+      supportsGrouping: false,
+      supportsUngrouping: false,
+      ringtonePath: 'ride_request_sound',
     ),
   );
   await FlutterCallkitIncoming.showCallkitIncoming(callKitParams);
@@ -168,8 +270,8 @@ class FirebaseService {
         final extra = event.callKitParams.extra;
         if (extra != null) {
           final Map<String, dynamic> data = Map<String, dynamic>.from(extra);
-          final rideData = RideData.fromJson(data);
-          Get.to(() => IncomingRideScreen(rideData: rideData));
+          RemoteMessage msg = RemoteMessage(data: data);
+          await _handleNotificationTap(msg);
         }
       } else if (event is CallEventActionCallDecline) {
         // Handle decline if needed, or simply let it close
@@ -182,10 +284,8 @@ class FirebaseService {
       final extra = activeCalls.first.extra;
       if (extra != null) {
         final Map<String, dynamic> data = Map<String, dynamic>.from(extra);
-        final rideData = RideData.fromJson(data);
-        if (rideData.id != null) {
-          Get.to(() => IncomingRideScreen(rideData: rideData));
-        }
+        RemoteMessage msg = RemoteMessage(data: data);
+        await _handleNotificationTap(msg);
       }
     }
 
@@ -198,22 +298,52 @@ class FirebaseService {
 
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       log('Firebase onMessage received: ${message.data}');
+
+      final bool isCancelled = message.data['tag'] == 'booking_taken' ||
+          message.data['tag'] == 'booking_cancelled' ||
+          message.data['statut'] == 'taken' ||
+          message.data['statut'] == 'cancelled';
+
+      if (isCancelled) {
+        InAppSoundService.stop();
+        final bookingId = message.data['id_ride']?.toString() ??
+            message.data['booking_id']?.toString() ??
+            message.data['id']?.toString() ?? '';
+        if (bookingId.isNotEmpty) {
+          FlutterCallkitIncoming.endCall(bookingId);
+          final notifId = bookingId.hashCode & 0x7FFFFFFF;
+          NotificationService.cancelNotification(notifId);
+        } else {
+          FlutterCallkitIncoming.endAllCalls();
+        }
+
+        if (Get.currentRoute.contains('IncomingRideScreen') || Get.isDialogOpen == true) {
+          Get.back();
+          ShowToastDialog.showToast("This booking was accepted by another provider.".tr);
+        }
+        return;
+      }
+
       final bool isHomeService = message.data['type'] == 'homeservice' ||
           message.data['tag'] == 'homeservicerequest' ||
           message.data['tag'] == 'homeservicenotif' ||
           (message.data['booking_id'] != null && message.data['booking_id'].toString().isNotEmpty);
+
+      final bool isRideRequest = message.data['statut'] == 'new' ||
+          message.data['tag'] == 'ridenewrider' ||
+          message.data['tag'] == 'parcelnew';
 
       if (isHomeService) {
         InAppSoundService.playIncomingBookingAlert();
         if (Get.isRegistered<MyBookingController>()) {
           Get.find<MyBookingController>().fetchBookings(showLoader: false);
         }
+        showCallkitIncomingForHomeService(message.data);
         NotificationService.display(message);
         return;
       }
 
-      if (message.data['statut'] == 'new' ||
-          message.data['tag'] == 'ridenewrider') {
+      if (isRideRequest) {
         try {
           final rideData = RideData.fromJson(message.data);
           if (rideData.id != null &&
@@ -226,7 +356,7 @@ class FirebaseService {
           log('Error showing callkit incoming screen: $e');
         }
       }
-      if (message.notification != null) {
+      if (message.notification != null || isRideRequest) {
         NotificationService.display(message);
       }
     });
@@ -351,8 +481,11 @@ class FirebaseService {
 class NotificationService {
   static final FlutterLocalNotificationsPlugin
       _flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  static bool _initialized = false;
 
-  static Future<void> initialize(BuildContext context) async {
+  static Future<void> initialize([BuildContext? context]) async {
+    if (_initialized) return;
+
     // General high-importance channel
     AndroidNotificationChannel generalChannel =
         const AndroidNotificationChannel(
@@ -361,7 +494,7 @@ class NotificationService {
       importance: Importance.high,
     );
 
-    // Dedicated request channel — max importance, custom alert sound, full-screen alert
+    // Dedicated request channel — max importance, custom alert sound
     AndroidNotificationChannel rideChannel = AndroidNotificationChannel(
       'ride_requests',
       'New Ride & Booking Requests',
@@ -376,7 +509,11 @@ class NotificationService {
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    var iosInitializationSettings = const DarwinInitializationSettings();
+    var iosInitializationSettings = const DarwinInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+    );
 
     final InitializationSettings initializationSettings =
         InitializationSettings(
@@ -402,25 +539,59 @@ class NotificationService {
             AndroidFlutterLocalNotificationsPlugin>();
     await android?.createNotificationChannel(generalChannel);
     await android?.createNotificationChannel(rideChannel);
+    _initialized = true;
   }
 
-  static void display(RemoteMessage message) async {
+  static Future<void> cancelNotification(int id) async {
     try {
+      await initialize();
+      await _flutterLocalNotificationsPlugin.cancel(id);
+    } catch (e) {
+      log('Error cancelling notification: $e');
+    }
+  }
+
+  static Future<void> display(RemoteMessage message) async {
+    try {
+      await initialize();
+
       final isHomeService = message.data['type'] == 'homeservice' ||
           message.data['tag'] == 'homeservicerequest' ||
           message.data['tag'] == 'homeservicenotif' ||
           (message.data['booking_id'] != null && message.data['booking_id'].toString().isNotEmpty);
 
       final isRideRequest = message.data['statut'] == 'new' ||
-          message.data['tag'] == 'ridenewrider';
+          message.data['tag'] == 'ridenewrider' ||
+          message.data['tag'] == 'parcelnew';
 
       final bool isAlert = isHomeService || isRideRequest;
 
-      final id = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+      final bookingId = message.data['id_ride']?.toString() ??
+          message.data['booking_id']?.toString() ??
+          message.data['id']?.toString() ?? '';
+      final int id = bookingId.isNotEmpty
+          ? (bookingId.hashCode & 0x7FFFFFFF)
+          : (DateTime.now().millisecondsSinceEpoch ~/ 1000);
 
-      final title =
-          message.notification?.title ?? message.data['title'] ?? 'Fiinway';
-      final body = message.notification?.body ?? message.data['body'] ?? '';
+      String title =
+          message.notification?.title ?? message.data['title'] ?? '';
+      String body = message.notification?.body ?? message.data['body'] ?? '';
+
+      if (title.isEmpty) {
+        if (isHomeService) {
+          title = 'New Service Booking Request!';
+          final sName = message.data['service_name'] ?? 'Home Service';
+          body = 'New request for $sName. Tap to view and accept.';
+        } else if (isRideRequest) {
+          final isParcel = message.data['tag'] == 'parcelnew';
+          title = isParcel ? 'New Parcel Delivery Request!' : 'New Ride Request!';
+          final depart = message.data['depart_name'] ?? '';
+          final dest = message.data['destination_name'] ?? '';
+          body = depart.isNotEmpty ? '$depart -> $dest' : 'Tap to view and accept.';
+        } else {
+          title = 'Fiinway';
+        }
+      }
 
       final NotificationDetails notificationDetails = NotificationDetails(
         android: AndroidNotificationDetails(
@@ -429,12 +600,14 @@ class NotificationService {
           channelDescription: isAlert
               ? 'Alerts for incoming ride and booking requests'
               : 'General notifications',
-          importance: Importance.max,
-          priority: Priority.max,
-          sound: const RawResourceAndroidNotificationSound('ride_request_sound'),
-          fullScreenIntent: isAlert,
-          autoCancel: !isAlert,
-          ongoing: isAlert,
+          importance: isAlert ? Importance.max : Importance.high,
+          priority: isAlert ? Priority.max : Priority.high,
+          sound: isAlert
+              ? const RawResourceAndroidNotificationSound('ride_request_sound')
+              : null,
+          fullScreenIntent: false, // NO full-screen takeover per instruction
+          autoCancel: true,
+          ongoing: false,
           visibility: isAlert
               ? NotificationVisibility.public
               : NotificationVisibility.private,
@@ -444,6 +617,15 @@ class NotificationService {
               ? Int64List.fromList([0, 500, 200, 500, 200, 500])
               : null,
           playSound: true,
+          category: isAlert
+              ? AndroidNotificationCategory.call
+              : AndroidNotificationCategory.message,
+        ),
+        iOS: DarwinNotificationDetails(
+          sound: isAlert ? 'ride_request_sound.caf' : 'default',
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
         ),
       );
 
@@ -454,7 +636,7 @@ class NotificationService {
         notificationDetails,
         payload: jsonEncode(message.data),
       );
-    } on Exception catch (e) {
+    } catch (e) {
       log('Notification display error: $e');
     }
   }
