@@ -25,6 +25,8 @@ import 'package:cabme_driver/utils/Preferences.dart';
 import 'package:cabme_driver/utils/dark_theme_provider.dart';
 import 'package:cabme_driver/page/auth_screens/phone_entry_screen.dart';
 import 'package:cabme_driver/widget/StarRating.dart';
+import 'package:cabme_driver/utils/onboarding_url.dart';
+import 'package:cabme_driver/page/web_view_screen/web_view_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -133,12 +135,20 @@ class _NewRideScreenState extends State<NewRideScreen> with SingleTickerProvider
                               activeColor: AppThemeData.success300,
                               inactiveTrackColor: AppThemeData.warning200,
                               onChanged: (value) async {
-                                await controllerDashBoard.getUsrData();
-                                if (controllerDashBoard.userModel.value.userData!.statutVehicule == "no") {
-                                  showAlertDialog(context, "vehicleInformation");
-                                } else if (controllerDashBoard.userModel.value.userData!.isVerified == "no" || controllerDashBoard.userModel.value.userData!.isVerified!.isEmpty) {
-                                  showAlertDialog(context, "document");
-                                } else {
+                                 await controllerDashBoard.getUsrData();
+                                 final uData = controllerDashBoard.userModel.value.userData;
+                                 final bool isOnboarded = uData?.onboardingCompleted == 'yes';
+                                 final bool isHomeService = uData?.isHomeServiceProvider == true;
+                                 if (!isOnboarded) {
+                                   final finalUrl = OnboardingUrl.build('/onboarding');
+                                   Get.to(() => WebViewScreen(url: finalUrl, title: 'Complete Onboarding'))?.then((_) {
+                                     controllerDashBoard.getUsrData();
+                                   });
+                                 } else if (!isHomeService && uData?.statutVehicule == "no") {
+                                   showAlertDialog(context, "vehicleInformation");
+                                 } else if (!isHomeService && (uData?.isVerified == "no" || uData?.isVerified == null || uData!.isVerified!.isEmpty)) {
+                                   showAlertDialog(context, "document");
+                                 } else {
                                   ShowToastDialog.showLoader("Please wait");
                                   Map<String, dynamic> bodyParams = {
                                     'id_driver': Preferences.getInt(Preferences.userId),

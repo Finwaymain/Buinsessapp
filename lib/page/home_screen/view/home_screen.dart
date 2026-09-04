@@ -218,61 +218,61 @@ class MainHomeScreen extends StatelessWidget {
                                             color: isDark ? AppThemeData.grey900Dark : AppThemeData.grey900,
                                           ),
                                         ),
-                                         if (((controller.userModel.value.userData?.isVerified == "1" || controller.userModel.value.userData?.isVerified == "yes") || controller.userModel.value.userData?.isHomeServiceProvider == true) && controller.userModel.value.userData?.statut == "yes") ...[
-                                          const SizedBox(height: 6),
-                                          Row(
-                                            children: [
-                                              Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.green.withOpacity(0.2),
-                                                  borderRadius: BorderRadius.circular(4),
-                                                  border: Border.all(color: Colors.green),
-                                                ),
-                                                child: Row(
-                                                  mainAxisSize: MainAxisSize.min,
-                                                  children: [
-                                                    const Icon(Icons.check_circle, size: 12, color: Colors.green),
-                                                    const SizedBox(width: 4),
-                                                    Text(
-                                                      "Verified".tr,
-                                                      style: const TextStyle(fontSize: 10, fontFamily: AppThemeData.medium, color: Colors.green),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ] else if (controller.userModel.value.userData?.onboardingCompleted != 'yes') ...[
-                                          // Driver hasn't completed onboarding yet
-                                          const SizedBox(height: 6),
-                                          GestureDetector(
-                                            onTap: () {
-                                              final finalUrl = OnboardingUrl.build('/onboarding');
-                                              Get.to(() => WebViewScreen(url: finalUrl, title: 'Complete Onboarding'))?.then((value) {
-                                                controller.getUsrData();
-                                              });
-                                            },
-                                            child: Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                              decoration: BoxDecoration(
-                                                color: AppThemeData.primary200,
-                                                borderRadius: BorderRadius.circular(6),
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                    color: AppThemeData.primary200.withValues(alpha: 0.3),
-                                                    blurRadius: 4,
-                                                    offset: const Offset(0, 2),
-                                                  ),
-                                                ],
-                                              ),
-                                              child: Text(
-                                                "Complete Onboarding".tr,
-                                                style: const TextStyle(fontSize: 11, fontFamily: AppThemeData.bold, color: Colors.white),
-                                              ),
-                                            ),
-                                          ),
-                                        ] else ...[
+                                         if (controller.userModel.value.userData?.onboardingCompleted != 'yes') ...[
+                                           // Driver hasn't completed onboarding yet
+                                           const SizedBox(height: 6),
+                                           GestureDetector(
+                                             onTap: () {
+                                               final finalUrl = OnboardingUrl.build('/onboarding');
+                                               Get.to(() => WebViewScreen(url: finalUrl, title: 'Complete Onboarding'))?.then((value) {
+                                                 controller.getUsrData();
+                                               });
+                                             },
+                                             child: Container(
+                                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                               decoration: BoxDecoration(
+                                                 color: AppThemeData.primary200,
+                                                 borderRadius: BorderRadius.circular(6),
+                                                 boxShadow: [
+                                                   BoxShadow(
+                                                     color: AppThemeData.primary200.withValues(alpha: 0.3),
+                                                     blurRadius: 4,
+                                                     offset: const Offset(0, 2),
+                                                   ),
+                                                 ],
+                                               ),
+                                               child: Text(
+                                                 "Complete Onboarding".tr,
+                                                 style: const TextStyle(fontSize: 11, fontFamily: AppThemeData.bold, color: Colors.white),
+                                               ),
+                                             ),
+                                           ),
+                                         ] else if (((controller.userModel.value.userData?.isVerified == "1" || controller.userModel.value.userData?.isVerified == "yes") || controller.userModel.value.userData?.isHomeServiceProvider == true) && controller.userModel.value.userData?.statut == "yes") ...[
+                                           const SizedBox(height: 6),
+                                           Row(
+                                             children: [
+                                               Container(
+                                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                 decoration: BoxDecoration(
+                                                   color: Colors.green.withOpacity(0.2),
+                                                   borderRadius: BorderRadius.circular(4),
+                                                   border: Border.all(color: Colors.green),
+                                                 ),
+                                                 child: Row(
+                                                   mainAxisSize: MainAxisSize.min,
+                                                   children: [
+                                                     const Icon(Icons.check_circle, size: 12, color: Colors.green),
+                                                     const SizedBox(width: 4),
+                                                     Text(
+                                                       "Verified".tr,
+                                                       style: const TextStyle(fontSize: 10, fontFamily: AppThemeData.medium, color: Colors.green),
+                                                     ),
+                                                   ],
+                                                 ),
+                                               ),
+                                             ],
+                                           ),
+                                         ] else ...[
                                           // Onboarding done, awaiting admin verification
                                           const SizedBox(height: 6),
                                           Row(

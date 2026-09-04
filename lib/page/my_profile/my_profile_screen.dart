@@ -59,7 +59,11 @@ class MyProfileScreen extends StatelessWidget {
         final address = uData?.address ?? '';
         final acNo = uData?.acNo ?? '';
         final isOnline = uData?.online == 'yes';
-        final isVerified = uData?.isVerified == '1' || uData?.isVerified == 'yes' || uData?.statut == 'yes' || uData?.isHomeServiceProvider == true;
+        final bool isOnboarded = uData?.onboardingCompleted == 'yes';
+        final bool isHomeService = uData?.isHomeServiceProvider == true;
+        final bool isVerified = isOnboarded &&
+            (isHomeService || uData?.isVerified == '1' || uData?.isVerified == 'yes') &&
+            uData?.statut == 'yes';
 
         // Vehicle info
         final vBrand = uData?.brand ?? '';
@@ -71,7 +75,10 @@ class MyProfileScreen extends StatelessWidget {
         // Financial & stats
         final walletAmount = uData?.amount ?? '0.00';
         final earnings = uData?.earnAmount ?? '0.00';
-        final kycStatus = (uData?.kycStatus ?? (isVerified ? 'Approved' : 'Pending')).capitalizeFirst ?? 'Pending';
+        final kycStatus = (!isOnboarded
+                ? 'Incomplete'
+                : (isVerified ? 'Approved' : 'Pending'))
+            .capitalizeFirst ?? 'Pending';
 
         // Bank info
         final bankName = uData?.bankName ?? '';
@@ -247,7 +254,9 @@ class MyProfileScreen extends StatelessWidget {
                                 ),
                                 const SizedBox(width: 5),
                                 Text(
-                                  isVerified ? "Verified Partner".tr : "Verification Pending".tr,
+                                  !isOnboarded
+                                      ? "Onboarding Incomplete".tr
+                                      : (isVerified ? "Verified Partner".tr : "Verification Pending".tr),
                                   style: TextStyle(
                                     fontFamily: AppThemeData.bold,
                                     fontSize: 11.5,
