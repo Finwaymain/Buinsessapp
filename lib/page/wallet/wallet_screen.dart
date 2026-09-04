@@ -1020,16 +1020,23 @@ class WalletScreen extends StatelessWidget {
   }
 
   void openCheckout({required amount, required orderId}) async {
+    final driverData = Constant.getUserData().userData;
+    final driverPhone = driverData?.phone ?? "";
+    final driverEmail = driverData?.email ?? "";
+
     var options = {
       'key': walletController.paymentSettingModel.value.razorpay!.key,
       'amount': amount * 100,
-      'name': 'Cabme',
+      'name': 'Fiinway',
       'order_id': orderId,
       "currency": "INR",
-      'description': 'wallet Topup',
+      'description': 'Fiinway Wallet Top-up',
       'retry': {'enabled': true, 'max_count': 1},
       'send_sms_hash': true,
-      'prefill': {'contact': "8888888888", 'email': "demo@demo.com"},
+      'prefill': {
+        if (driverPhone.isNotEmpty) 'contact': driverPhone,
+        if (driverEmail.isNotEmpty) 'email': driverEmail,
+      },
       'external': {
         'wallets': ['paytm']
       }
