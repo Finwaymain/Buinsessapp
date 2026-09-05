@@ -135,7 +135,7 @@ Future<void> showCallkitIncoming(Map<String, dynamic> data) async {
     extra: data,
     headers: <String, dynamic>{},
     android: const AndroidParams(
-      isCustomNotification: true,
+      isCustomNotification: false,
       isShowLogo: false,
       ringtonePath: 'ride_request_sound',
       backgroundColor: '#0955fa',
@@ -143,9 +143,10 @@ Future<void> showCallkitIncoming(Map<String, dynamic> data) async {
       textColor: '#ffffff',
       textAccept: 'Accept',
       textDecline: 'Decline',
-      isShowFullLockedScreen: false,
-      isFullScreen: false,
+      isShowFullLockedScreen: true,
+      isFullScreen: true,
     ),
+    duration: 30000,
     ios: const IOSParams(
       iconName: 'CallKitLogo',
       handleType: '',
@@ -186,7 +187,7 @@ Future<void> showCallkitIncomingForHomeService(Map<String, dynamic> data) async 
     extra: data,
     headers: <String, dynamic>{},
     android: const AndroidParams(
-      isCustomNotification: true,
+      isCustomNotification: false,
       isShowLogo: false,
       ringtonePath: 'ride_request_sound',
       backgroundColor: '#0955fa',
@@ -194,9 +195,10 @@ Future<void> showCallkitIncomingForHomeService(Map<String, dynamic> data) async 
       textColor: '#ffffff',
       textAccept: 'Accept',
       textDecline: 'Decline',
-      isShowFullLockedScreen: false,
-      isFullScreen: false,
+      isShowFullLockedScreen: true,
+      isFullScreen: true,
     ),
+    duration: 30000,
     ios: const IOSParams(
       iconName: 'CallKitLogo',
       handleType: '',
@@ -524,6 +526,29 @@ class NotificationService {
     await _flutterLocalNotificationsPlugin.initialize(initializationSettings,
         onDidReceiveNotificationResponse:
             (NotificationResponse response) async {
+      if (response.actionId == 'decline_booking') {
+        try {
+          if (response.payload != null && response.payload!.isNotEmpty) {
+            Map<String, dynamic> data = jsonDecode(response.payload!);
+            final bookingId = data['id_ride']?.toString() ??
+                data['booking_id']?.toString() ??
+                data['id']?.toString() ?? '';
+            if (bookingId.isNotEmpty) {
+              await FlutterCallkitIncoming.endCall(bookingId);
+              final notifId = bookingId.hashCode & 0x7FFFFFFF;
+              await _flutterLocalNotificationsPlugin.cancel(notifId);
+            } else {
+              await FlutterCallkitIncoming.endAllCalls();
+            }
+          } else {
+            await FlutterCallkitIncoming.endAllCalls();
+          }
+        } catch (e) {
+          log('Error handling decline action: $e');
+        }
+        return;
+      }
+
       if (response.payload != null && response.payload!.isNotEmpty) {
         try {
           Map<String, dynamic> data = jsonDecode(response.payload!);
@@ -606,7 +631,7 @@ class NotificationService {
           sound: isAlert
               ? const RawResourceAndroidNotificationSound('ride_request_sound')
               : null,
-          fullScreenIntent: false, // NO full-screen takeover per instruction
+          fullScreenIntent: isAlert,
           autoCancel: true,
           ongoing: false,
           visibility: isAlert
@@ -621,6 +646,20 @@ class NotificationService {
           category: isAlert
               ? AndroidNotificationCategory.call
               : AndroidNotificationCategory.message,
+          actions: isAlert
+              ? <AndroidNotificationAction>[
+                  const AndroidNotificationAction(
+                    'accept_booking',
+                    'ACCEPT',
+                    showsUserInterface: true,
+                  ),
+                  const AndroidNotificationAction(
+                    'decline_booking',
+                    'DECLINE',
+                    showsUserInterface: false,
+                  ),
+                ]
+              : null,
         ),
         iOS: DarwinNotificationDetails(
           sound: isAlert ? 'ride_request_sound.caf' : 'default',
