@@ -15,6 +15,7 @@ import 'package:cabme_driver/utils/dark_theme_provider.dart';
 import 'package:cabme_driver/widget/StarRating.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cabme_driver/page/new_ride_screens/payment_collection_screen.dart';
+import 'package:cabme_driver/controller/new_ride_controller.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
@@ -28,14 +29,15 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:cabme_driver/service/api.dart';
 
 class RouteViewScreen extends StatefulWidget {
-  const RouteViewScreen({super.key});
+  final Map<String, dynamic>? arguments;
+  const RouteViewScreen({super.key, this.arguments});
 
   @override
   State<RouteViewScreen> createState() => _RouteViewScreenState();
 }
 
 class _RouteViewScreenState extends State<RouteViewScreen> {
-  dynamic argumentData = Get.arguments;
+  dynamic argumentData;
 
   GoogleMapController? _mapcontroller;
 
@@ -68,6 +70,7 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
   @override
   void initState() {
     super.initState();
+    argumentData = widget.arguments ?? Get.arguments;
     departureLatLong = const LatLng(0, 0);
     destinationLatLong = const LatLng(0, 0);
 
@@ -99,9 +102,34 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
   }
 
   Future<void> getArgumentData() async {
+    argumentData ??= widget.arguments ?? Get.arguments;
     if (argumentData != null) {
-      type = argumentData['type'];
-      final loadedRide = argumentData['data'] as RideData;
+      type = argumentData['type']?.toString();
+      RideData? loadedRide;
+      if (argumentData['data'] is RideData) {
+        loadedRide = argumentData['data'] as RideData;
+      } else if (argumentData['data'] is Map) {
+        loadedRide = RideData.fromJson(Map<String, dynamic>.from(argumentData['data']));
+      }
+
+      final rideId = loadedRide?.id ?? argumentData['id_ride'] ?? argumentData['id'];
+
+      // Always try to fetch freshest ride details from backend
+      if (rideId != null && rideId.toString().isNotEmpty && rideId.toString() != 'null') {
+        try {
+          final response = await Dio().get(
+            "${API.rideDetails}?ride_id=$rideId",
+            options: Options(headers: API.header),
+          );
+          if (response.statusCode == 200 && response.data != null) {
+            if (response.data['success'] == 'success' && response.data['data'] != null) {
+              loadedRide = RideData.fromJson(Map<String, dynamic>.from(response.data['data']));
+            }
+          }
+        } catch (_) {}
+      }
+
+      if (loadedRide == null) return;
 
       final depLat = double.tryParse(loadedRide.latitudeDepart?.toString() ?? '0') ?? 0.0;
       final depLng = double.tryParse(loadedRide.longitudeDepart?.toString() ?? '0') ?? 0.0;
@@ -112,19 +140,19 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
       destinationLatLong = LatLng(destLat, destLng);
 
       try {
-        if (Constant.currentLocation != null && Constant.currentLocation!.latitude != null) {
+        if (Constant.currentLocation != null && Constant.currentLocation!.latitude != null && Constant.currentLocation!.latitude != 0.0) {
           driverCurrentLocation = LatLng(Constant.currentLocation!.latitude!, Constant.currentLocation!.longitude!);
         } else {
           final loc = await _location.getLocation().timeout(const Duration(seconds: 3));
-          if (loc.latitude != null && loc.longitude != null) {
+          if (loc.latitude != null && loc.latitude != 0.0) {
             driverCurrentLocation = LatLng(loc.latitude!, loc.longitude!);
           }
         }
       } catch (_) {
-        driverCurrentLocation = departureLatLong;
+        driverCurrentLocation = (departureLatLong.latitude != 0.0) ? departureLatLong : destinationLatLong;
       }
 
-      driverCurrentLocation ??= departureLatLong;
+      driverCurrentLocation ??= (departureLatLong.latitude != 0.0) ? departureLatLong : destinationLatLong;
 
       if (mounted) {
         setState(() {
@@ -132,8 +160,8 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
         });
       }
 
-      final dLat = driverCurrentLocation!.latitude;
-      final dLng = driverCurrentLocation!.longitude;
+      final dLat = driverCurrentLocation?.latitude ?? departureLatLong.latitude;
+      final dLng = driverCurrentLocation?.longitude ?? departureLatLong.longitude;
       await getDirections(dLat: dLat, dLng: dLng);
 
       _startLiveLocationTracking();
@@ -403,6 +431,13 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
     GoogleMapController? mapController,
   ) async {
     if (mapController == null) return;
+    if (source.latitude == 0.0 || destination.latitude == 0.0) return;
+
+    if ((source.latitude - destination.latitude).abs() < 0.0001 &&
+        (source.longitude - destination.longitude).abs() < 0.0001) {
+      mapController.animateCamera(CameraUpdate.newLatLngZoom(source, 15));
+      return;
+    }
 
     LatLngBounds bounds;
 
@@ -443,6 +478,12 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
 
     final themeChange = Provider.of<DarkThemeProvider>(context);
 
+    final LatLng initialTarget = (driverCurrentLocation != null && driverCurrentLocation!.latitude != 0.0)
+        ? driverCurrentLocation!
+        : (departureLatLong.latitude != 0.0
+            ? departureLatLong
+            : (destinationLatLong.latitude != 0.0 ? destinationLatLong : const LatLng(20.5937, 78.9629)));
+
     return Scaffold(
       body: Stack(
         alignment: Alignment.bottomCenter,
@@ -451,13 +492,18 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
             zoomControlsEnabled: false,
             myLocationButtonEnabled: false,
             myLocationEnabled: false,
-            initialCameraPosition: const CameraPosition(
-              target: LatLng(48.8561, 2.2930),
+            initialCameraPosition: CameraPosition(
+              target: initialTarget,
               zoom: 14.0,
             ),
             onMapCreated: (GoogleMapController controller) {
               _mapcontroller = controller;
-              _mapcontroller!.moveCamera(CameraUpdate.newLatLngZoom(departureLatLong, 12));
+              final targetPos = (driverCurrentLocation != null && driverCurrentLocation!.latitude != 0.0)
+                  ? driverCurrentLocation!
+                  : (departureLatLong.latitude != 0.0 ? departureLatLong : destinationLatLong);
+              if (targetPos.latitude != 0.0) {
+                _mapcontroller!.moveCamera(CameraUpdate.newLatLngZoom(targetPos, 14));
+              }
               if (polyLines.isNotEmpty && polyLines.values.first.points.isNotEmpty) {
                 final pts = polyLines.values.first.points;
                 updateCameraLocation(pts.first, pts.last, _mapcontroller);
@@ -533,134 +579,147 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
                                       ],
                                     ),
                                   ),
-                                  InkWell(
-                                    onTap: () async {
-                                      final pLat = double.parse(rideData!.latitudeDepart.toString());
-                                      final pLng = double.parse(rideData!.longitudeDepart.toString());
-                                      final url = Uri.parse("https://www.google.com/maps/dir/?api=1&destination=$pLat,$pLng&travelmode=driving");
-                                      if (await canLaunchUrl(url)) {
-                                        await launchUrl(url, mode: LaunchMode.externalApplication);
-                                      }
-                                    },
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: AppThemeData.primary200.withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(color: AppThemeData.primary200.withValues(alpha: 0.3)),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Icon(Icons.directions, color: AppThemeData.primary200, size: 16),
-                                          const SizedBox(width: 4),
-                                          Text("Navigate".tr, style: TextStyle(color: AppThemeData.primary200, fontWeight: FontWeight.bold, fontSize: 12)),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )
-                          else if (rideData!.statut == 'on ride')
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.flag_circle, color: Colors.green, size: 20),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Heading to Dropoff'.tr,
-                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.green),
-                                        ),
-                                        Text(
-                                          rideData!.destinationName ?? '',
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          Padding(
-                            padding: const EdgeInsets.only(top: 10),
-                            child: Row(
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(60),
-                                  child: CachedNetworkImage(
-                                    imageUrl: rideData!.photoPath.toString(),
-                                    height: 60,
-                                    width: 60,
-                                    fit: BoxFit.cover,
-                                    errorWidget: (context, url, error) => Image.asset(
-                                      "assets/images/appIcon.png",
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(left: 8.0),
-                                    child: rideData!.rideType == 'driver' && rideData!.existingUserId.toString() == "null"
-                                        ? Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(rideData!.userInfo?.name ?? '',
-                                                  style: TextStyle(
-                                                    color: themeChange.getThem() ? AppThemeData.grey900Dark : AppThemeData.grey900,
-                                                    fontSize: 16,
-                                                    fontFamily: AppThemeData.semiBold,
-                                                  )),
-                                              Text(rideData!.userInfo?.email ?? '',
-                                                  style: TextStyle(
-                                                    color: themeChange.getThem() ? AppThemeData.grey900Dark : AppThemeData.grey900,
-                                                    fontSize: 14,
-                                                    fontFamily: AppThemeData.regular,
-                                                  )),
-                                            ],
-                                          )
-                                        : Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text('${rideData!.prenom.toString()} ${rideData!.nom.toString()}',
-                                                  style: TextStyle(
-                                                      fontSize: 16,
-                                                      color: themeChange.getThem() ? AppThemeData.grey900Dark : AppThemeData.grey900,
-                                                      fontFamily: AppThemeData.medium)),
-                                              StarRating(size: 18, rating: double.parse(rideData!.moyenneDriver.toString()), color: AppThemeData.error100),
-                                            ],
-                                          ),
-                                  ),
-                                ),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Visibility(
-                                          visible: rideData!.statut == "confirmed" && rideData!.existingUserId.toString() != "null" ? true : false,
-                                          child: InkWell(
-                                              onTap: () {
-                                                Get.to(ConversationScreen(), arguments: {
-                                                  'receiverId': int.parse(rideData!.idUserApp.toString()),
-                                                  'orderId': int.parse(rideData!.id.toString()),
-                                                  'receiverName': '${rideData!.prenom} ${rideData!.nom}',
-                                                  'receiverPhoto': rideData!.photoPath
-                                                });
-                                              },
-                                              child: Image.asset(
-                                                'assets/icons/chat_icon.png',
-                                                height: 40,
-                                                width: 40,
-                                                fit: BoxFit.cover,
-                                              )),
-                                        ),
+                                   InkWell(
+                                     onTap: () async {
+                                       final pLat = double.tryParse(rideData!.latitudeDepart?.toString() ?? '0') ?? 0.0;
+                                       final pLng = double.tryParse(rideData!.longitudeDepart?.toString() ?? '0') ?? 0.0;
+                                       if (pLat != 0.0 && pLng != 0.0) {
+                                         final url = Uri.parse("https://www.google.com/maps/dir/?api=1&destination=$pLat,$pLng&travelmode=driving");
+                                         if (await canLaunchUrl(url)) {
+                                           await launchUrl(url, mode: LaunchMode.externalApplication);
+                                         }
+                                       } else {
+                                         ShowToastDialog.showToast("Pickup coordinates not available");
+                                       }
+                                     },
+                                     child: Container(
+                                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                       decoration: BoxDecoration(
+                                         color: AppThemeData.primary200.withValues(alpha: 0.1),
+                                         borderRadius: BorderRadius.circular(8),
+                                         border: Border.all(color: AppThemeData.primary200.withValues(alpha: 0.3)),
+                                       ),
+                                       child: Row(
+                                         children: [
+                                           Icon(Icons.directions, color: AppThemeData.primary200, size: 16),
+                                           const SizedBox(width: 4),
+                                           Text("Navigate".tr, style: TextStyle(color: AppThemeData.primary200, fontWeight: FontWeight.bold, fontSize: 12)),
+                                         ],
+                                       ),
+                                     ),
+                                   ),
+                                 ],
+                               ),
+                             )
+                           else if (rideData!.statut == 'on ride')
+                             Padding(
+                               padding: const EdgeInsets.all(8.0),
+                               child: Row(
+                                 children: [
+                                   const Icon(Icons.flag_circle, color: Colors.green, size: 20),
+                                   const SizedBox(width: 8),
+                                   Expanded(
+                                     child: Column(
+                                       crossAxisAlignment: CrossAxisAlignment.start,
+                                       children: [
+                                         Text(
+                                           'Heading to Dropoff'.tr,
+                                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.green),
+                                         ),
+                                         Text(
+                                           rideData!.destinationName ?? '',
+                                           maxLines: 1,
+                                           overflow: TextOverflow.ellipsis,
+                                           style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                                         ),
+                                       ],
+                                     ),
+                                   ),
+                                 ],
+                               ),
+                             ),
+                           Padding(
+                             padding: const EdgeInsets.only(top: 10),
+                             child: Row(
+                               children: [
+                                 ClipRRect(
+                                   borderRadius: BorderRadius.circular(60),
+                                   child: CachedNetworkImage(
+                                     imageUrl: (rideData!.photoPath != null && rideData!.photoPath!.isNotEmpty && rideData!.photoPath != 'null') ? rideData!.photoPath! : '',
+                                     height: 60,
+                                     width: 60,
+                                     fit: BoxFit.cover,
+                                     errorWidget: (context, url, error) => Image.asset(
+                                       "assets/images/appIcon.png",
+                                     ),
+                                   ),
+                                 ),
+                                 Expanded(
+                                   child: Padding(
+                                     padding: const EdgeInsets.only(left: 8.0),
+                                     child: rideData!.rideType == 'driver' && (rideData!.existingUserId == null || rideData!.existingUserId.toString() == "null")
+                                         ? Column(
+                                             crossAxisAlignment: CrossAxisAlignment.start,
+                                             children: [
+                                               Text(rideData!.userInfo?.name ?? '',
+                                                   style: TextStyle(
+                                                     color: themeChange.getThem() ? AppThemeData.grey900Dark : AppThemeData.grey900,
+                                                     fontSize: 16,
+                                                     fontFamily: AppThemeData.semiBold,
+                                                   )),
+                                               Text(rideData!.userInfo?.email ?? '',
+                                                   style: TextStyle(
+                                                     color: themeChange.getThem() ? AppThemeData.grey900Dark : AppThemeData.grey900,
+                                                     fontSize: 14,
+                                                     fontFamily: AppThemeData.regular,
+                                                   )),
+                                             ],
+                                           )
+                                         : Column(
+                                             crossAxisAlignment: CrossAxisAlignment.start,
+                                             children: [
+                                               Text('${rideData!.prenom ?? ''} ${rideData!.nom ?? ''}'.trim().isEmpty ? 'Passenger'.tr : '${rideData!.prenom ?? ''} ${rideData!.nom ?? ''}'.trim(),
+                                                   style: TextStyle(
+                                                       fontSize: 16,
+                                                       color: themeChange.getThem() ? AppThemeData.grey900Dark : AppThemeData.grey900,
+                                                       fontFamily: AppThemeData.medium)),
+                                               StarRating(
+                                                 size: 18,
+                                                 rating: double.tryParse(rideData?.moyenneDriver?.toString() ?? '0.0') ?? 0.0,
+                                                 color: AppThemeData.error100,
+                                               ),
+                                             ],
+                                           ),
+                                   ),
+                                 ),
+                                 Column(
+                                   crossAxisAlignment: CrossAxisAlignment.end,
+                                   children: [
+                                     Row(
+                                       children: [
+                                         Visibility(
+                                           visible: (rideData!.statut == "confirmed" || rideData!.statut == "on ride") &&
+                                               rideData!.existingUserId != null &&
+                                               rideData!.existingUserId.toString() != "null" &&
+                                               rideData!.existingUserId.toString().isNotEmpty,
+                                           child: InkWell(
+                                               onTap: () {
+                                                 final receiverIdVal = int.tryParse(rideData?.idUserApp?.toString() ?? '0') ?? 0;
+                                                 final orderIdVal = int.tryParse(rideData?.id?.toString() ?? '0') ?? 0;
+                                                 Get.to(ConversationScreen(), arguments: {
+                                                   'receiverId': receiverIdVal,
+                                                   'orderId': orderIdVal,
+                                                   'receiverName': '${rideData!.prenom ?? ''} ${rideData!.nom ?? ''}'.trim(),
+                                                   'receiverPhoto': rideData!.photoPath
+                                                 });
+                                               },
+                                               child: Image.asset(
+                                                 'assets/icons/chat_icon.png',
+                                                 height: 40,
+                                                 width: 40,
+                                                 fit: BoxFit.cover,
+                                               )),
+                                         ),
                                         Padding(
                                           padding: const EdgeInsets.only(left: 10, right: 10),
                                           child: InkWell(
@@ -1016,7 +1075,8 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
                                 };
                                 controllerRideDetails.setCompletedRequest(bodyParams, rideData!, paymethod: "Pending").then((value) {
                                   if (value != null) {
-                                    Get.to(() => PaymentCollectionScreen(
+                                    rideData!.statut = 'completed';
+                                    Get.off(() => PaymentCollectionScreen(
                                       rideData: rideData!,
                                       onConfirm: (String paymethod) {
                                         if (paymethod.toLowerCase() == "cash") {
@@ -1032,7 +1092,9 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
                                                       text: "Ok".tr,
                                                       onPress: () {
                                                         Get.back();
-                                                        Get.back();
+                                                        if (Get.isRegistered<NewRideController>()) {
+                                                          Get.find<NewRideController>().getNewRide();
+                                                        }
                                                       },
                                                       img: Image.asset('assets/images/green_checked.png'),
                                                     );
@@ -1050,7 +1112,9 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
                                                   text: "Ok".tr,
                                                   onPress: () {
                                                     Get.back();
-                                                    Get.back();
+                                                    if (Get.isRegistered<NewRideController>()) {
+                                                      Get.find<NewRideController>().getNewRide();
+                                                    }
                                                   },
                                                   img: Image.asset('assets/images/green_checked.png'),
                                                 );
@@ -1076,7 +1140,8 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
     );
   }
 
-  Future<dynamic> buildShowBottomSheet(BuildContext context, bool isDarkMode) {
+  Future<dynamic> buildShowBottomSheet(BuildContext context, bool isDarkMode, {bool isOnRide = false}) {
+    resonController.clear();
     return showModalBottomSheet(
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.only(topRight: Radius.circular(15), topLeft: Radius.circular(15))),
         context: context,
@@ -1095,7 +1160,7 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       child: Text(
-                        "Cancel Trip".tr,
+                        isOnRide ? "Cancel Active Trip".tr : "Cancel Trip".tr,
                         style: TextStyle(
                           fontSize: 18,
                           fontFamily: AppThemeData.semiBold,
@@ -1106,7 +1171,9 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
                     Padding(
                       padding: const EdgeInsets.only(top: 10),
                       child: Text(
-                        "Write a reason for trip cancellation".tr,
+                        isOnRide
+                            ? "Write a reason for cancelling this trip in progress".tr
+                            : "Write a reason for trip cancellation".tr,
                         style: TextStyle(
                           fontSize: 14,
                           fontFamily: AppThemeData.regular,
@@ -1134,39 +1201,44 @@ class _RouteViewScreenState extends State<RouteViewScreen> {
                               padding: const EdgeInsets.only(bottom: 5),
                               child: ButtonThem.buildButton(
                                 context,
-                                title: 'Cancel Trip'.tr,
+                                title: isOnRide ? 'Cancel Active Trip'.tr : 'Cancel Trip'.tr,
                                 btnHeight: 45,
                                 btnWidthRatio: 0.8,
-                                btnColor: AppThemeData.primary200,
-                                txtColor: Colors.black,
+                                btnColor: Colors.red,
+                                txtColor: Colors.white,
                                 onPress: () async {
-                                  if (resonController.text.isNotEmpty) {
+                                  if (resonController.text.trim().isNotEmpty) {
                                     Get.back();
                                     showDialog(
                                       barrierColor: Colors.black26,
                                       context: context,
                                       builder: (context) {
                                         return CustomAlertDialog(
-                                          title: "Do you want to cancel this booking?".tr,
+                                          title: isOnRide
+                                              ? "Are you sure you want to cancel this active trip?".tr
+                                              : "Do you want to cancel this booking?".tr,
                                           onPressNegative: () {
                                             Get.back();
                                           },
                                           negativeButtonText: 'No'.tr,
                                           positiveButtonText: 'Yes'.tr,
                                           onPressPositive: () {
+                                            Get.back(); // close confirmation dialog
                                             Map<String, String> bodyParams = {
                                               'id_ride': rideData!.id.toString(),
                                               'id_user': rideData!.idUserApp.toString(),
                                               'driver_name': '${rideData!.prenomConducteur.toString()} ${rideData!.nomConducteur.toString()}',
-                                              'lat_conducteur': rideData!.latitudeDepart.toString(),
-                                              'lng_conducteur': rideData!.longitudeDepart.toString(),
+                                              'name': '${rideData!.prenomConducteur.toString()} ${rideData!.nomConducteur.toString()}',
+                                              'user_cat': 'driver',
+                                              'lat_conducteur': (driverCurrentLocation?.latitude ?? rideData!.latitudeDepart).toString(),
+                                              'lng_conducteur': (driverCurrentLocation?.longitude ?? rideData!.longitudeDepart).toString(),
                                               'lat_client': rideData!.latitudeArrivee.toString(),
                                               'lng_client': rideData!.longitudeArrivee.toString(),
                                               'from_id': Preferences.getInt(Preferences.userId).toString(),
-                                              'reason': resonController.text.toString(),
+                                              'reason': resonController.text.trim(),
+                                              'other_info': resonController.text.trim(),
                                             };
                                             controllerRideDetails.canceledRide(bodyParams).then((value) {
-                                              Get.back();
                                               if (value != null) {
                                                 showDialog(
                                                     context: context,

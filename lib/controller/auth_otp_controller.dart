@@ -31,14 +31,20 @@ class AuthOtpController extends GetxController {
   @override
   void onClose() {
     _resendTimer?.cancel();
-    phoneController.value.dispose();
-    phoneOtpController.value.dispose();
-    emailController.value.dispose();
-    emailOtpController.value.dispose();
-    firstNameController.value.dispose();
-    lastNameController.value.dispose();
-    referralCodeController.value.dispose();
     super.onClose();
+  }
+
+  void resetControllers() {
+    phoneController.value = TextEditingController();
+    phoneOtpController.value = TextEditingController();
+    emailController.value = TextEditingController();
+    emailOtpController.value = TextEditingController();
+    firstNameController.value = TextEditingController();
+    lastNameController.value = TextEditingController();
+    referralCodeController.value = TextEditingController();
+    phone.value = '';
+    emailHint.value = '';
+    isLoading.value = false;
   }
 
   void startResendTimer() {
@@ -430,7 +436,6 @@ class AuthOtpController extends GetxController {
       final dataMap = responseBody['data'] is Map<String, dynamic> ? responseBody['data'] : {};
       final String idStr = (model.userData?.id ?? dataMap['id'] ?? '').toString();
       final String tokenStr = (model.userData?.accesstoken ?? dataMap['accesstoken'] ?? '').toString();
-      final String catId = (model.userData?.categoryId ?? dataMap['category_id'] ?? '').toString();
 
       if (idStr.isNotEmpty) {
         await Preferences.setInt(Preferences.userId, int.tryParse(idStr) ?? 0);

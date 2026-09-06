@@ -59,17 +59,39 @@ import 'package:cabme_driver/page/features/SmartValue/Payout/view/payout_screen.
 import 'package:cabme_driver/page/features/SmartValue/ScanAndTransfer/view/scanner_and_transfer_screen.dart';
 import 'package:cabme_driver/page/subscription_plan_screen/business_premium_plan_screen.dart';
 
-class WalletScreen extends StatelessWidget {
+class WalletScreen extends StatefulWidget {
   final bool isTab;
   final int initialIndex;
-  WalletScreen({super.key, this.isTab = false, this.initialIndex = 0});
+  final bool autoOpenTopUp;
+  const WalletScreen({super.key, this.isTab = false, this.initialIndex = 0, this.autoOpenTopUp = false});
 
+  @override
+  State<WalletScreen> createState() => _WalletScreenState();
+}
+
+class _WalletScreenState extends State<WalletScreen> {
   final Razorpay razorPayController = Razorpay();
 
   static final GlobalKey<FormState> _walletFormKey = GlobalKey<FormState>();
   final controllerDashBoard = Get.put(DashBoardController());
   final walletController = Get.put(WalletController());
   WebViewController? activeWebViewController;
+  bool _hasAutoOpenedTopUp = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.autoOpenTopUp) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!_hasAutoOpenedTopUp && mounted) {
+          _hasAutoOpenedTopUp = true;
+          final themeChange = Provider.of<DarkThemeProvider>(context, listen: false);
+          walletController.amountController.value.clear();
+          addToWalletAmount(context, walletController, themeChange.getThem());
+        }
+      });
+    }
+  }
 
   _refreshAPI() {
     walletController.getAmount();
@@ -88,7 +110,7 @@ class WalletScreen extends StatelessWidget {
     });
 
     return Scaffold(
-      appBar: isTab
+      appBar: widget.isTab
           ? null
           : AppbarCustom(
               title: 'Smart Value'.tr,
@@ -108,7 +130,7 @@ class WalletScreen extends StatelessWidget {
             ),
       backgroundColor: themeChange.getThem() ? AppThemeData.grey50Dark : AppThemeData.grey50,
       body: SafeArea(
-        top: !isTab,
+        top: !widget.isTab,
         child: WebViewScreen(
           url: walletUrl,
           title: 'Smart Value',

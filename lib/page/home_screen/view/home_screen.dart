@@ -46,7 +46,6 @@ import '../../wallet/wallet_screen.dart';
 import '../../features/Taxi/taxi_dashboard/taxi_dashboard.dart';
 
 import '../../wallet/xenditScreen.dart';
-import '../../web_view_screen/web_view_screen.dart';
 import '../../features/AllServices/all_services_screen.dart';
 import '../../marketplace/view/marketplace_home_screen.dart';
 import '../../../utils/onboarding_navigation.dart';
@@ -66,7 +65,8 @@ import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:http/http.dart' as http;
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 
-import '../../wallet/wallet_screen.dart';
+
+import '../../coming_soon/coming_soon_screen.dart';
 
 class MainHomeScreen extends StatelessWidget {
   MainHomeScreen({super.key});
@@ -126,52 +126,44 @@ class MainHomeScreen extends StatelessWidget {
                     GetX<NewRideController>(
                       init: NewRideController(),
                       builder: (rideController) {
-                        // Add null safety checks
-                        if (rideController.userModel.value.userData == null ||
-                            Constant.minimumWalletBalance == null) {
-                          return const SizedBox(); // Return empty widget if data is not ready
-                        }
-
-                        // Safely parse the amount with null checks
                         double userAmount = 0.0;
-                        try {
-                          final amountVal = double.tryParse(
-                              rideController.userModel.value.userData!.amount?.toString() ?? '0'
-                          ) ?? 0.0;
-                          final earnVal = double.tryParse(
-                              rideController.userModel.value.userData!.earnAmount?.toString() ?? '0'
-                          ) ?? 0.0;
-                          userAmount = amountVal > 0 ? amountVal : (earnVal > 0 ? earnVal : amountVal);
-                        } catch (e) {
-                          return const SizedBox();
-                        }
-
                         double minBalance = 0.0;
-                        try {
-                          minBalance = double.parse(Constant.minimumWalletBalance!);
-                        } catch (e) {
-                          return const SizedBox();
+                        if (rideController.userModel.value.userData != null &&
+                            Constant.minimumWalletBalance != null) {
+                          try {
+                            final amountVal = double.tryParse(
+                                rideController.userModel.value.userData!.amount?.toString() ?? '0'
+                            ) ?? 0.0;
+                            final earnVal = double.tryParse(
+                                rideController.userModel.value.userData!.earnAmount?.toString() ?? '0'
+                            ) ?? 0.0;
+                            userAmount = amountVal > 0 ? amountVal : (earnVal > 0 ? earnVal : amountVal);
+                          } catch (_) {}
+
+                          try {
+                            minBalance = double.parse(Constant.minimumWalletBalance!);
+                          } catch (_) {}
                         }
 
                         bool isShow = userAmount < minBalance;
 
                         return isShow
                             ? Container(
-                          margin: const EdgeInsets.only(top: 10, left: 16, right: 16),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 10
-                          ),
-                          decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              color: AppThemeData.warning200
-                          ),
-                          child: Text(
-                            "${"Your wallet balance must be".tr} ${Constant().amountShow(amount: Constant.minimumWalletBalance!.toString())} ${"to get ride.".tr}",
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                          ),
-                        )
-                            : const SizedBox();
+                                margin: const EdgeInsets.only(top: 10, left: 16, right: 16),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 10
+                                ),
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    color: AppThemeData.warning200
+                                ),
+                                child: Text(
+                                  "${"Your wallet balance must be".tr} ${Constant().amountShow(amount: Constant.minimumWalletBalance!.toString())} ${"to get ride.".tr}",
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                ),
+                              )
+                            : const SizedBox.shrink();
                       },
                     ),
                     Expanded(
@@ -671,13 +663,7 @@ class MainHomeScreen extends StatelessWidget {
                             ),
 
                             // Quick Access Section
-                            Obx(() {
-                              final rideController = Get.isRegistered<NewRideController>()
-                                  ? Get.find<NewRideController>()
-                                  : Get.put(NewRideController());
-                              final showParcel = rideController.userModel.value.userData?.parcelDelivery == 'yes';
-
-                              return VerticalLineSection(
+                            VerticalLineSection(
                                 text: "Quick Access",
                                 margin: const EdgeInsets.only(top: 20),
                                 cardChildren: [
@@ -685,36 +671,23 @@ class MainHomeScreen extends StatelessWidget {
                                     icon: Icons.directions_car_outlined,
                                     text: 'Ride Booking',
                                     onTap: () {
-                                      if (!Preferences.getBoolean(Preferences.isLogin)) {
-                                        Get.to(() => PhoneEntryScreen(mode: 'signup'), transition: Transition.rightToLeftWithFade);
-                                        return;
-                                      }
-                                      Get.to(() => TaxiDashBoard(),
+                                      Get.to(() => const ComingSoonScreen(title: 'Ride Booking'),
                                           transition: Transition.rightToLeftWithFade);
                                     },
                                   ),
-                                  if (showParcel)
-                                    VerticalIconWithText(
-                                      icon: Icons.local_shipping_outlined,
-                                      text: 'Parcel Service',
-                                      onTap: () {
-                                        if (!Preferences.getBoolean(Preferences.isLogin)) {
-                                          Get.to(() => PhoneEntryScreen(mode: 'signup'), transition: Transition.rightToLeftWithFade);
-                                          return;
-                                        }
-                                        Get.to(() => const ParcelConsoleScreen(),
-                                            transition: Transition.rightToLeftWithFade);
-                                      },
-                                    ),
+                                  VerticalIconWithText(
+                                    icon: Icons.local_shipping_outlined,
+                                    text: 'Parcel Service',
+                                    onTap: () {
+                                      Get.to(() => const ComingSoonScreen(title: 'Parcel Service'),
+                                          transition: Transition.rightToLeftWithFade);
+                                    },
+                                  ),
                                   VerticalIconWithText(
                                     icon: Icons.share_location_outlined,
                                     text: 'Shared Ride',
                                     onTap: () {
-                                      if (!Preferences.getBoolean(Preferences.isLogin)) {
-                                        Get.to(() => PhoneEntryScreen(mode: 'signup'), transition: Transition.rightToLeftWithFade);
-                                        return;
-                                      }
-                                      Get.to(() => const InProgressScreen(),
+                                      Get.to(() => const ComingSoonScreen(title: 'Shared Ride'),
                                           transition: Transition.rightToLeftWithFade);
                                     },
                                   ),
@@ -773,8 +746,7 @@ class MainHomeScreen extends StatelessWidget {
                                     },
                                   ),
                                 ],
-                              );
-                            }),
+                              ),
 
                             // Smart Value Section
                             VerticalLineSection(

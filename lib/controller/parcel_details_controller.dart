@@ -154,8 +154,6 @@ class ParcelDetailsController extends GetxController {
         ShowToastDialog.closeLoader();
         return responseBody;
       } else if (response.statusCode == 200 && responseBody['success'] == "Failed") {
-        await http.get(Uri.parse("${API.reGenerateOtp}?id_user_app=$userId&ride_id=$rideId"), headers: API.header);
-
         ShowToastDialog.closeLoader();
         ShowToastDialog.showToast(responseBody['error'].toString());
       } else {

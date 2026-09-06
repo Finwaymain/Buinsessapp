@@ -551,9 +551,9 @@ class _NewRideScreenState extends State<NewRideScreen> with SingleTickerProvider
                         var argumentData = {'type': 'confirmed', 'data': data};
                         if (Constant.liveTrackingMapType == "inappmap") {
                           if (Constant.selectedMapType == 'osm') {
-                            Get.to(() => const RouteOsmViewScreen(), arguments: argumentData);
+                            Get.to(() => RouteOsmViewScreen(arguments: argumentData), arguments: argumentData);
                           } else {
-                            Get.to(() => const RouteViewScreen(), arguments: argumentData);
+                            Get.to(() => RouteViewScreen(arguments: argumentData), arguments: argumentData);
                           }
                         } else {
                           Constant.redirectMap(
@@ -585,7 +585,9 @@ class _NewRideScreenState extends State<NewRideScreen> with SingleTickerProvider
   }
 
   Widget _buildPendingCard(BuildContext context, RideData data, NewRideController controller, bool isDark) {
-    final bool isOnRide = data.statut == "on ride" || data.statut == "on_ride";
+    final status = (data.statut ?? '').toLowerCase().trim();
+    final bool isCompleted = status == 'completed';
+    final bool isOnRide = status == "on ride" || status == "on_ride" || status == "started" || status == "in_progress";
     final fareStr = Constant().amountShow(amount: data.montant.toString());
 
     return Container(
@@ -594,9 +596,11 @@ class _NewRideScreenState extends State<NewRideScreen> with SingleTickerProvider
         color: isDark ? AppThemeData.surface50Dark : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isOnRide
-              ? AppThemeData.warning200.withValues(alpha: 0.4)
-              : AppThemeData.primary200.withValues(alpha: 0.4),
+          color: isCompleted
+              ? AppThemeData.primary200.withValues(alpha: 0.6)
+              : isOnRide
+                  ? AppThemeData.warning200.withValues(alpha: 0.4)
+                  : AppThemeData.primary200.withValues(alpha: 0.4),
           width: 1.5,
         ),
         boxShadow: [
@@ -618,19 +622,29 @@ class _NewRideScreenState extends State<NewRideScreen> with SingleTickerProvider
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: isOnRide
-                          ? AppThemeData.warning200.withValues(alpha: 0.15)
-                          : AppThemeData.primary200.withValues(alpha: 0.15),
+                      color: isCompleted
+                          ? AppThemeData.primary200.withValues(alpha: 0.15)
+                          : isOnRide
+                              ? AppThemeData.warning200.withValues(alpha: 0.15)
+                              : AppThemeData.primary200.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      isOnRide ? "On Ride — In Progress".tr : "Confirmed — Ready for Pickup".tr,
+                      isCompleted
+                          ? "Ride Completed — Collect Payment".tr
+                          : isOnRide
+                              ? "On Ride — In Progress".tr
+                              : "Confirmed — Ready for Pickup".tr,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontFamily: AppThemeData.bold,
                         fontSize: 12,
-                        color: isOnRide ? AppThemeData.warning200 : AppThemeData.primary200,
+                        color: isCompleted
+                            ? AppThemeData.primary200
+                            : isOnRide
+                                ? AppThemeData.warning200
+                                : AppThemeData.primary200,
                       ),
                     ),
                   ),
@@ -677,15 +691,77 @@ class _NewRideScreenState extends State<NewRideScreen> with SingleTickerProvider
             const SizedBox(height: 12),
             _buildRouteSnippet(data.departName ?? '', data.destinationName ?? '', isDark),
             const SizedBox(height: 16),
-            if (!isOnRide) ...[
+            if (isCompleted) ...[
+              ElevatedButton.icon(
+                onPressed: () async {
+                  await Get.to(() => PaymentCollectionScreen(
+                    rideData: data,
+                    onConfirm: (String paymethod) {
+                      if (paymethod.toLowerCase() == "cash") {
+                        controller.cashPaymentRequest(data, paymethod: "Cash").then((cashVal) {
+                          if (cashVal != null) {
+                            Get.back();
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return CustomDialogBox(
+                                  title: "Completed Successfully".tr,
+                                  descriptions: "Cash payment collected successfully.".tr,
+                                  text: "Ok".tr,
+                                  onPress: () {
+                                    Get.back();
+                                    controller.getNewRide();
+                                    _tabController.animateTo(2);
+                                  },
+                                  img: Image.asset('assets/images/green_checked.png'),
+                                );
+                              },
+                            );
+                          }
+                        });
+                      } else {
+                        Get.back();
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return CustomDialogBox(
+                              title: "Completed Successfully".tr,
+                              descriptions: "Ride successfully completed.".tr,
+                              text: "Ok".tr,
+                              onPress: () {
+                                Get.back();
+                                controller.getNewRide();
+                                _tabController.animateTo(2);
+                              },
+                              img: Image.asset('assets/images/green_checked.png'),
+                            );
+                          },
+                        );
+                      }
+                    },
+                  ));
+                  controller.getNewRide();
+                },
+                icon: const Icon(Icons.payments_rounded, color: Colors.white, size: 20),
+                label: Text(
+                  "COLLECT PAYMENT".tr,
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppThemeData.primary200,
+                  minimumSize: const Size.fromHeight(48),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ] else if (!isOnRide) ...[
               ElevatedButton.icon(
                 onPressed: () async {
                   var argumentData = {'type': 'confirmed', 'data': data};
                   if (Constant.liveTrackingMapType == "inappmap") {
                     if (Constant.selectedMapType == 'osm') {
-                      await Get.to(() => const RouteOsmViewScreen(), arguments: argumentData);
+                      await Get.to(() => RouteOsmViewScreen(arguments: argumentData), arguments: argumentData);
                     } else {
-                      await Get.to(() => const RouteViewScreen(), arguments: argumentData);
+                      await Get.to(() => RouteViewScreen(arguments: argumentData), arguments: argumentData);
                     }
                     controller.getNewRide();
                   } else {
@@ -744,9 +820,9 @@ class _NewRideScreenState extends State<NewRideScreen> with SingleTickerProvider
                         if (Constant.liveTrackingMapType == "inappmap") {
                           var argumentData = {'type': data.statut, 'data': data};
                           if (Constant.selectedMapType == 'osm') {
-                            await Get.to(const RouteOsmViewScreen(), arguments: argumentData);
+                            await Get.to(() => RouteOsmViewScreen(arguments: argumentData), arguments: argumentData);
                           } else {
-                            await Get.to(const RouteViewScreen(), arguments: argumentData);
+                            await Get.to(() => RouteViewScreen(arguments: argumentData), arguments: argumentData);
                           }
                           controller.getNewRide();
                         } else {
@@ -818,33 +894,29 @@ class _NewRideScreenState extends State<NewRideScreen> with SingleTickerProvider
                           ));
                         }
 
-                        if ((data.statut ?? '').toLowerCase().trim() == 'completed') {
-                          openPaymentCollection();
-                        } else {
-                          Map<String, String> bodyParams = {
-                            'id_ride': data.id.toString(),
-                            'id_user': data.idUserApp.toString(),
-                            'driver_name': '${data.prenomConducteur ?? ''} ${data.nomConducteur ?? ''}'.trim(),
-                            'from_id': Preferences.getInt(Preferences.userId).toString(),
-                          };
-                          controller.setCompletedRequest(bodyParams, data, paymethod: "Pending").then((value) {
-                            if (value != null) {
-                              openPaymentCollection();
-                            }
-                          });
-                        }
+                        Map<String, String> bodyParams = {
+                          'id_ride': data.id.toString(),
+                          'id_user': data.idUserApp.toString(),
+                          'driver_name': '${data.prenomConducteur ?? ''} ${data.nomConducteur ?? ''}'.trim(),
+                          'from_id': Preferences.getInt(Preferences.userId).toString(),
+                        };
+                        controller.setCompletedRequest(bodyParams, data, paymethod: "Pending").then((value) {
+                          if (value != null) {
+                            openPaymentCollection();
+                          }
+                        });
                       },
-                      icon: Icon(
-                        (data.statut ?? '').toLowerCase().trim() == 'completed' ? Icons.payments_rounded : Icons.check_circle_rounded,
+                      icon: const Icon(
+                        Icons.check_circle_rounded,
                         color: Colors.white,
                         size: 16,
                       ),
                       label: Text(
-                        (data.statut ?? '').toLowerCase().trim() == 'completed' ? "COLLECT CASH".tr : "COMPLETE".tr,
+                        "COMPLETE".tr,
                         style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: (data.statut ?? '').toLowerCase().trim() == 'completed' ? AppThemeData.primary200 : AppThemeData.success300,
+                        backgroundColor: AppThemeData.success300,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
@@ -1190,7 +1262,7 @@ class _NewRideScreenState extends State<NewRideScreen> with SingleTickerProvider
     );
   }
 
-  Future<dynamic> buildShowBottomSheet(BuildContext context, RideData data, NewRideController controller, bool isDark) {
+  Future<dynamic> buildShowBottomSheet(BuildContext context, RideData data, NewRideController controller, bool isDark, {bool isOnRide = false}) {
     resonController.clear();
     return showModalBottomSheet(
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
@@ -1218,12 +1290,14 @@ class _NewRideScreenState extends State<NewRideScreen> with SingleTickerProvider
               ),
               const SizedBox(height: 16),
               Text(
-                "Cancel Trip".tr,
+                isOnRide ? "Cancel Active Trip".tr : "Cancel Trip".tr,
                 style: const TextStyle(fontSize: 18, fontFamily: AppThemeData.bold),
               ),
               const SizedBox(height: 6),
               Text(
-                "Please provide a reason for cancelling this trip request:".tr,
+                isOnRide
+                    ? "Please provide a reason for cancelling this active trip:".tr
+                    : "Please provide a reason for cancelling this trip request:".tr,
                 style: TextStyle(fontSize: 13, color: isDark ? AppThemeData.grey400Dark : AppThemeData.grey500),
               ),
               const SizedBox(height: 14),
@@ -1262,8 +1336,15 @@ class _NewRideScreenState extends State<NewRideScreen> with SingleTickerProvider
                         Map<String, String> bodyParams = {
                           'id_ride': data.id.toString(),
                           'id_user': data.idUserApp.toString(),
+                          'driver_name': '${data.prenomConducteur ?? ''} ${data.nomConducteur ?? ''}'.trim(),
                           'name': '${data.prenomConducteur ?? ''} ${data.nomConducteur ?? ''}'.trim(),
+                          'user_cat': 'driver',
+                          'lat_conducteur': data.latitudeDepart?.toString() ?? '',
+                          'lng_conducteur': data.longitudeDepart?.toString() ?? '',
+                          'lat_client': data.latitudeArrivee?.toString() ?? '',
+                          'lng_client': data.longitudeArrivee?.toString() ?? '',
                           'from_id': Preferences.getInt(Preferences.userId).toString(),
+                          'reason': resonController.text.trim(),
                           'other_info': resonController.text.trim(),
                         };
                         await controller.canceledRide(bodyParams);

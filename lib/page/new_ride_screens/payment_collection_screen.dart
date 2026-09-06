@@ -7,6 +7,7 @@ import 'package:cabme_driver/service/api.dart';
 import 'package:cabme_driver/themes/button_them.dart';
 import 'package:cabme_driver/themes/constant_colors.dart';
 import 'package:cabme_driver/themes/custom_dialog_box.dart';
+import 'package:cabme_driver/controller/new_ride_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -70,7 +71,9 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                       text: "Ok".tr,
                       onPress: () {
                         Get.back();
-                        Get.back();
+                        if (Get.isRegistered<NewRideController>()) {
+                          Get.find<NewRideController>().getNewRide();
+                        }
                       },
                       img: Image.asset('assets/images/green_checked.png'),
                     );
@@ -97,10 +100,13 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
   @override
   Widget build(BuildContext context) {
     final baseFare = double.tryParse(widget.rideData.montant?.toString() ?? '0') ?? 0.0;
+    final discount = double.tryParse(widget.rideData.discount?.toString() ?? '0') ?? 0.0;
+    final tip = double.tryParse(widget.rideData.tipAmount?.toString() ?? '0') ?? 0.0;
+    final netBaseFare = (baseFare - discount) > 0 ? (baseFare - discount) : 0.0;
     final activeMethod = selectedMethod.toLowerCase();
-    final taxBreakdown = Constant.getTaxBreakdown(baseFare, activeMethod);
-    final totalTax = Constant.calculateTotalTaxes(baseFare, activeMethod);
-    final totalPayable = baseFare + totalTax;
+    final taxBreakdown = Constant.getTaxBreakdown(netBaseFare, activeMethod);
+    final totalTax = Constant.calculateTotalTaxes(netBaseFare, activeMethod);
+    final totalPayable = netBaseFare + totalTax + tip;
 
     return Scaffold(
       appBar: AppBar(
@@ -163,6 +169,8 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                   Text("Fare Breakdown".tr, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
                   _breakdownRow("Base Ride Fare".tr, Constant().amountShow(amount: baseFare.toString())),
+                  if (discount > 0)
+                    _breakdownRow("Discount".tr, "-${Constant().amountShow(amount: discount.toString())}", color: Colors.green),
                   if (taxBreakdown.isNotEmpty) ...[
                     const SizedBox(height: 6),
                     ...taxBreakdown.map((t) => _breakdownRow(
@@ -171,6 +179,8 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                           color: AppThemeData.primary200,
                         )),
                   ],
+                  if (tip > 0)
+                    _breakdownRow("Driver Tip".tr, "+${Constant().amountShow(amount: tip.toString())}"),
                   const Divider(height: 20, thickness: 0.8),
                   _breakdownRow(
                     "Total Amount".tr,

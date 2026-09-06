@@ -32,9 +32,9 @@ class MainHomeController extends GetxController
   List<Map<String, dynamic>> get featureCards {
     return [
       {
-        "routeName": "/history",
-        "icon": Icons.history_rounded,
-        "title": "History & Invoices",
+        "routeName": "/addValue",
+        "icon": Icons.account_balance_wallet_outlined,
+        "title": "Add Value",
         "status": 1,
       },
       {
@@ -61,14 +61,14 @@ class MainHomeController extends GetxController
         "status": 1,
       },
       {
-        "routeName": "/referralProgram",
-        "title": "Partner Dashboard",
-        "subtitle": "Manage team, track stats & earn lifetime cashback",
+        "routeName": "/medicalCashback",
+        "title": "Medical Cashback Card",
+        "subtitle": "Earn cashback on medical bills & healthcare",
         "status": 1,
       },
       {
         "routeName": "/smartValue",
-        "title": "Smart Value & QR",
+        "title": "Smart Value",
         "subtitle": "Earn Upto 2%  By Using App Services",
         "status": 1,
       },
@@ -122,8 +122,8 @@ class MainHomeController extends GetxController
     if (!isLogin) {
       Get.to(() => PhoneEntryScreen(mode: 'signup'),
           transition: Transition.rightToLeftWithFade);
-    } else if (routeName == '/history') {
-      Get.to(() => WalletScreen(initialIndex: 1), transition: Transition.rightToLeftWithFade);
+    } else if (routeName == '/addValue' || routeName == '/history') {
+      Get.to(() => const WalletScreen(autoOpenTopUp: true), transition: Transition.rightToLeftWithFade);
     } else if (routeName == '/referral') {
       Get.to(() => const ReferralEarnScreen(), transition: Transition.rightToLeftWithFade);
     } else if (routeName == '/premium') {
@@ -159,7 +159,11 @@ class MainHomeController extends GetxController
       Get.to(() => PhoneEntryScreen(mode: 'signup'),
           transition: Transition.rightToLeftWithFade);
     } else if (routeName == '/smartValue') {
-      Get.to(() => MyQRScreen(), transition: Transition.rightToLeftWithFade);
+      Get.to(() => const WalletScreen(), transition: Transition.rightToLeftWithFade);
+    } else if (routeName == '/medicalCashback') {
+      final finalUrl = OnboardingUrl.build('/onboarding/medical-cashback');
+      Get.to(() => WebViewScreen(url: finalUrl, title: 'Medical Cashback Card'.tr),
+          transition: Transition.rightToLeftWithFade);
     } else if (routeName == '/referralProgram') {
       Get.to(() => const ReferralEarnScreen(), transition: Transition.rightToLeftWithFade);
     } else if (index == 0) {

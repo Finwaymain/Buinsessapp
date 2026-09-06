@@ -17,6 +17,7 @@ import 'package:cabme_driver/utils/Preferences.dart';
 import 'package:cabme_driver/utils/dark_theme_provider.dart';
 import 'package:cabme_driver/widget/StarRating.dart';
 import 'package:cabme_driver/page/new_ride_screens/payment_collection_screen.dart';
+import 'package:cabme_driver/controller/new_ride_controller.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -29,14 +30,15 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:cabme_driver/service/api.dart';
 
 class RouteOsmViewScreen extends StatefulWidget {
-  const RouteOsmViewScreen({super.key});
+  final Map<String, dynamic>? arguments;
+  const RouteOsmViewScreen({super.key, this.arguments});
 
   @override
   State<RouteOsmViewScreen> createState() => _RouteOsmViewScreenState();
 }
 
 class _RouteOsmViewScreenState extends State<RouteOsmViewScreen> {
-  dynamic argumentData = Get.arguments;
+  dynamic argumentData;
 
   late MapController mapController;
 
@@ -60,12 +62,20 @@ class _RouteOsmViewScreenState extends State<RouteOsmViewScreen> {
 
   @override
   void initState() {
+    argumentData = widget.arguments ?? Get.arguments;
     if (argumentData != null) {
-      type = argumentData['type'];
-      rideData = argumentData['data'];
+      if (argumentData is RideData) {
+        rideData = argumentData as RideData;
+        type = 'ride';
+      } else if (argumentData is Map) {
+        type = argumentData['type'];
+        rideData = argumentData['data'];
+      }
     }
     ShowToastDialog.showLoader("Please wait");
-    mapController = MapController(initPosition: GeoPoint(latitude: double.parse(rideData!.latitudeDepart!), longitude: double.parse(rideData!.longitudeDepart!)));
+    final lat = double.tryParse(rideData?.latitudeDepart?.toString() ?? '') ?? 20.9153;
+    final lng = double.tryParse(rideData?.longitudeDepart?.toString() ?? '') ?? -100.7439;
+    mapController = MapController(initPosition: GeoPoint(latitude: lat, longitude: lng));
     setIcons();
 
     super.initState();
@@ -349,7 +359,7 @@ class _RouteOsmViewScreenState extends State<RouteOsmViewScreen> {
                                                       fontSize: 16,
                                                       color: themeChange.getThem() ? AppThemeData.grey900Dark : AppThemeData.grey900,
                                                       fontFamily: AppThemeData.medium)),
-                                              StarRating(size: 18, rating: double.parse(rideData!.moyenneDriver.toString()), color: AppThemeData.error100),
+                                              StarRating(size: 18, rating: double.tryParse(rideData?.moyenneDriver?.toString() ?? '0') ?? 0.0, color: AppThemeData.error100),
                                             ],
                                           ),
                                   ),
@@ -360,13 +370,18 @@ class _RouteOsmViewScreenState extends State<RouteOsmViewScreen> {
                                     Row(
                                       children: [
                                         Visibility(
-                                          visible: rideData!.statut == "confirmed" && rideData!.existingUserId.toString() != "null" ? true : false,
+                                          visible: (rideData!.statut == "confirmed" || rideData!.statut == "on ride") &&
+                                              rideData!.existingUserId != null &&
+                                              rideData!.existingUserId.toString() != "null" &&
+                                              rideData!.existingUserId.toString().isNotEmpty,
                                           child: InkWell(
                                               onTap: () {
+                                                final receiverIdVal = int.tryParse(rideData?.idUserApp?.toString() ?? '0') ?? 0;
+                                                final orderIdVal = int.tryParse(rideData?.id?.toString() ?? '0') ?? 0;
                                                 Get.to(ConversationScreen(), arguments: {
-                                                  'receiverId': int.parse(rideData!.idUserApp.toString()),
-                                                  'orderId': int.parse(rideData!.id.toString()),
-                                                  'receiverName': '${rideData!.prenom} ${rideData!.nom}',
+                                                  'receiverId': receiverIdVal,
+                                                  'orderId': orderIdVal,
+                                                  'receiverName': '${rideData!.prenom ?? ''} ${rideData!.nom ?? ''}'.trim(),
                                                   'receiverPhoto': rideData!.photoPath
                                                 });
                                               },
@@ -384,7 +399,7 @@ class _RouteOsmViewScreenState extends State<RouteOsmViewScreen> {
                                                 if (rideData!.existingUserId.toString() != "null") {
                                                   Constant.makePhoneCall(rideData!.phone.toString());
                                                 } else {
-                                                  Constant.makePhoneCall(rideData!.userInfo!.phone.toString());
+                                                  Constant.makePhoneCall(rideData!.userInfo?.phone?.toString() ?? '');
                                                 }
                                               },
                                               child: Container(
@@ -729,7 +744,8 @@ class _RouteOsmViewScreenState extends State<RouteOsmViewScreen> {
                                 };
                                 controllerRideDetails.setCompletedRequest(bodyParams, rideData!, paymethod: "Pending").then((value) {
                                   if (value != null) {
-                                    Get.to(() => PaymentCollectionScreen(
+                                    rideData!.statut = 'completed';
+                                    Get.off(() => PaymentCollectionScreen(
                                       rideData: rideData!,
                                       onConfirm: (String paymethod) {
                                         if (paymethod.toLowerCase() == "cash") {
@@ -745,7 +761,9 @@ class _RouteOsmViewScreenState extends State<RouteOsmViewScreen> {
                                                       text: "Ok".tr,
                                                       onPress: () {
                                                         Get.back();
-                                                        Get.back();
+                                                        if (Get.isRegistered<NewRideController>()) {
+                                                          Get.find<NewRideController>().getNewRide();
+                                                        }
                                                       },
                                                       img: Image.asset('assets/images/green_checked.png'),
                                                     );
@@ -763,7 +781,9 @@ class _RouteOsmViewScreenState extends State<RouteOsmViewScreen> {
                                                   text: "Ok".tr,
                                                   onPress: () {
                                                     Get.back();
-                                                    Get.back();
+                                                    if (Get.isRegistered<NewRideController>()) {
+                                                      Get.find<NewRideController>().getNewRide();
+                                                    }
                                                   },
                                                   img: Image.asset('assets/images/green_checked.png'),
                                                 );
@@ -791,7 +811,8 @@ class _RouteOsmViewScreenState extends State<RouteOsmViewScreen> {
 
   final resonController = TextEditingController();
 
-  Future<dynamic> buildShowBottomSheet(BuildContext context) {
+  Future<dynamic> buildShowBottomSheet(BuildContext context, {bool isOnRide = false}) {
+    resonController.clear();
     return showModalBottomSheet(
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.only(topRight: Radius.circular(15), topLeft: Radius.circular(15))),
         context: context,
@@ -810,14 +831,16 @@ class _RouteOsmViewScreenState extends State<RouteOsmViewScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       child: Text(
-                        "Cancel Trip".tr,
+                        isOnRide ? "Cancel Active Trip".tr : "Cancel Trip".tr,
                         style: const TextStyle(fontSize: 18, color: Colors.black),
                       ),
                     ),
                     Padding(
                       padding: const EdgeInsets.only(top: 10),
                       child: Text(
-                        "Write a reason for trip cancellation".tr,
+                        isOnRide
+                            ? "Write a reason for cancelling this trip in progress".tr
+                            : "Write a reason for trip cancellation".tr,
                         style: TextStyle(color: Colors.black.withValues(alpha: 0.50)),
                       ),
                     ),
@@ -828,6 +851,7 @@ class _RouteOsmViewScreenState extends State<RouteOsmViewScreen> {
                         keyboardType: TextInputType.text,
                         textInputAction: TextInputAction.done,
                         decoration: const InputDecoration(
+                          hintText: 'Enter reason...',
                           focusedBorder: OutlineInputBorder(
                             borderSide: BorderSide(color: Colors.grey, width: 1.0),
                           ),
@@ -846,43 +870,51 @@ class _RouteOsmViewScreenState extends State<RouteOsmViewScreen> {
                               padding: const EdgeInsets.only(bottom: 5),
                               child: ButtonThem.buildButton(
                                 context,
-                                title: 'Cancel Trip'.tr,
+                                title: isOnRide ? 'Cancel Active Trip'.tr : 'Cancel Trip'.tr,
                                 btnHeight: 45,
                                 btnWidthRatio: 0.8,
-                                btnColor: AppThemeData.primary200,
+                                btnColor: Colors.red,
                                 txtColor: Colors.white,
                                 onPress: () async {
-                                  if (resonController.text.isNotEmpty) {
+                                  if (resonController.text.trim().isNotEmpty) {
                                     Get.back();
                                     showDialog(
                                       barrierColor: Colors.black26,
                                       context: context,
                                       builder: (context) {
                                         return CustomAlertDialog(
-                                          title: "Do you want to reject this booking?".tr,
+                                          title: isOnRide
+                                              ? "Are you sure you want to cancel this active trip?".tr
+                                              : "Do you want to reject this booking?".tr,
                                           onPressNegative: () {
                                             Get.back();
                                           },
                                           negativeButtonText: 'No'.tr,
                                           positiveButtonText: 'Yes'.tr,
                                           onPressPositive: () {
+                                            Get.back(); // close confirmation dialog
                                             Map<String, String> bodyParams = {
                                               'id_ride': rideData!.id.toString(),
                                               'id_user': rideData!.idUserApp.toString(),
+                                              'driver_name': '${rideData!.prenomConducteur.toString()} ${rideData!.nomConducteur.toString()}',
                                               'name': '${rideData!.prenomConducteur.toString()} ${rideData!.nomConducteur.toString()}',
                                               'from_id': Preferences.getInt(Preferences.userId).toString(),
-                                              'user_cat': controllerRideDetails.userModel!.userData!.userCat.toString(),
-                                              'reason': resonController.text.toString(),
+                                              'user_cat': 'driver',
+                                              'lat_conducteur': (departureLatLong?.latitude ?? double.tryParse(rideData!.latitudeDepart ?? '0') ?? 0.0).toString(),
+                                              'lng_conducteur': (departureLatLong?.longitude ?? double.tryParse(rideData!.longitudeDepart ?? '0') ?? 0.0).toString(),
+                                              'lat_client': rideData!.latitudeArrivee.toString(),
+                                              'lng_client': rideData!.longitudeArrivee.toString(),
+                                              'reason': resonController.text.trim(),
+                                              'other_info': resonController.text.trim(),
                                             };
                                             controllerRideDetails.canceledRide(bodyParams).then((value) {
-                                              Get.back();
                                               if (value != null) {
                                                 showDialog(
                                                     context: context,
                                                     builder: (BuildContext context) {
                                                       return CustomDialogBox(
-                                                        title: "Reject Successfully".tr,
-                                                        descriptions: "Ride Successfully rejected.".tr,
+                                                        title: "Cancel Successfully".tr,
+                                                        descriptions: "Ride Successfully canceled.".tr,
                                                         text: "Ok".tr,
                                                         onPress: () {
                                                           Get.back();

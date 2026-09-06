@@ -410,5 +410,13 @@ const Map<String, String> enUS = {
   'Your Balance : ': 'Your Balance : ',
   'Subscription Amount Debited': 'Subscription Amount Debited',
   'An admin has deleted your account. You no longer have access.': 'An admin has deleted your account. You no longer have access.',
-  'Signup successful!': 'Signup successful!'
+  'Signup successful!': 'Signup successful!',
+  'Add Value': 'Add Value',
+  'Medical Cashback Card': 'Medical Cashback Card',
+  'Smart Value': 'Smart Value',
+  'Ride Booking': 'Ride Booking',
+  'Shared Ride': 'Shared Ride',
+  'Coming Soon': 'Coming Soon',
+  'COMING SOON': 'COMING SOON',
+  'Back to Home': 'Back to Home',
 };

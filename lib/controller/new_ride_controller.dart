@@ -232,6 +232,7 @@ class NewRideController extends GetxController with WidgetsBindingObserver {
 
   Future<dynamic> canceledRide(Map<String, String> bodyParams) async {
     try {
+      bodyParams['user_cat'] = bodyParams['user_cat'] ?? 'driver';
       ShowToastDialog.showLoader("Please wait");
       final response = await http.post(Uri.parse(API.rejectRide), headers: API.header, body: jsonEncode(bodyParams));
       showLog("API :: URL :: ${API.rejectRide}");
@@ -246,23 +247,18 @@ class NewRideController extends GetxController with WidgetsBindingObserver {
         return responseBody;
       } else if (response.statusCode == 200 && responseBody['success'] == "Failed") {
         ShowToastDialog.closeLoader();
-        ShowToastDialog.showToast(responseBody['error']);
+        ShowToastDialog.showToast(responseBody['error'] ?? 'Cancellation failed');
       } else {
         ShowToastDialog.closeLoader();
         ShowToastDialog.showToast(responseBody['error'] ?? 'Something went wrong. Please try again later');
-        throw Exception('Failed to load album');
       }
-    } on TimeoutException catch (e) {
-      ShowToastDialog.closeLoader();
-      ShowToastDialog.showToast(e.message.toString());
-    } on SocketException catch (e) {
-      ShowToastDialog.closeLoader();
-      ShowToastDialog.showToast(e.message.toString());
-    } on Error catch (e) {
+    } catch (e) {
+      showLog("canceledRide Error in new_ride_controller :: $e");
       ShowToastDialog.closeLoader();
       ShowToastDialog.showToast(e.toString());
+    } finally {
+      ShowToastDialog.closeLoader();
     }
-    ShowToastDialog.closeLoader();
     return null;
   }
 
@@ -354,8 +350,6 @@ class NewRideController extends GetxController with WidgetsBindingObserver {
         ShowToastDialog.closeLoader();
         return responseBody;
       } else if (response.statusCode == 200 && responseBody['success'] == "Failed") {
-        await http.get(Uri.parse("${API.reGenerateOtp}?id_user_app=$userId&ride_id=$rideId"), headers: API.header);
-
         ShowToastDialog.closeLoader();
         ShowToastDialog.showToast(responseBody['error'].toString());
       } else {
@@ -380,11 +374,8 @@ class NewRideController extends GetxController with WidgetsBindingObserver {
   }
 
   Future<dynamic> cashPaymentRequest(RideData data, {String paymethod = "Cash"}) async {
-    List taxList = [];
-
-    for (var v in Constant.taxList) {
-      taxList.add(v.toJson());
-    }
+    final activeTaxes = Constant.getActiveTaxes(paymethod.toLowerCase());
+    List taxList = activeTaxes.map((v) => v.toJson()).toList();
     Map<String, dynamic> bodyParams = {
       'id_ride': data.id.toString(),
       'id_driver': data.idConducteur.toString(),
