@@ -23,6 +23,7 @@ import '../page/wallet/wallet_screen.dart';
 import '../utils/onboarding_navigation.dart';
 import '../page/my_profile/my_profile_screen.dart';
 import '../page/web_view_screen/web_view_screen.dart';
+import '../page/MainDashBoard/screen/main_dashboard.dart';
 
 import '../page/privacy_policy/privacy_policy_screen.dart';
 import '../page/referral/referral_earn_screen.dart';
@@ -730,6 +731,13 @@ class DashBoardController extends GetxController with WidgetsBindingObserver {
       }
     } else if (item.title == 'Log Out'.tr || item.title == 'Log Out' || item.title.toLowerCase().contains('log out') || item.title.toLowerCase().contains('logout')) {
       await performLogout();
+    } else if (item.title == 'Home'.tr || item.title == 'Home' || index == 0) {
+      selectedDrawerIndex.value = 0;
+      if (Get.currentRoute == '/' || Get.currentRoute == '/MainDashboard' || Get.key.currentState?.canPop() != true) {
+        Get.offAll(() => const MainDashboard());
+      } else {
+        Get.until((route) => route.isFirst);
+      }
     } else {
       selectedDrawerIndex.value = index;
     }

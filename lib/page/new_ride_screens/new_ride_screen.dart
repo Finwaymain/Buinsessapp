@@ -96,7 +96,16 @@ class _NewRideScreenState extends State<NewRideScreen> with SingleTickerProvider
               : AppBar(
                   backgroundColor: isDark ? AppThemeData.surface50Dark : AppThemeData.surface50,
                   elevation: 0,
-                  titleSpacing: 16,
+                  leading: Builder(
+                    builder: (context) => IconButton(
+                      icon: Icon(
+                        Icons.menu,
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
+                      onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+                    ),
+                  ),
+                  titleSpacing: 0,
                   title: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [

@@ -50,6 +50,8 @@ class RideDetailsdata {
   String? statutPaiement;
   String? idConducteur;
   String? idPaymentMethod;
+  String? payment;
+  String? paymentImage;
   String? creer;
   String? modifier;
   String? dateRetour;
@@ -95,6 +97,8 @@ class RideDetailsdata {
       this.statutPaiement,
       this.idConducteur,
       this.idPaymentMethod,
+      this.payment,
+      this.paymentImage,
       this.creer,
       this.modifier,
       this.dateRetour,
@@ -147,6 +151,8 @@ class RideDetailsdata {
     statutPaiement = json['statut_paiement'].toString();
     idConducteur = json['id_conducteur'].toString();
     idPaymentMethod = json['id_payment_method'].toString();
+    payment = json['payment']?.toString();
+    paymentImage = json['payment_image']?.toString();
     creer = json['creer'].toString();
     modifier = json['modifier'].toString();
     dateRetour = json['date_retour'].toString();
@@ -196,6 +202,8 @@ class RideDetailsdata {
     data['statut_paiement'] = statutPaiement;
     data['id_conducteur'] = idConducteur;
     data['id_payment_method'] = idPaymentMethod;
+    data['payment'] = payment;
+    data['payment_image'] = paymentImage;
     data['creer'] = creer;
     data['modifier'] = modifier;
     data['date_retour'] = dateRetour;
