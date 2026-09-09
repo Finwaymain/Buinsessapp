@@ -88,6 +88,9 @@ class RideData {
   String? rideType;
   String? existingUserId;
   String? adminCommission;
+  String? promotionalAmount;
+  String? promotionalDiscount;
+  bool isPromotionalApplied = false;
   UserInfo? userInfo;
   List<TaxModel>? taxModel;
 
@@ -149,6 +152,9 @@ class RideData {
     this.userInfo,
     this.existingUserId,
     this.adminCommission,
+    this.promotionalAmount,
+    this.promotionalDiscount,
+    this.isPromotionalApplied = false,
   });
 
   RideData.fromJson(Map<String, dynamic> json) {
@@ -225,6 +231,9 @@ class RideData {
     rideType = json['ride_type'].toString();
     existingUserId = json['existing_user_id'].toString();
     adminCommission = json['admin_commission'].toString();
+    promotionalAmount = json['promotional_amount']?.toString();
+    promotionalDiscount = json['promotional_discount']?.toString();
+    isPromotionalApplied = json['is_promotional_applied'] == true || json['is_promotional_applied'] == 1 || json['is_promotional_applied'] == '1';
 
     taxModel = taxList;
   }

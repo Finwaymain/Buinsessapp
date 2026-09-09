@@ -102,6 +102,10 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
     final baseFare = double.tryParse(widget.rideData.montant?.toString() ?? '0') ?? 0.0;
     final discount = double.tryParse(widget.rideData.discount?.toString() ?? '0') ?? 0.0;
     final tip = double.tryParse(widget.rideData.tipAmount?.toString() ?? '0') ?? 0.0;
+    final promoDiscount = double.tryParse(widget.rideData.promotionalDiscount?.toString() ?? '0') ?? 0.0;
+    final promoAmount = double.tryParse(widget.rideData.promotionalAmount?.toString() ?? '0') ?? 0.0;
+    final hasPromo = (widget.rideData.isPromotionalApplied || promoDiscount > 0) && promoDiscount > 0;
+    final displayedRideFare = hasPromo ? (baseFare + promoAmount) : baseFare;
     final netBaseFare = (baseFare - discount) > 0 ? (baseFare - discount) : 0.0;
     final activeMethod = selectedMethod.toLowerCase();
     final taxBreakdown = Constant.getTaxBreakdown(netBaseFare, activeMethod);
@@ -168,9 +172,11 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                 children: [
                   Text("Fare Breakdown".tr, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
-                  _breakdownRow("Base Ride Fare".tr, Constant().amountShow(amount: baseFare.toString())),
+                  _breakdownRow(hasPromo ? "Ride Booking Total".tr : "Base Ride Fare".tr, Constant().amountShow(amount: displayedRideFare.toString())),
+                  if (hasPromo)
+                    _breakdownRow("🎁 Welcome Bonus".tr, "-${Constant().amountShow(amount: promoDiscount.toString())}", color: Colors.green),
                   if (discount > 0)
-                    _breakdownRow("Discount".tr, "-${Constant().amountShow(amount: discount.toString())}", color: Colors.green),
+                    _breakdownRow("Coupon Discount".tr, "-${Constant().amountShow(amount: discount.toString())}", color: Colors.green),
                   if (taxBreakdown.isNotEmpty) ...[
                     const SizedBox(height: 6),
                     ...taxBreakdown.map((t) => _breakdownRow(

@@ -73,12 +73,17 @@ class _ServicePaymentReceivedScreenState extends State<ServicePaymentReceivedScr
                 children: [
                   Text('Bill Breakdown'.tr, style: const TextStyle(fontFamily: AppThemeData.semiBold, fontSize: 14)),
                   const SizedBox(height: 10),
-                  if (flow.itemizedBillItems.isNotEmpty)
-                    ...flow.itemizedBillItems.map((item) => _row(item.name, item.price))
-                  else
-                    _row('Service Charge'.tr, flow.labourTotal),
-                  if (flow.visitingCharge.value > 0) _row('Visiting Charge'.tr, flow.visitingCharge.value),
-                  if (flow.materialCost.value > 0) _row('Material Cost'.tr, flow.materialCost.value),
+                  if (booking.hasPromotionalBonus) ...[
+                    _row('Service Booking Total'.tr, flow.billTotal + booking.promotionalAmountValue),
+                    _row('🎁 Welcome Bonus'.tr, -booking.promotionalDiscountValue, color: Colors.green),
+                  ] else ...[
+                    if (flow.itemizedBillItems.isNotEmpty)
+                      ...flow.itemizedBillItems.map((item) => _row(item.name, item.price))
+                    else
+                      _row('Service Charge'.tr, flow.labourTotal),
+                    if (flow.visitingCharge.value > 0) _row('Visiting Charge'.tr, flow.visitingCharge.value),
+                    if (flow.materialCost.value > 0) _row('Material Cost'.tr, flow.materialCost.value),
+                  ],
                   const Divider(height: 20),
                   _row('Total Amount'.tr, flow.billTotal, bold: true, color: AppThemeData.success300),
                 ],

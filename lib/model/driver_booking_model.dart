@@ -62,6 +62,9 @@ class DriverBookingItem {
   final String? lng;
   final bool isUrgent;
   final List<ServiceLineItem> serviceItems;
+  final double? promotionalAmount;
+  final double? promotionalDiscount;
+  final bool isPromotionalApplied;
 
   DriverBookingItem({
     required this.id,
@@ -93,6 +96,9 @@ class DriverBookingItem {
     this.lng,
     this.isUrgent = false,
     this.serviceItems = const [],
+    this.promotionalAmount,
+    this.promotionalDiscount,
+    this.isPromotionalApplied = false,
   });
 
   factory DriverBookingItem.empty(String id) {
@@ -212,8 +218,18 @@ class DriverBookingItem {
       lng: json['lng']?.toString(),
       isUrgent: json['is_urgent'] == true || desc.toUpperCase().contains('[VERY URGENT]'),
       serviceItems: items,
+      promotionalAmount: double.tryParse(json['promotional_amount']?.toString() ?? ''),
+      promotionalDiscount: double.tryParse(json['promotional_discount']?.toString() ?? ''),
+      isPromotionalApplied: json['is_promotional_applied'] == true || json['is_promotional_applied'] == 1 || json['is_promotional_applied'] == '1',
     );
   }
+
+  bool get hasPromotionalBonus =>
+      (promotionalDiscount != null && promotionalDiscount! > 0) ||
+      (isPromotionalApplied && (promotionalAmount != null && promotionalAmount! > 0));
+  double get promotionalAmountValue => promotionalAmount ?? 0.0;
+  double get promotionalDiscountValue => promotionalDiscount ?? 0.0;
+  double get displayedBookingTotal => hasPromotionalBonus ? (amount + promotionalAmountValue) : amount;
 
   static List<ServiceLineItem> _parseServiceItemsFromName(String raw) {
     final items = <ServiceLineItem>[];
