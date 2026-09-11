@@ -29,6 +29,7 @@ import '../../features/SmartValue/Payout/view/payout_screen.dart';
 import '../../features/SmartValue/ScanAndTransfer/view/scanner_and_transfer_screen.dart';
 import '../../in_progress_screen.dart';
 import '../../parcel_service/parcel_console_screen.dart';
+import '../../food/food_ordering_screen.dart';
 import '../../booking/my_booking_screen.dart';
 import '../../contact_us/customer_support_screen.dart';
 import '../../features/SmartValue/AccountDetails/view/account_details.dart';
@@ -718,9 +719,8 @@ class MainHomeScreen extends StatelessWidget {
                                     icon: Icons.fastfood_outlined,
                                     text: 'Food Order',
                                     onTap: () {
-                                      final url = OnboardingUrl.build('/onboarding/food.html');
                                       Get.to(
-                                        () => WebViewScreen(url: url, title: 'Food Ordering'.tr),
+                                        () => const FoodOrderingScreen(),
                                         transition: Transition.rightToLeftWithFade,
                                       );
                                     },

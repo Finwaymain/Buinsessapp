@@ -24,6 +24,7 @@ import '../utils/onboarding_navigation.dart';
 import '../page/my_profile/my_profile_screen.dart';
 import '../page/web_view_screen/web_view_screen.dart';
 import '../page/MainDashBoard/screen/main_dashboard.dart';
+import '../page/food/food_ordering_screen.dart';
 
 import '../page/privacy_policy/privacy_policy_screen.dart';
 import '../page/referral/referral_earn_screen.dart';
@@ -696,8 +697,7 @@ class DashBoardController extends GetxController with WidgetsBindingObserver {
       final url = OnboardingUrl.build('/onboarding/marketplace.html');
       Get.to(() => WebViewScreen(url: url, title: 'Marketplace'.tr));
     } else if (item.title == 'Food Ordering'.tr || item.title == 'Food Order'.tr) {
-      final url = OnboardingUrl.build('/onboarding/food.html');
-      Get.to(() => WebViewScreen(url: url, title: 'Food Ordering'.tr));
+      Get.to(() => const FoodOrderingScreen());
     } else if (item.title == 'Update Categories'.tr) {
       openDriverOnboardingEditor(
         mode: 'edit_profile',
