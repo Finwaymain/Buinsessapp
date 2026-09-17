@@ -38,74 +38,16 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
   final WalletController walletController = Get.put(WalletController());
 
   // View Navigation Modes:
-  // 'current_plan': Screen 1 (Commission base service, 10% loss calculator, 26 locked benefits)
+  // 'current_plan': Screen 1 (Commission base service, 10% loss calculator, locked benefits)
   // 'plans': Screen 2 (Choose Plan & Plan Benefits)
-  // 'benefits': Screen 2 detail (Full 26 benefits & Proceed to Pay)
+  // 'benefits': Screen 2 detail (Full benefits list & Proceed to Pay)
   // 'activated': Screen 3 (Plan Activated Confirmation)
-  // 'dashboard': Screen 4 (Active My Membership Dashboard: 312 days countdown, ₹12,450 saved, 26 active scrollable items)
+  // 'dashboard': Screen 4 (Active My Membership Dashboard: countdown, saved amount, active items)
   String viewMode = 'current_plan';
 
   // Commission Loss Calculator State
   double monthlyEarnings = 50000;
 
-  // The 26 canonical business benefits
-  static const List<String> business26Benefits = [
-    "Business Verified Badge – for trusted business opportunities",
-    "Premium / Priority Listing – for higher search visibility",
-    "QR Pay Send & Receive – with cashback benefits up to 2%",
-    "Daily Value Increment – with growth benefits up to 2%",
-    "Free Incoming Booking – up to 150 bookings annually",
-    "Interest-Free Loan Eligibility – up to ₹5 Lakh funding",
-    "Value Transfer Cashback – with benefits up to 2%",
-    "Wallet Enabled – for easy business transactions",
-    "Professional Dashboard – with advanced business insights",
-    "Priority / Premium Customer Support – with faster assistance",
-    "Analytics Dashboard – for tracking business growth",
-    "Extra Business Visibility – for reaching more customers",
-    "Promotional Support – for increasing business promotion",
-    "Discounts & Cashback – on eligible products and services",
-    "Higher Booking Limits – for more customer bookings",
-    "Marketing Tools – for promoting your business effectively",
-    "Priority Offers – with exclusive business benefits",
-    "Fiinway Services Discount – up to 20% savings available",
-    "Online Shopping Discount – up to 40% savings available",
-    "Free Shipping – on eligible products and orders",
-    "Personal Loan Eligibility – with applicable loan facilities",
-    "Business Loan Eligibility – with applicable business financing",
-    "Credit Card Eligibility – with applicable card offers",
-    "High-Margin Product Selling – for better earning opportunities",
-    "Instant Virtual Credit – up to ₹15,000 subject eligibility",
-    "More Premium Benefits – with additional exclusive opportunities",
-  ];
-
-  static const List<String> businessMissingBenefits = [
-    "Business Verified Badge",
-    "Premium / Priority Listing in Search",
-    "QR Pay – Send & Receive Cashback (Up to 2%)",
-    "Daily Value Increment (Up to 2%)",
-    "Free Incoming Booking (150)",
-    "Interest-Free Loan (Up to ₹5 Lakh)",
-    "Value Transfer Cashback (Up to 2%)",
-    "Wallet Enabled",
-    "Professional Dashboard",
-    "Priority / Premium Customer Support",
-    "Analytics Dashboard",
-    "Extra Business Visibility",
-    "Promotional Support",
-    "Discounts & Cashback",
-    "Higher Booking Limits",
-    "Marketing Tools",
-    "Priority Offers",
-    "Up to 20% Discount on Fiinway Services",
-    "Up to 40% Discount on Online Shopping",
-    "Free Shipping on Eligible Products",
-    "Personal Loan Eligibility",
-    "Business Loan Eligibility",
-    "Credit Card Eligibility",
-    "Old & New Product Selling at High Margin",
-    "₹15,000 Instant Virtual Credit",
-    "And Many More Premium Benefits",
-  ];
 
   @override
   void initState() {
@@ -289,7 +231,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
   }
 
   // ===========================================================================
-  // SCREEN 1: CURRENT PLAN (Commission Basis, 10% Loss Calculator, 26 Locked Perks)
+  // SCREEN 1: CURRENT PLAN (Commission Basis, 10% Loss Calculator, Locked Perks from API)
   // ===========================================================================
   Widget _buildCurrentPlanScreen(bool isDark, SubscriptionController controller) {
     final double commissionLostMonthly = monthlyEarnings * 0.10;
@@ -350,18 +292,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                         ),
                       ],
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.green.withOpacity(0.3)),
-                      ),
-                      child: const Text(
-                        'Active',
-                        style: TextStyle(fontSize: 11, fontFamily: AppThemeData.bold, color: Colors.green),
-                      ),
-                    ),
+
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -373,11 +304,11 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.info_outline_rounded, size: 16, color: Color(0xFF64748B)),
+
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'You are using base services with limited features. Upgrade to Premium & unlock 26 business advantages.',
+                          'You are using base services with limited features. Upgrade to Premium & unlock ${controller.lockedBenefits.length > 0 ? controller.lockedBenefits.length : 'premium'} business advantages.',
                           style: TextStyle(
                             fontSize: 12,
                             color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
@@ -580,72 +511,82 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
           const SizedBox(height: 20),
 
           // Missing Benefits Header
-          Row(
-            children: [
-              const Icon(Icons.lock_rounded, size: 18, color: Colors.orange),
-              const SizedBox(width: 8),
-              Text(
-                'Services You Are Missing (26 Locked)',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontFamily: AppThemeData.bold,
-                  color: isDark ? Colors.white : const Color(0xFF0F172A),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Upgrade to Premium to unlock all 26 business benefits:',
-            style: TextStyle(
-              fontSize: 12,
-              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // 26 Locked Benefits List (matching correction document)
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: businessMissingBenefits.length,
-            itemBuilder: (context, idx) {
-              return Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                ),
-                child: Row(
+          Obx(() {
+            final lockedBenefits = controller.lockedBenefits;
+            if (lockedBenefits.isEmpty) return const SizedBox.shrink();
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.close_rounded, color: Colors.red, size: 14),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        businessMissingBenefits[idx],
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontFamily: AppThemeData.medium,
-                          color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
-                        ),
+                    const Icon(Icons.lock_rounded, size: 18, color: Colors.orange),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Services You Are Missing (${lockedBenefits.length} Locked)',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontFamily: AppThemeData.bold,
+                        color: isDark ? Colors.white : const Color(0xFF0F172A),
                       ),
                     ),
-                    Icon(Icons.lock_outline_rounded, size: 16, color: Colors.grey.shade400),
                   ],
                 ),
-              );
-            },
-          ),
+                const SizedBox(height: 4),
+                Text(
+                  'Upgrade to unlock all ${lockedBenefits.length} business benefits:',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Dynamic Locked Benefits List from API
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: lockedBenefits.length,
+                  itemBuilder: (context, idx) {
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.close_rounded, color: Colors.red, size: 14),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              lockedBenefits[idx],
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontFamily: AppThemeData.medium,
+                                color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
+                              ),
+                            ),
+                          ),
+                          Icon(Icons.lock_outline_rounded, size: 16, color: Colors.grey.shade400),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ],
+            );
+          }),
           const SizedBox(height: 24),
+
 
           // Upgrade CTA Button
           SizedBox(
@@ -723,10 +664,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        'Zero commission • 26 Unlocked perks • Official tax invoice',
-                        style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
-                      ),
+
                     ],
                   ),
                 ),
@@ -821,34 +759,21 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                                       ),
                                     ),
                                   ),
-                                  if (plan.badge != null && plan.badge!.isNotEmpty) ...[
-                                    const SizedBox(width: 6),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: Colors.amber.shade700,
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text(
-                                        plan.badge!,
-                                        style: const TextStyle(fontSize: 9, color: Colors.white, fontFamily: AppThemeData.bold),
-                                      ),
-                                    ),
-                                  ],
-                                  if (isCurrent) ...[
-                                    const SizedBox(width: 6),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: Colors.green,
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: const Text(
-                                        'Current',
-                                        style: TextStyle(fontSize: 9, color: Colors.white, fontFamily: AppThemeData.bold),
-                                      ),
-                                    ),
-                                  ],
+                                  // if (plan.badge != null && plan.badge!.isNotEmpty) ...[
+                                  //   const SizedBox(width: 6),
+                                  //   Container(
+                                  //     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  //     decoration: BoxDecoration(
+                                  //       color: Colors.amber.shade700,
+                                  //       borderRadius: BorderRadius.circular(4),
+                                  //     ),
+                                  //     child: Text(
+                                  //       plan.badge!,
+                                  //       style: const TextStyle(fontSize: 9, color: Colors.white, fontFamily: AppThemeData.bold),
+                                  //     ),
+                                  //   ),
+                                  // ],
+
                                 ],
                               ),
                               const SizedBox(height: 4),
@@ -911,7 +836,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
   }
 
   // ===========================================================================
-  // SCREEN 2B: PLAN BENEFITS & ADVANTAGES (All 26 Benefits & Payment Flow)
+  // SCREEN 2B: PLAN BENEFITS & ADVANTAGES (Dynamic Benefits & Payment Flow)
   // ===========================================================================
   Widget _buildBenefitsScreen(bool isDark, SubscriptionController controller) {
     final plan = controller.selectedSubscriptionPlan.value;
@@ -922,12 +847,10 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
     final String expiryText = plan.expiryDay == "-1" ? "Lifetime" : "${plan.expiryDay ?? '365'} Days";
     final double cashbackAmount = double.tryParse(plan.cashbackOnPurchase ?? '0') ?? 0;
 
-    // Use canonical 26 benefits if not provided by backend
+    // Use only admin-configured benefits from API
     final List<String> benefitsList = (plan.benefitsList != null && plan.benefitsList!.isNotEmpty)
         ? plan.benefitsList!
-        : ((plan.planPoints != null && plan.planPoints!.length >= 10)
-            ? plan.planPoints!
-            : business26Benefits);
+        : (plan.planPoints ?? []);
 
     final int currentTier = int.tryParse(userData?.subscriptionPlan?.tierLevel?.toString() ?? '1') ?? 1;
     final int selectedTier = plan.tierLevel ?? 2;
@@ -1050,9 +973,9 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
             const SizedBox(height: 14),
           ],
 
-          // 26 Benefits Title
+          // Benefits Title
           Text(
-            'Key Benefits & Advantages (26 Included)',
+            'Key Benefits & Advantages (${benefitsList.length} Included)',
             style: TextStyle(
               fontSize: 16,
               fontFamily: AppThemeData.bold,
@@ -1061,7 +984,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
           ),
           const SizedBox(height: 10),
 
-          // List of all 26 benefits
+          // List of all benefits from admin panel
           ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -1189,6 +1112,11 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
     final plan = controller.selectedSubscriptionPlan.value;
     final planName = plan.name ?? "Professional Plan";
     final planPrice = Constant().amountShow(amount: plan.price ?? '2500');
+    final List<String> planBenefits = (plan.benefitsList != null && plan.benefitsList!.isNotEmpty)
+        ? plan.benefitsList!
+        : (plan.planPoints ?? []);
+    final String benefitsCountText = planBenefits.isNotEmpty ? '${planBenefits.length} listed' : 'all';
+
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -1217,7 +1145,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
           ),
           const SizedBox(height: 6),
           Text(
-            'Your $planName is now active, and all 26 listed benefits are now applicable to your business.',
+            'Your $planName is now active, and $benefitsCountText benefits are now applicable to your business.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 13, height: 1.4, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
           ),
@@ -1301,7 +1229,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
   }
 
   // ===========================================================================
-  // SCREEN 4: MY MEMBERSHIP DASHBOARD (312 Days Remaining, ₹12,450 Saved, 26 Active Items)
+  // SCREEN 4: MY MEMBERSHIP DASHBOARD (Days Remaining, Commission Saved, Active Items)
   // ===========================================================================
   Widget _buildDashboardScreen(bool isDark, SubscriptionController controller) {
     final userData = controller.userModel.value.userData ?? Constant.getUserData().userData;
@@ -1315,10 +1243,11 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
     final String remainingDays = _calculateDaysRemaining(userData, activePlan);
     final String commissionSaved = _calculateTotalCommissionSaved(userData);
 
-    // 26 Active benefits list
+    // Active benefits list from admin panel (no hardcoded fallback)
     final List<String> activePerks = (activePlan.benefitsList != null && activePlan.benefitsList!.isNotEmpty)
         ? activePlan.benefitsList!
-        : business26Benefits;
+        : (activePlan.planPoints ?? []);
+
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -1496,19 +1425,12 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                   color: isDark ? Colors.white : const Color(0xFF0F172A),
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: const Text('Scroll to view all', style: TextStyle(fontSize: 10, color: Colors.green)),
-              ),
+             
             ],
           ),
           const SizedBox(height: 10),
 
-          // Single smooth scrollable list showing all 26 benefits with Active badges
+          // Single smooth scrollable list showing all active benefits with Active badges
           ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),

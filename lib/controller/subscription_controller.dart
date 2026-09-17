@@ -28,6 +28,9 @@ class SubscriptionController extends GetxController {
   RxDouble totalAmount = 0.0.obs;
   Rx<UserModel> userModel = UserModel().obs;
 
+  // Locked benefits from API (commission_loss_calculator.locked_benefits)
+  RxList<String> lockedBenefits = <String>[].obs;
+
   RxString selectedRadioTile = ''.obs;
   var paymentSettingModel = PaymentSettingModel().obs;
 
@@ -182,6 +185,16 @@ class SubscriptionController extends GetxController {
       Map<String, dynamic> responseBody = json.decode(response.body);
       if (response.statusCode == 200 && responseBody['success'] == "success") {
         SubscriptionPlanModel model = SubscriptionPlanModel.fromJson(responseBody);
+
+        // Parse locked_benefits from commission_loss_calculator
+        final lossCalc = responseBody['commission_loss_calculator'];
+        if (lossCalc is Map) {
+          final rawLocked = lossCalc['locked_benefits'];
+          if (rawLocked is List) {
+            lockedBenefits.value = rawLocked.map((e) => e.toString()).toList();
+          }
+        }
+
         if (model.data?.isNotEmpty == true) {
           List<SubscriptionPlanData> subscriptionPlanData = model.data!;
           subscriptionPlanData.sort((a, b) {
