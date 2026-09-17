@@ -91,8 +91,31 @@ class RideData {
   String? promotionalAmount;
   String? promotionalDiscount;
   bool isPromotionalApplied = false;
+  String? baseFare;
+  String? baseMontant;
+  String? totalFare;
+  String? totalTax;
+  String? totalTaxAmount;
   UserInfo? userInfo;
   List<TaxModel>? taxModel;
+
+  double get trueBaseFare {
+    double? bf = double.tryParse(baseFare ?? baseMontant ?? '');
+    if (bf != null && bf > 0) return bf;
+
+    double m = double.tryParse(montant ?? '0') ?? 0.0;
+    double tf = double.tryParse(totalFare ?? '0') ?? 0.0;
+    double tt = double.tryParse(totalTax ?? totalTaxAmount ?? '0') ?? 0.0;
+
+    // Resilient fallback if talking to unpatched server where montant == totalFare
+    if (tf > 0 && tt > 0 && (m - tf).abs() < 1.0 && (tf - tt) > 0) {
+      return tf - tt;
+    }
+    return m;
+  }
+
+  double get parsedTotalFare => double.tryParse(totalFare ?? '0') ?? 0.0;
+  double get parsedTotalTax => double.tryParse(totalTax ?? totalTaxAmount ?? '0') ?? 0.0;
 
   RideData({
     this.id,
@@ -155,6 +178,11 @@ class RideData {
     this.promotionalAmount,
     this.promotionalDiscount,
     this.isPromotionalApplied = false,
+    this.baseFare,
+    this.baseMontant,
+    this.totalFare,
+    this.totalTax,
+    this.totalTaxAmount,
   });
 
   RideData.fromJson(Map<String, dynamic> json) {
@@ -234,6 +262,11 @@ class RideData {
     promotionalAmount = json['promotional_amount']?.toString();
     promotionalDiscount = json['promotional_discount']?.toString();
     isPromotionalApplied = json['is_promotional_applied'] == true || json['is_promotional_applied'] == 1 || json['is_promotional_applied'] == '1';
+    baseFare = json['base_fare']?.toString();
+    baseMontant = json['base_montant']?.toString();
+    totalFare = json['total_fare']?.toString();
+    totalTax = (json['total_tax'] ?? json['total_tax_amount'])?.toString();
+    totalTaxAmount = json['total_tax_amount']?.toString();
 
     taxModel = taxList;
   }
@@ -304,6 +337,11 @@ class RideData {
       data['stops'] = [];
     }
     data['tax'] = taxModel?.map((v) => v.toJson()).toList();
+    data['base_fare'] = baseFare;
+    data['base_montant'] = baseMontant;
+    data['total_fare'] = totalFare;
+    data['total_tax'] = totalTax;
+    data['total_tax_amount'] = totalTaxAmount;
     return data;
   }
 }

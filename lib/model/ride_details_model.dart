@@ -74,6 +74,28 @@ class RideDetailsdata {
   UserInfo? userInfo;
   String? driverLatitude;
   String? driverLongitude;
+  String? baseFare;
+  String? baseMontant;
+  String? totalFare;
+  String? totalTax;
+  String? totalTaxAmount;
+
+  double get trueBaseFare {
+    double? bf = double.tryParse(baseFare ?? baseMontant ?? '');
+    if (bf != null && bf > 0) return bf;
+
+    double m = double.tryParse(montant ?? '0') ?? 0.0;
+    double tf = double.tryParse(totalFare ?? '0') ?? 0.0;
+    double tt = double.tryParse(totalTax ?? totalTaxAmount ?? '0') ?? 0.0;
+
+    if (tf > 0 && tt > 0 && (m - tf).abs() < 1.0 && (tf - tt) > 0) {
+      return tf - tt;
+    }
+    return m;
+  }
+
+  double get parsedTotalFare => double.tryParse(totalFare ?? '0') ?? 0.0;
+  double get parsedTotalTax => double.tryParse(totalTax ?? totalTaxAmount ?? '0') ?? 0.0;
 
   RideDetailsdata(
       {this.id,
@@ -120,7 +142,12 @@ class RideDetailsdata {
       this.existingUserId,
       this.driverLatitude,
       this.driverLongitude,
-      this.updatedAt});
+      this.updatedAt,
+      this.baseFare,
+      this.baseMontant,
+      this.totalFare,
+      this.totalTax,
+      this.totalTaxAmount});
 
   RideDetailsdata.fromJson(Map<String, dynamic> json) {
     List<TaxModel>? taxList = [];
@@ -177,6 +204,11 @@ class RideDetailsdata {
     }
     driverLatitude = json['driver_latitude'].toString();
     driverLongitude = json['driver_longitude'].toString();
+    baseFare = json['base_fare']?.toString();
+    baseMontant = json['base_montant']?.toString();
+    totalFare = json['total_fare']?.toString();
+    totalTax = (json['total_tax'] ?? json['total_tax_amount'])?.toString();
+    totalTaxAmount = json['total_tax_amount']?.toString();
   }
 
   Map<String, dynamic> toJson() {
@@ -228,6 +260,11 @@ class RideDetailsdata {
     }
     data['driver_latitude'] = driverLatitude;
     data['driver_longitude'] = driverLongitude;
+    data['base_fare'] = baseFare;
+    data['base_montant'] = baseMontant;
+    data['total_fare'] = totalFare;
+    data['total_tax'] = totalTax;
+    data['total_tax_amount'] = totalTaxAmount;
     return data;
   }
 }

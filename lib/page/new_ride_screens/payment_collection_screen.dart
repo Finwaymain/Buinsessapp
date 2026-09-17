@@ -4,7 +4,6 @@ import 'package:http/http.dart' as http;
 import 'package:cabme_driver/constant/constant.dart';
 import 'package:cabme_driver/model/ride_model.dart';
 import 'package:cabme_driver/service/api.dart';
-import 'package:cabme_driver/themes/button_them.dart';
 import 'package:cabme_driver/themes/constant_colors.dart';
 import 'package:cabme_driver/themes/custom_dialog_box.dart';
 import 'package:cabme_driver/controller/new_ride_controller.dart';
@@ -56,6 +55,12 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
           Map<String, dynamic> rawJson = jsonDecode(response.body);
           dynamic rawItem = rawJson['data'] ?? rawJson['rideDetailsdata'];
           if (rawItem != null && rawItem is Map) {
+            if (rawItem['base_fare'] != null) widget.rideData.baseFare = rawItem['base_fare'].toString();
+            if (rawItem['base_montant'] != null) widget.rideData.baseMontant = rawItem['base_montant'].toString();
+            if (rawItem['total_fare'] != null) widget.rideData.totalFare = rawItem['total_fare'].toString();
+            if (rawItem['total_tax'] != null) widget.rideData.totalTax = rawItem['total_tax'].toString();
+            if (rawItem['montant'] != null) widget.rideData.montant = rawItem['montant'].toString();
+
             String paymentStatus = (rawItem['statut_paiement'] ?? '').toString().toLowerCase();
             if (paymentStatus == "yes" || paymentStatus == "paid") {
               _paymentPollTimer?.cancel();
@@ -99,7 +104,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final baseFare = double.tryParse(widget.rideData.montant?.toString() ?? '0') ?? 0.0;
+    final baseFare = widget.rideData.trueBaseFare;
     final discount = double.tryParse(widget.rideData.discount?.toString() ?? '0') ?? 0.0;
     final tip = double.tryParse(widget.rideData.tipAmount?.toString() ?? '0') ?? 0.0;
     final promoDiscount = double.tryParse(widget.rideData.promotionalDiscount?.toString() ?? '0') ?? 0.0;

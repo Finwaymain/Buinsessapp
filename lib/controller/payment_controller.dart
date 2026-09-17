@@ -30,28 +30,31 @@ class PaymentController extends GetxController {
     dynamic argumentData = Get.arguments;
     if (argumentData != null) {
       data.value = argumentData["rideData"];
+      subTotalAmount.value = data.value.trueBaseFare;
+      tipAmount.value = double.tryParse(data.value.tipAmount?.toString() ?? '0') ?? 0.0;
+      discountAmount.value = double.tryParse(data.value.discount?.toString() ?? '0') ?? 0.0;
 
-      // subTotalAmount.value = double.parse(data.value.montant!);
-      // tipAmount.value = data.value.tipAmount != "null" && data.value.tipAmount!.isNotEmpty ? double.parse(data.value.tipAmount.toString()) : 0.0;
-      // // taxAmount.value = double.parse(data.value.tax!);
-      // discountAmount.value = data.value.discount != "null" ? double.parse(data.value.discount!) : 0.0;
-      // for (var i = 0; i < data.value.taxModel!.length; i++) {
-      //   if (data.value.taxModel![i].statut == 'yes') {
-      //     if (data.value.taxModel![i].type == "Fixed") {
-      //       taxAmount.value += double.parse(data.value.taxModel![i].value.toString());
-      //     } else {
-      //       taxAmount.value += ((subTotalAmount.value - discountAmount.value) * double.parse(data.value.taxModel![i].value!.toString())) / 100;
-      //     }
-      //   }
-      // }
+      double taxableBase = (subTotalAmount.value - discountAmount.value) > 0 ? (subTotalAmount.value - discountAmount.value) : 0.0;
+      taxAmount.value = 0.0;
+      if (data.value.taxModel != null) {
+        for (var i = 0; i < data.value.taxModel!.length; i++) {
+          if (data.value.taxModel![i].statut == 'yes') {
+            if (data.value.taxModel![i].type == "Fixed") {
+              taxAmount.value += double.tryParse(data.value.taxModel![i].value.toString()) ?? 0.0;
+            } else {
+              taxAmount.value += (taxableBase * (double.tryParse(data.value.taxModel![i].value!.toString()) ?? 0.0)) / 100;
+            }
+          }
+        }
+      }
     }
     if (data.value.statutPaiement == "yes") {
       getRideDetailsData(data.value.id.toString());
-      adminCommission.value = double.parse(data.value.adminCommission.toString());
+      adminCommission.value = double.tryParse(data.value.adminCommission?.toString() ?? '0') ?? 0.0;
     } else {
       adminCommission.value = (Preferences.getString(Preferences.admincommissiontype).toString() == 'Percentage')
-          ? ((subTotalAmount.value - discountAmount.value) * double.parse(Preferences.getString(Preferences.admincommission).toString())) / 100
-          : double.parse(Preferences.getString(Preferences.admincommission).toString());
+          ? ((subTotalAmount.value - discountAmount.value) * (double.tryParse(Preferences.getString(Preferences.admincommission).toString()) ?? 0.0)) / 100
+          : (double.tryParse(Preferences.getString(Preferences.admincommission).toString()) ?? 0.0);
     }
 
     update();
@@ -70,15 +73,22 @@ class PaymentController extends GetxController {
       if (response.statusCode == 200 && responseBody['success'] == "success") {
         RideDetailsModel parcelDetailsModel = RideDetailsModel.fromJson(responseBody);
 
-        subTotalAmount.value = double.parse(parcelDetailsModel.rideDetailsdata!.montant.toString());
-        tipAmount.value = double.parse(parcelDetailsModel.rideDetailsdata!.tipAmount.toString());
-        discountAmount.value = double.parse(parcelDetailsModel.rideDetailsdata!.discount.toString());
-        for (var i = 0; i < parcelDetailsModel.rideDetailsdata!.taxModel!.length; i++) {
-          if (parcelDetailsModel.rideDetailsdata!.taxModel![i].statut! == 'yes') {
-            if (parcelDetailsModel.rideDetailsdata!.taxModel![i].type == "Fixed") {
-              taxAmount.value += double.parse(parcelDetailsModel.rideDetailsdata!.taxModel![i].value.toString());
-            } else {
-              taxAmount.value += ((subTotalAmount.value - discountAmount.value) * double.parse(parcelDetailsModel.rideDetailsdata!.taxModel![i].value!.toString())) / 100;
+        if (parcelDetailsModel.rideDetailsdata != null) {
+          final rd = parcelDetailsModel.rideDetailsdata!;
+          subTotalAmount.value = rd.trueBaseFare;
+          tipAmount.value = double.tryParse(rd.tipAmount?.toString() ?? '0') ?? 0.0;
+          discountAmount.value = double.tryParse(rd.discount?.toString() ?? '0') ?? 0.0;
+          double taxableBase = (subTotalAmount.value - discountAmount.value) > 0 ? (subTotalAmount.value - discountAmount.value) : 0.0;
+          taxAmount.value = 0.0;
+          if (rd.taxModel != null) {
+            for (var i = 0; i < rd.taxModel!.length; i++) {
+              if (rd.taxModel![i].statut! == 'yes') {
+                if (rd.taxModel![i].type == "Fixed") {
+                  taxAmount.value += double.tryParse(rd.taxModel![i].value.toString()) ?? 0.0;
+                } else {
+                  taxAmount.value += (taxableBase * (double.tryParse(rd.taxModel![i].value!.toString()) ?? 0.0)) / 100;
+                }
+              }
             }
           }
         }
@@ -103,10 +113,11 @@ class PaymentController extends GetxController {
   double calculateTax({TaxModel? taxModel}) {
     double tax = 0.0;
     if (taxModel != null && taxModel.statut == 'yes') {
+      double taxableBase = (subTotalAmount.value - discountAmount.value) > 0 ? (subTotalAmount.value - discountAmount.value) : 0.0;
       if (taxModel.type.toString() == "Fixed") {
-        tax = double.parse(taxModel.value.toString());
+        tax = double.tryParse(taxModel.value.toString()) ?? 0.0;
       } else {
-        tax = ((subTotalAmount.value - discountAmount.value) * double.parse(taxModel.value!.toString())) / 100;
+        tax = (taxableBase * (double.tryParse(taxModel.value!.toString()) ?? 0.0)) / 100;
       }
     }
     return tax;

@@ -228,10 +228,10 @@ class TripHistoryScreen extends StatelessWidget {
                                     Expanded(
                                       child: Column(
                                         children: [
-                                          Text(
-                                            Constant().amountShow(amount: controller.data.value.montant.toString()),
-                                            style: TextStyle(color: AppThemeData.primary400, fontSize: 18, fontFamily: AppThemeData.semiBold),
-                                          ),
+                                           Text(
+                                             Constant().amountShow(amount: controller.subTotalAmount.value.toString()),
+                                             style: TextStyle(color: AppThemeData.primary400, fontSize: 18, fontFamily: AppThemeData.semiBold),
+                                           ),
                                           Text("Trip Price".tr,
                                               style: TextStyle(
                                                   color: themeChange.getThem() ? AppThemeData.grey900Dark : AppThemeData.grey900, fontSize: 12, fontFamily: AppThemeData.regular)),
@@ -339,7 +339,7 @@ class TripHistoryScreen extends StatelessWidget {
                                 isDarkMode: themeChange.getThem(),
                                 lbl: "Sub Total",
                                 value: Constant().amountShow(
-                                  amount: controller.data.value.montant!.toString(),
+                                  amount: controller.subTotalAmount.value.toString(),
                                 )),
                             dividerCust(isDarkMode: themeChange.getThem()),
                             listTile(
@@ -351,7 +351,7 @@ class TripHistoryScreen extends StatelessWidget {
                             dividerCust(isDarkMode: themeChange.getThem()),
 
                             ListView.builder(
-                              itemCount: controller.data.value.taxModel!.length,
+                              itemCount: controller.data.value.taxModel != null ? controller.data.value.taxModel!.length : 0,
                               shrinkWrap: true,
                               padding: EdgeInsets.zero,
                               physics: const NeverScrollableScrollPhysics(),

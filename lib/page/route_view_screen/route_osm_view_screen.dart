@@ -98,6 +98,11 @@ class _RouteOsmViewScreenState extends State<RouteOsmViewScreen> {
         RideDetailsModel rideDetails = RideDetailsModel.fromJson(response.data);
         if (rideDetails.success == 'success' && rideDetails.rideDetailsdata != null) {
           var data = rideDetails.rideDetailsdata!;
+          if (data.baseFare != null) rideData!.baseFare = data.baseFare;
+          if (data.baseMontant != null) rideData!.baseMontant = data.baseMontant;
+          if (data.totalFare != null) rideData!.totalFare = data.totalFare;
+          if (data.totalTax != null) rideData!.totalTax = data.totalTax;
+          if (data.montant != null) rideData!.montant = data.montant;
           if (mounted) {
             setState(() {
               rideData!.statut = data.statut;
@@ -745,6 +750,9 @@ class _RouteOsmViewScreenState extends State<RouteOsmViewScreen> {
                                 controllerRideDetails.setCompletedRequest(bodyParams, rideData!, paymethod: "Pending").then((value) {
                                   if (value != null) {
                                     rideData!.statut = 'completed';
+                                    if (value['data'] != null && value['data'] is Map<String, dynamic>) {
+                                      rideData = RideData.fromJson(value['data']);
+                                    }
                                     Get.off(() => PaymentCollectionScreen(
                                       rideData: rideData!,
                                       onConfirm: (String paymethod) {

@@ -239,16 +239,13 @@ class RideDetailsController extends GetxController {
   }
 
   Future<dynamic> cashPaymentRequest(RideData data, {String paymethod = "Cash"}) async {
-    List taxList = [];
-
-    for (var v in Constant.taxList) {
-      taxList.add(v.toJson());
-    }
+    final activeTaxes = Constant.getActiveTaxes(paymethod.toLowerCase());
+    List taxList = activeTaxes.map((v) => v.toJson()).toList();
     Map<String, dynamic> bodyParams = {
       'id_ride': data.id.toString(),
       'id_driver': data.idConducteur.toString(),
       'id_user_app': data.idUserApp.toString(),
-      'amount': data.montant.toString(),
+      'amount': data.trueBaseFare.toString(),
       'paymethod': paymethod,
       'discount': data.discount.toString(),
       'tip': data.tipAmount.toString(),

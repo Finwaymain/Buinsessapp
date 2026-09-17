@@ -382,7 +382,7 @@ class NewRideController extends GetxController with WidgetsBindingObserver {
       'id_ride': data.id.toString(),
       'id_driver': data.idConducteur.toString(),
       'id_user_app': data.idUserApp.toString(),
-      'amount': data.montant.toString(),
+      'amount': data.trueBaseFare.toString(),
       'paymethod': paymethod,
       'discount': data.discount.toString(),
       'tip': data.tipAmount.toString(),

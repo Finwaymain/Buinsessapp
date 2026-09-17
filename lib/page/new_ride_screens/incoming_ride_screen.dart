@@ -65,6 +65,10 @@ class _IncomingRideScreenState extends State<IncomingRideScreen> with TickerProv
               widget.rideData.latitudeArrivee = enriched.latitudeArrivee;
               widget.rideData.longitudeArrivee = enriched.longitudeArrivee;
               widget.rideData.montant = enriched.montant;
+              widget.rideData.baseFare = enriched.baseFare;
+              widget.rideData.baseMontant = enriched.baseMontant;
+              widget.rideData.totalFare = enriched.totalFare;
+              widget.rideData.totalTax = enriched.totalTax;
               widget.rideData.distance = enriched.distance;
               widget.rideData.distanceUnit = enriched.distanceUnit;
               widget.rideData.duree = enriched.duree;
@@ -450,7 +454,7 @@ class _IncomingRideScreenState extends State<IncomingRideScreen> with TickerProv
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              Constant().amountShow(amount: widget.rideData.montant.toString()),
+                              Constant().amountShow(amount: widget.rideData.trueBaseFare.toString()),
                               style: TextStyle(
                                 color: AppThemeData.primary200,
                                 fontSize: 28,

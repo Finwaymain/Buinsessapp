@@ -414,7 +414,7 @@ class _NewRideScreenState extends State<NewRideScreen> with SingleTickerProvider
   }
 
   Widget _buildIncomingCard(BuildContext context, RideData data, NewRideController controller, bool isDark) {
-    final fareStr = Constant().amountShow(amount: data.montant.toString());
+    final fareStr = Constant().amountShow(amount: data.trueBaseFare.toString());
     final distanceStr = '${double.tryParse(data.distance.toString())?.toStringAsFixed(1) ?? data.distance ?? "0"} ${Constant.distanceUnit}';
     final durationStr = data.duree?.toString() ?? "";
 
@@ -597,7 +597,12 @@ class _NewRideScreenState extends State<NewRideScreen> with SingleTickerProvider
     final status = (data.statut ?? '').toLowerCase().trim();
     final bool isCompleted = status == 'completed';
     final bool isOnRide = status == "on ride" || status == "on_ride" || status == "started" || status == "in_progress";
-    final fareStr = Constant().amountShow(amount: data.montant.toString());
+    final fareStr = Constant().amountShow(
+      amount: (isCompleted && data.parsedTotalFare > 0
+              ? data.parsedTotalFare
+              : data.trueBaseFare)
+          .toString(),
+    );
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -941,7 +946,12 @@ class _NewRideScreenState extends State<NewRideScreen> with SingleTickerProvider
   }
 
   Widget _buildCompletedCard(BuildContext context, RideData data, NewRideController controller, bool isDark) {
-    final fareStr = Constant().amountShow(amount: data.montant.toString());
+    final fareStr = Constant().amountShow(
+      amount: (data.parsedTotalFare > 0
+              ? data.parsedTotalFare
+              : data.trueBaseFare)
+          .toString(),
+    );
     final isCompleted = data.statut == "completed";
 
     return InkWell(
