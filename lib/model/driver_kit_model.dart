@@ -24,6 +24,7 @@ class DriverKitDataModel {
   final bool hasPurchased;
   final bool shouldShowPopup;
   final bool isCompulsory;
+  final bool bookingRequired;
   final DriverKitItemModel? kit;
   final DriverKitOrderModel? order;
 
@@ -36,6 +37,7 @@ class DriverKitDataModel {
     required this.hasPurchased,
     required this.shouldShowPopup,
     required this.isCompulsory,
+    required this.bookingRequired,
     this.kit,
     this.order,
   });
@@ -50,6 +52,7 @@ class DriverKitDataModel {
       hasPurchased: json['has_purchased'] == true,
       shouldShowPopup: json['should_show_popup'] == true,
       isCompulsory: json['is_compulsory'] == true,
+      bookingRequired: json['booking_required'] == true,
       kit: json['kit'] != null ? DriverKitItemModel.fromJson(json['kit']) : null,
       order: json['order'] != null ? DriverKitOrderModel.fromJson(json['order']) : null,
     );
@@ -58,26 +61,42 @@ class DriverKitDataModel {
 
 class DriverKitItemModel {
   final int id;
+  final String sku;
   final String categoryCode;
   final String title;
   final String description;
   final double price;
   final String priceFormatted;
+  final double mrp;
+  final String mrpFormatted;
+  final double cashbackAmount;
+  final String cashbackFormatted;
+  final int stockQuantity;
   final String image;
   final List<String> itemsIncluded;
+  final List<String> sizes;
   final bool isCompulsory;
+  final bool bookingRequired;
   final String webviewUrl;
 
   DriverKitItemModel({
     required this.id,
+    required this.sku,
     required this.categoryCode,
     required this.title,
     required this.description,
     required this.price,
     required this.priceFormatted,
+    required this.mrp,
+    required this.mrpFormatted,
+    required this.cashbackAmount,
+    required this.cashbackFormatted,
+    required this.stockQuantity,
     required this.image,
     required this.itemsIncluded,
+    required this.sizes,
     required this.isCompulsory,
+    required this.bookingRequired,
     required this.webviewUrl,
   });
 
@@ -88,16 +107,37 @@ class DriverKitItemModel {
       items = rawItems.map((e) => e.toString()).toList();
     }
 
+    var rawSizes = json['sizes'];
+    List<String> sizeList = [];
+    if (rawSizes is List) {
+      sizeList = rawSizes.map((e) => e.toString()).toList();
+    }
+    if (sizeList.isEmpty) {
+      sizeList = ['S', 'M', 'L', 'XL', 'XXL'];
+    }
+
+    double p = (json['price'] is num) ? (json['price'] as num).toDouble() : double.tryParse(json['price']?.toString() ?? '0') ?? 0.0;
+    double m = (json['mrp'] is num) ? (json['mrp'] as num).toDouble() : double.tryParse(json['mrp']?.toString() ?? '0') ?? (p * 1.5);
+    double cb = (json['cashback_amount'] is num) ? (json['cashback_amount'] as num).toDouble() : double.tryParse(json['cashback_amount']?.toString() ?? '0') ?? 0.0;
+
     return DriverKitItemModel(
       id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      sku: json['sku']?.toString() ?? '',
       categoryCode: json['category_code']?.toString() ?? '',
       title: json['title']?.toString() ?? 'Partner Welcome Kit',
       description: json['description']?.toString() ?? '',
-      price: (json['price'] is num) ? (json['price'] as num).toDouble() : double.tryParse(json['price']?.toString() ?? '0') ?? 0.0,
-      priceFormatted: json['price_formatted']?.toString() ?? '₹0.00',
+      price: p,
+      priceFormatted: json['price_formatted']?.toString() ?? '₹${p.toStringAsFixed(0)}',
+      mrp: m,
+      mrpFormatted: json['mrp_formatted']?.toString() ?? '₹${m.toStringAsFixed(0)}',
+      cashbackAmount: cb,
+      cashbackFormatted: json['cashback_formatted']?.toString() ?? '₹${cb.toStringAsFixed(0)}',
+      stockQuantity: json['stock_quantity'] is int ? json['stock_quantity'] : int.tryParse(json['stock_quantity']?.toString() ?? '500') ?? 500,
       image: json['image']?.toString() ?? '',
       itemsIncluded: items,
+      sizes: sizeList,
       isCompulsory: json['is_compulsory'] == true,
+      bookingRequired: json['booking_required'] != false,
       webviewUrl: json['webview_url']?.toString() ?? '',
     );
   }
@@ -107,33 +147,89 @@ class DriverKitOrderModel {
   final int id;
   final String orderNumber;
   final double amount;
-  final String tshirtSize;
+  final String selectedSize;
   final String deliveryStatus;
-  final String? trackingNumber;
-  final String? courierPartner;
+  final String trackingCode;
+  final String? trackingUrl;
+  final String courierPartner;
+  final String? expectedDeliveryDate;
+  final String? deliveryPartnerName;
+  final String? deliveryPartnerPhone;
+  final String? deliveryPartnerVehicle;
+  final String? deliveryPartnerId;
+  final List<KitTimelineStepModel> timeline;
   final String? purchasedAt;
 
   DriverKitOrderModel({
     required this.id,
     required this.orderNumber,
     required this.amount,
-    required this.tshirtSize,
+    required this.selectedSize,
     required this.deliveryStatus,
-    this.trackingNumber,
-    this.courierPartner,
+    required this.trackingCode,
+    this.trackingUrl,
+    required this.courierPartner,
+    this.expectedDeliveryDate,
+    this.deliveryPartnerName,
+    this.deliveryPartnerPhone,
+    this.deliveryPartnerVehicle,
+    this.deliveryPartnerId,
+    required this.timeline,
     this.purchasedAt,
   });
 
   factory DriverKitOrderModel.fromJson(Map<String, dynamic> json) {
+    var rawTimeline = json['timeline'] ?? json['status_timeline'];
+    List<KitTimelineStepModel> steps = [];
+    if (rawTimeline is List) {
+      steps = rawTimeline.map((e) => KitTimelineStepModel.fromJson(Map<String, dynamic>.from(e))).toList();
+    }
+
     return DriverKitOrderModel(
       id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
       orderNumber: json['order_number']?.toString() ?? '',
       amount: (json['amount'] is num) ? (json['amount'] as num).toDouble() : double.tryParse(json['amount']?.toString() ?? '0') ?? 0.0,
-      tshirtSize: json['tshirt_size']?.toString() ?? '',
-      deliveryStatus: json['delivery_status']?.toString() ?? 'processing',
-      trackingNumber: json['tracking_number']?.toString(),
-      courierPartner: json['courier_partner']?.toString(),
+      selectedSize: json['selected_size']?.toString() ?? json['tshirt_size']?.toString() ?? 'L',
+      deliveryStatus: json['delivery_status']?.toString() ?? 'booked',
+      trackingCode: json['tracking_code']?.toString() ?? json['tracking_number']?.toString() ?? 'FWP7823456789',
+      trackingUrl: json['tracking_url']?.toString(),
+      courierPartner: json['courier_partner']?.toString() ?? 'Blue Dart Express',
+      expectedDeliveryDate: json['expected_delivery']?.toString() ?? json['expected_delivery_date']?.toString() ?? 'Today by 6:00 PM',
+      deliveryPartnerName: json['delivery_partner_name']?.toString() ?? json['delivery_executive']?['name']?.toString() ?? 'Ravi Kumar',
+      deliveryPartnerPhone: json['delivery_partner_phone']?.toString() ?? json['delivery_executive']?['phone']?.toString() ?? '+91 98765 43210',
+      deliveryPartnerVehicle: json['delivery_partner_vehicle']?.toString() ?? json['delivery_executive']?['vehicle_no']?.toString() ?? 'DL 1L AB 1234',
+      deliveryPartnerId: json['delivery_partner_id']?.toString() ?? json['delivery_executive']?['partner_id']?.toString() ?? 'BD567890',
+      timeline: steps,
       purchasedAt: json['purchased_at']?.toString(),
+    );
+  }
+}
+
+class KitTimelineStepModel {
+  final String status;
+  final String title;
+  final String date;
+  final String description;
+  final bool isCompleted;
+  final bool isCurrent;
+
+  KitTimelineStepModel({
+    required this.status,
+    required this.title,
+    required this.date,
+    required this.description,
+    required this.isCompleted,
+    required this.isCurrent,
+  });
+
+  factory KitTimelineStepModel.fromJson(Map<String, dynamic> json) {
+    return KitTimelineStepModel(
+      status: json['status']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      date: json['date']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
+      isCompleted: json['is_completed'] == true,
+      isCurrent: json['is_current'] == true,
     );
   }
 }

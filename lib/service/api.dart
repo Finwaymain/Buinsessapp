@@ -218,5 +218,11 @@ class API {
 
   // Driver Welcome Kit Endpoints
   static const driverKitStatus = "${baseUrl}driver/kit-status";
+  static const driverKitCatalog = "${baseUrl}driver/kit-catalog";
+  static const driverKitOrderTrack = "${baseUrl}driver/kit-order/track";
   static const driverKitRecordPurchase = "${baseUrl}driver/kit-purchase/record";
+
+  // Plan Email OTP Verification
+  static const sendPlanEmailOtp = "${baseUrl}plan/send-email-otp";
+  static const verifyPlanEmailOtp = "${baseUrl}plan/verify-email-otp";
 }

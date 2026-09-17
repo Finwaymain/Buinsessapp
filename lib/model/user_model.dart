@@ -131,6 +131,7 @@ class UserData {
   bool? isHomeServiceProvider; // true = painter, plumber, electrician, etc.
   String? alternatePhone;
   String? marketplaceEnabled;
+  String? emailVerifiedAt;
 
   UserData({
     this.id,
@@ -225,6 +226,7 @@ class UserData {
     this.isHomeServiceProvider,
     this.alternatePhone,
     this.marketplaceEnabled,
+    this.emailVerifiedAt,
   });
 
   UserData.fromJson(Map<String, dynamic> json) {
@@ -326,6 +328,7 @@ class UserData {
     isHomeServiceProvider = parseProfileBool(json['is_home_service_provider']);
     alternatePhone = json['alternate_phone']?.toString();
     marketplaceEnabled = json['marketplace_enabled']?.toString();
+    emailVerifiedAt = json['email_verified_at']?.toString();
   }
 
   Map<String, dynamic> toJson() {
@@ -428,6 +431,7 @@ class UserData {
     data['is_home_service_provider'] = isHomeServiceProvider;
     data['alternate_phone'] = alternatePhone;
     data['marketplace_enabled'] = marketplaceEnabled;
+    data['email_verified_at'] = emailVerifiedAt;
     return data;
   }
 }
