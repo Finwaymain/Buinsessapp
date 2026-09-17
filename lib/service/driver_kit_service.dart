@@ -10,8 +10,6 @@ import 'package:http/http.dart' as http;
 
 import '../model/driver_kit_model.dart';
 import '../utils/onboarding_url.dart';
-import '../page/driver_kit/partner_kit_store_screen.dart';
-import '../page/driver_kit/kit_tracking_screen.dart';
 
 import '../controller/dash_board_controller.dart';
 
@@ -226,7 +224,7 @@ class DriverKitService extends GetxController {
                 child: ElevatedButton(
                   onPressed: () {
                     Get.back();
-                    openKitStore();
+                    openKitWebView(kit.webviewUrl);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppThemeData.primary200,
@@ -272,24 +270,29 @@ class DriverKitService extends GetxController {
     );
   }
 
-  /// Open Native Kit Store
-  void openKitStore() {
-    final kit = kitData.value?.kit;
-    Get.to(() => PartnerKitStoreScreen(initialKit: kit))?.then((_) {
-      fetchKitStatus();
-    });
-  }
-
-  /// Open Native Kit Tracking
-  void openKitTracking() {
-    final order = kitData.value?.order;
-    Get.to(() => KitTrackingScreen(orderNumber: order?.orderNumber))?.then((_) {
-      fetchKitStatus();
-    });
-  }
-
-  /// Fallback WebView if needed
+  /// Open Kit Purchase & Tracking in WebView
   void openKitWebView(String webviewUrl) {
-    openKitStore();
+    String finalUrl = webviewUrl;
+    if (finalUrl.isEmpty || finalUrl.contains('localhost') || !finalUrl.startsWith('http')) {
+      final driverId = _getDriverId();
+      final token = _getAccessToken();
+      finalUrl = OnboardingUrl.build('/onboarding/kit-purchase', extra: {
+        'driver_id': driverId,
+        'accesstoken': token,
+      });
+    }
+
+    Get.to(() => WebViewScreen(
+      url: finalUrl,
+      title: 'Partner Welcome Kit'.tr,
+    ))?.then((_) {
+      // Re-fetch status when returning from WebView
+      fetchKitStatus();
+    });
+  }
+
+  /// Open Tracking in WebView
+  void openKitTracking() {
+    openKitWebView('');
   }
 }
