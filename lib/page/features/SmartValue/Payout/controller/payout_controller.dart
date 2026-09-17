@@ -32,7 +32,24 @@ class PayoutController extends GetxController with GetTickerProviderStateMixin {
 
   String get earnAmount => accountDetailsModel.value?.data?.earnAmount ?? "0.00";
 
-  String get totalAmount => (double.parse(amount) + double.parse(earnAmount)).toStringAsFixed(2);
+  String get totalEarnings => accountDetailsModel.value?.data?.totalEarnings ?? earnAmount;
+  String get cashEarnings => accountDetailsModel.value?.data?.cashEarnings ?? "0.00";
+
+  double get walletBalance => double.tryParse(amount) ?? 0.0;
+  double get digitalEarnBalance => double.tryParse(earnAmount) ?? 0.0;
+
+  double get withdrawableAmount {
+    if (accountDetailsModel.value?.data?.withdrawableBalance != null) {
+      final parsed = double.tryParse(accountDetailsModel.value!.data!.withdrawableBalance!);
+      if (parsed != null) return parsed;
+    }
+    if (walletBalance <= 0 || digitalEarnBalance <= 0) {
+      return 0.0;
+    }
+    return walletBalance < digitalEarnBalance ? walletBalance : digitalEarnBalance;
+  }
+
+  String get totalAmount => withdrawableAmount.toStringAsFixed(2);
 
 
   @override
@@ -508,14 +525,21 @@ class PayoutController extends GetxController with GetTickerProviderStateMixin {
       return;
     }
 
-    /// 🔹 Wallet balance check
-    final double walletBalance =
-        double.tryParse(amount?? '0') ?? 0;
+    /// 🔹 Withdrawable payout balance check
+    if (withdrawableAmount <= 0) {
+      _showSnack(
+        "No Withdrawable Balance",
+        "You do not have any withdrawable digital earnings. Cash collected directly from riders is retained in hand and cannot be withdrawn via payout.",
+        Icons.account_balance_wallet_outlined,
+        Colors.red,
+      );
+      return;
+    }
 
-    if (enteredAmount > walletBalance) {
+    if (enteredAmount > withdrawableAmount) {
       _showSnack(
         "Insufficient Balance",
-        "Available balance is ${Constant.currency}$walletBalance",
+        "Available payout balance is ${Constant.currency}${withdrawableAmount.toStringAsFixed(2)}. Only earnings from UPI or Wallet can be withdrawn.",
         Icons.account_balance_wallet_outlined,
         Colors.red,
       );

@@ -75,7 +75,7 @@ class _ServicePaymentReceivedScreenState extends State<ServicePaymentReceivedScr
                   const SizedBox(height: 10),
                   if (booking.hasPromotionalBonus) ...[
                     _row('Service Booking Total'.tr, flow.billTotal + booking.promotionalAmountValue),
-                    _row('🎁 Welcome Bonus'.tr, -booking.promotionalDiscountValue, color: Colors.green),
+                    _row('🎁 Promotion Bonus'.tr, -booking.promotionalDiscountValue, color: Colors.green),
                   ] else ...[
                     if (flow.itemizedBillItems.isNotEmpty)
                       ...flow.itemizedBillItems.map((item) => _row(item.name, item.price))

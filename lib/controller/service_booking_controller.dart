@@ -31,15 +31,26 @@ class ServiceBookingController extends GetxController {
   }) async {
     try {
       isLoading.value = true;
+      final userId = ServiceHistoryController.resolveUserId();
       final params = <String, String>{
         'service_name': serviceName,
         'service_names': serviceNames.join('|'),
       };
       if (lat != null && lat.isNotEmpty) params['lat'] = lat;
       if (lng != null && lng.isNotEmpty) params['lng'] = lng;
+      if (userId > 0) {
+        params['user_id'] = userId.toString();
+        params['user_type'] = 'driver';
+      }
 
       final uri = Uri.parse(API.servicePriceEstimate).replace(queryParameters: params);
-      final response = await http.get(uri, headers: API.header).timeout(const Duration(seconds: 20));
+      final headers = Map<String, String>.from(API.header);
+      if (userId > 0) {
+        headers['id_user'] = userId.toString();
+        headers['user_type'] = 'driver';
+      }
+
+      final response = await http.get(uri, headers: headers).timeout(const Duration(seconds: 20));
       final body = json.decode(response.body);
       if (response.statusCode == 200 && body['success'] == 'success') {
         final data = ServicePriceEstimate.fromJson(Map<String, dynamic>.from(body['data'] as Map));
@@ -63,8 +74,10 @@ class ServiceBookingController extends GetxController {
       }
 
       bodyParams['user_id'] = userId.toString();
+      bodyParams['user_type'] = 'driver';
       final headers = Map<String, String>.from(API.header);
       headers['id_user'] = userId.toString();
+      headers['user_type'] = 'driver';
 
       ShowToastDialog.showLoader("Booking service...".tr);
       final response = await http
@@ -241,7 +254,11 @@ class ServiceBookingController extends GetxController {
     }
   }
 
-  Future<bool> payBooking({required int bookingId, required String paymentMethod}) async {
+  Future<bool> payBooking({
+    required int bookingId,
+    required String paymentMethod,
+    bool applyPromotional = true,
+  }) async {
     try {
       final userId = ServiceHistoryController.resolveUserId();
       if (userId == 0) {
@@ -261,6 +278,7 @@ class ServiceBookingController extends GetxController {
               'user_id': userId.toString(),
               'booking_id': bookingId.toString(),
               'payment_method': paymentMethod,
+              'apply_promotional': applyPromotional ? '1' : '0',
             }),
           )
           .timeout(const Duration(seconds: 20));

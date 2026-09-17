@@ -14,6 +14,7 @@ class ServiceScanToPayScreen extends StatefulWidget {
   final String expectedDriverId;
   final double amount;
   final ServiceBookingController controller;
+  final bool applyPromotional;
 
   const ServiceScanToPayScreen({
     super.key,
@@ -21,6 +22,7 @@ class ServiceScanToPayScreen extends StatefulWidget {
     required this.expectedDriverId,
     required this.amount,
     required this.controller,
+    this.applyPromotional = true,
   });
 
   @override
@@ -85,6 +87,7 @@ class _ServiceScanToPayScreenState extends State<ServiceScanToPayScreen> {
             final ok = await widget.controller.payBooking(
               bookingId: widget.bookingId,
               paymentMethod: 'wallet',
+              applyPromotional: widget.applyPromotional,
             );
             ShowToastDialog.closeLoader();
 

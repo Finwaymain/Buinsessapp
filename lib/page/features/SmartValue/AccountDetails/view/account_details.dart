@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
-import '../controller/account_details_controller.dart';
+import 'package:cabme_driver/page/features/SmartValue/AccountDetails/controller/account_details_controller.dart';
 
 class AccountDetails extends StatelessWidget {
   AccountDetails({super.key});

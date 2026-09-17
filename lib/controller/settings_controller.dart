@@ -118,7 +118,9 @@ class SettingsController extends GetxController {
           Constant.decimal = model.data?.decimalDigit ?? "2";
           Constant.currency = model.data?.currency ?? "₹";
           Constant.symbolAtRight = _parseBool(model.data?.symbolAtRight);
-          Constant.kGoogleApiKey = model.data?.googleMapApiKey ?? "";
+          if (model.data?.googleMapApiKey != null && model.data!.googleMapApiKey!.isNotEmpty) {
+            Constant.kGoogleApiKey = model.data!.googleMapApiKey!;
+          }
           Constant.contactUsEmail = model.data?.contactUsEmail ?? "";
           Constant.contactUsAddress = model.data?.contactUsAddress ?? "";
           Constant.minimumWalletBalance = model.data?.minimumDepositAmount ?? "0";

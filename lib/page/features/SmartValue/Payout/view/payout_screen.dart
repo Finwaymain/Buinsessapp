@@ -124,7 +124,7 @@ class PayoutScreen extends StatelessWidget {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          "Available Balance",
+                                          "Available for Payout",
                                           style: TextStyle(
                                             color: Colors.white.withValues(alpha: 0.9),
                                             fontSize: 14,
@@ -193,7 +193,7 @@ class PayoutScreen extends StatelessWidget {
                                                   borderRadius: BorderRadius.circular(8),
                                                 ),
                                                 child: const Icon(
-                                                  Icons.wallet,
+                                                  Icons.account_balance_wallet,
                                                   color: Colors.white,
                                                   size: 16,
                                                 ),
@@ -252,7 +252,7 @@ class PayoutScreen extends StatelessWidget {
                                               ),
                                               const SizedBox(width: 8),
                                               Text(
-                                                "Earnings",
+                                                "UPI / Digital",
                                                 style: TextStyle(
                                                   color: Colors.white.withValues(alpha: 0.85),
                                                   fontSize: 13,
@@ -277,6 +277,30 @@ class PayoutScreen extends StatelessWidget {
                                       ),
                                     ),
                                   ],
+                                ),
+                                const SizedBox(height: 16),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.info_outline, color: Colors.white, size: 16),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          "Cash collected in hand is already with you. Only UPI & Wallet digital earnings are withdrawable.",
+                                          style: TextStyle(
+                                            color: Colors.white.withValues(alpha: 0.95),
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w400,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
@@ -599,7 +623,7 @@ class PayoutScreen extends StatelessWidget {
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
-                                        bankName ?? '',
+                                        bankName,
                                         style: TextStyle(
                                           fontSize: 15,
                                           fontWeight: FontWeight.bold,

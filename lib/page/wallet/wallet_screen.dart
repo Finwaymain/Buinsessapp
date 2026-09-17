@@ -228,7 +228,13 @@ class _WalletScreenState extends State<WalletScreen> {
                         ? Row(
                             children: [
                               Text(
-                                data.amount!.toString().contains('-') ? "Admin Commission Debited".tr : "Booking Amount credited".tr,
+                                data.amount!.toString().contains('-')
+                                    ? (data.libelle != null && data.libelle!.isNotEmpty && data.libelle != 'ride' && data.libelle != 'Normal Ride' && data.libelle != 'Cab Ride Fare'
+                                        ? "${data.libelle} Debited".tr
+                                        : "Admin Commission Debited".tr)
+                                    : (data.payment != null && data.payment.toString().toLowerCase() == 'cash')
+                                        ? "Cash Collected (In Hand)".tr
+                                        : "Booking Amount credited".tr,
                                 style: TextStyle(
                                   color: isDarkMode ? AppThemeData.grey900Dark : AppThemeData.grey900,
                                   fontFamily: AppThemeData.medium,

@@ -82,10 +82,8 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     return;
   }
 
-  final bool isHomeService = message.data['type'] == 'homeservice' ||
-      message.data['tag'] == 'homeservicerequest' ||
-      message.data['tag'] == 'homeservicenotif' ||
-      (message.data['booking_id'] != null && message.data['booking_id'].toString().isNotEmpty);
+  final bool isNewHomeServiceRequest = message.data['tag'] == 'homeservicerequest' ||
+      (message.data['type'] == 'homeservice' && message.data['statut'] == 'new');
 
   final bool isRideRequest = message.data['statut'] == 'new' ||
       message.data['tag'] == 'ridenewrider' ||
@@ -100,7 +98,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     } catch (e) {
       log('Error showing callkit in background for ride: $e');
     }
-  } else if (isHomeService) {
+  } else if (isNewHomeServiceRequest) {
     try {
       await showCallkitIncomingForHomeService(message.data);
     } catch (e) {
@@ -327,21 +325,31 @@ class FirebaseService {
         return;
       }
 
-      final bool isHomeService = message.data['type'] == 'homeservice' ||
-          message.data['tag'] == 'homeservicerequest' ||
+      final bool isNewHomeServiceRequest = message.data['tag'] == 'homeservicerequest' ||
+          (message.data['type'] == 'homeservice' && message.data['statut'] == 'new');
+
+      final bool isHomeServiceUpdate = message.data['type'] == 'homeservice' ||
           message.data['tag'] == 'homeservicenotif' ||
           (message.data['booking_id'] != null && message.data['booking_id'].toString().isNotEmpty);
 
-      final bool isRideRequest = message.data['statut'] == 'new' ||
+      final bool isRideRequest = (message.data['statut'] == 'new' ||
           message.data['tag'] == 'ridenewrider' ||
-          message.data['tag'] == 'parcelnew';
+          message.data['tag'] == 'parcelnew') && !isHomeServiceUpdate;
 
-      if (isHomeService) {
+      if (isNewHomeServiceRequest) {
         InAppSoundService.playIncomingBookingAlert();
         if (Get.isRegistered<MyBookingController>()) {
           Get.find<MyBookingController>().fetchBookings(showLoader: false);
         }
         showCallkitIncomingForHomeService(message.data);
+        NotificationService.display(message);
+        return;
+      }
+
+      if (isHomeServiceUpdate) {
+        if (Get.isRegistered<MyBookingController>()) {
+          Get.find<MyBookingController>().fetchBookings(showLoader: false);
+        }
         NotificationService.display(message);
         return;
       }
@@ -780,7 +788,7 @@ class InitialBinding extends Bindings {
 }
 
 class AppRoutes {
-  static Widget getInitialScreen(SettingsController controller) {
+  static Widget getInitialScreen([SettingsController? controller]) {
     // Ensure default language code
     if (Preferences.getString(Preferences.languageCodeKey).toString().isEmpty) {
       Preferences.setString(Preferences.languageCodeKey, 'en');
@@ -865,22 +873,7 @@ class _MyAppState extends State<MyApp> {
                 child: builtChild,
               );
             },
-            home: GetX<SettingsController>(
-              init: SettingsController(),
-              builder: (controller) {
-                if (controller.isLoading.value) {
-                  return Scaffold(
-                    backgroundColor: themeProvider.getThem() ? AppThemeData.surface50Dark : AppThemeData.surface50,
-                    body: Constant.loader(
-                      context,
-                      isDarkMode: themeProvider.getThem(),
-                    ),
-                  );
-                }
-
-                return AppRoutes.getInitialScreen(controller);
-              },
-            ),
+            home: AppRoutes.getInitialScreen(),
           );
         },
       ),

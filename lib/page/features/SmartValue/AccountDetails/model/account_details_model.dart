@@ -96,6 +96,10 @@ class AccountData {
 
     String? amount;
     String? earnAmount;
+    String? totalEarnings;
+    String? cashEarnings;
+    String? withdrawableBalance;
+    String? digitalEarnings;
 
     String? resetPasswordOtp;
     String? resetPasswordOtpModifier;
@@ -151,6 +155,10 @@ class AccountData {
         otherInfo = _asString(json['other_info']);
         amount = _asString(json['amount']);
         earnAmount = _asString(json['earn_amount']);
+        totalEarnings = _asString(json['total_earnings']);
+        cashEarnings = _asString(json['cash_earnings']);
+        withdrawableBalance = _asString(json['withdrawable_balance']);
+        digitalEarnings = _asString(json['digital_earnings']);
         isVerified = _asInt(json['is_verified']);
         mdp = _asString(json['mdp']);
         email = _asString(json['email']);
@@ -237,6 +245,10 @@ class AccountData {
 
         data['amount'] = amount;
         data['earn_amount'] = earnAmount;
+        data['total_earnings'] = totalEarnings;
+        data['cash_earnings'] = cashEarnings;
+        data['withdrawable_balance'] = withdrawableBalance;
+        data['digital_earnings'] = digitalEarnings;
 
         data['reset_password_otp'] = resetPasswordOtp;
         data['reset_password_otp_modifier'] = resetPasswordOtpModifier;

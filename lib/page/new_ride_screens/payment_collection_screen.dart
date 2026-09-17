@@ -104,10 +104,12 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
     final tip = double.tryParse(widget.rideData.tipAmount?.toString() ?? '0') ?? 0.0;
     final promoDiscount = double.tryParse(widget.rideData.promotionalDiscount?.toString() ?? '0') ?? 0.0;
     final promoAmount = double.tryParse(widget.rideData.promotionalAmount?.toString() ?? '0') ?? 0.0;
-    final hasPromo = (widget.rideData.isPromotionalApplied || promoDiscount > 0) && promoDiscount > 0;
+    final activeMethod = selectedMethod.toLowerCase();
+    // Promotional bonus is only applicable on digital wallet transactions, NEVER on cash
+    final isCash = activeMethod == 'cash';
+    final hasPromo = !isCash && (widget.rideData.isPromotionalApplied || promoDiscount > 0) && promoDiscount > 0;
     final displayedRideFare = hasPromo ? (baseFare + promoAmount) : baseFare;
     final netBaseFare = (baseFare - discount) > 0 ? (baseFare - discount) : 0.0;
-    final activeMethod = selectedMethod.toLowerCase();
     final taxBreakdown = Constant.getTaxBreakdown(netBaseFare, activeMethod);
     final totalTax = Constant.calculateTotalTaxes(netBaseFare, activeMethod);
     final totalPayable = netBaseFare + totalTax + tip;
@@ -174,7 +176,7 @@ class _PaymentCollectionScreenState extends State<PaymentCollectionScreen> {
                   const SizedBox(height: 12),
                   _breakdownRow(hasPromo ? "Ride Booking Total".tr : "Base Ride Fare".tr, Constant().amountShow(amount: displayedRideFare.toString())),
                   if (hasPromo)
-                    _breakdownRow("🎁 Welcome Bonus".tr, "-${Constant().amountShow(amount: promoDiscount.toString())}", color: Colors.green),
+                    _breakdownRow("🎁 Promotion Bonus".tr, "-${Constant().amountShow(amount: promoDiscount.toString())}", color: Colors.green),
                   if (discount > 0)
                     _breakdownRow("Coupon Discount".tr, "-${Constant().amountShow(amount: discount.toString())}", color: Colors.green),
                   if (taxBreakdown.isNotEmpty) ...[

@@ -1053,7 +1053,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                         child: Column(
                           children: [
                             buildPaymentOption(
-                              title: "Razorpay",
+                              title: "UPI",
                               value: "razorpay",
                               controller: controller,
                               isDarkMode: isDarkMode,
@@ -1061,12 +1061,6 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                             buildPaymentOption(
                               title: "Wallet",
                               value: "wallet",
-                              controller: controller,
-                              isDarkMode: isDarkMode,
-                            ),
-                            buildPaymentOption(
-                              title: "Stripe",
-                              value: "stripe",
                               controller: controller,
                               isDarkMode: isDarkMode,
                             ),

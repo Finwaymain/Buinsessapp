@@ -33,6 +33,7 @@ class _ServiceCompletedPaymentScreenState extends State<ServiceCompletedPaymentS
   bool _loading = true;
   double _walletBalance = 0;
   double _pendingRazorpayAmount = 0;
+  bool _applyPromo = true;
 
   @override
   void initState() {
@@ -97,7 +98,7 @@ class _ServiceCompletedPaymentScreenState extends State<ServiceCompletedPaymentS
 
   void _handleRazorpaySuccess(PaymentSuccessResponse response) async {
     setState(() => _paying = true);
-    final ok = await _controller.payBooking(bookingId: widget.bookingId, paymentMethod: 'upi');
+    final ok = await _controller.payBooking(bookingId: widget.bookingId, paymentMethod: 'upi', applyPromotional: _applyPromo);
     if (!mounted) return;
     setState(() => _paying = false);
     if (ok) {
@@ -109,46 +110,65 @@ class _ServiceCompletedPaymentScreenState extends State<ServiceCompletedPaymentS
     ShowToastDialog.showToast('Payment failed. Please try again.'.tr);
   }
 
-  void _handleExternalWallet(ExternalWalletResponse response) {
+  void _handleExternalWallet(ExternalWalletResponse response) async {
     ShowToastDialog.showToast('Payment processing via ${response.walletName ?? 'UPI'}'.tr);
+    setState(() => _paying = true);
+    final ok = await _controller.payBooking(bookingId: widget.bookingId, paymentMethod: 'upi', applyPromotional: _applyPromo);
+    if (!mounted) return;
+    setState(() => _paying = false);
+    if (ok) {
+      _goToSuccess(_pendingRazorpayAmount, 'upi');
+    }
   }
 
   Future<void> _pay() async {
     final booking = _booking;
     if (booking == null || booking.isPaid) return;
 
-    final total = booking.payableAmount;
-    if (total <= 0) {
+    final baseTotal = booking.payableAmount;
+    if (baseTotal <= 0) {
       ShowToastDialog.showToast('Payment amount is not available. Please contact support.'.tr);
       return;
     }
+
+    final hasPromo = booking.hasPromotionalBonus;
+    final promoDiscount = booking.promotionalDiscountValue;
+    final effectiveBase = (hasPromo && !_applyPromo) ? (baseTotal + promoDiscount) : baseTotal;
+
+    final totalTax = Constant.calculateTotalTaxes(effectiveBase, _paymentMethod);
+    final totalWithTax = effectiveBase + totalTax;
 
     if (_paymentMethod == 'wallet') {
       final paymentSuccess = await Get.to(() => ServiceScanToPayScreen(
             bookingId: widget.bookingId,
             expectedDriverId: booking.driverId?.toString() ?? '',
-            amount: total,
+            amount: totalWithTax,
             controller: _controller,
+            applyPromotional: _applyPromo,
           ));
 
       if (paymentSuccess == true) {
-        _goToSuccess(total, 'wallet');
+        _goToSuccess(totalWithTax, 'wallet');
       }
       return;
     }
 
     if (_paymentMethod == 'upi') {
-      await _payWithRazorpay(total);
+      await _payWithRazorpay(totalWithTax);
       return;
     }
 
     setState(() => _paying = true);
-    final ok = await _controller.payBooking(bookingId: widget.bookingId, paymentMethod: _paymentMethod);
+    final ok = await _controller.payBooking(
+      bookingId: widget.bookingId,
+      paymentMethod: _paymentMethod,
+      applyPromotional: _applyPromo,
+    );
     if (!mounted) return;
     setState(() => _paying = false);
 
     if (ok) {
-      _goToSuccess(total, _paymentMethod);
+      _goToSuccess(totalWithTax, _paymentMethod);
     }
   }
 
@@ -169,10 +189,18 @@ class _ServiceCompletedPaymentScreenState extends State<ServiceCompletedPaymentS
   Widget build(BuildContext context) {
     final isDarkMode = Provider.of<DarkThemeProvider>(context).getThem();
     final booking = _booking;
-    final total = booking?.payableAmount ?? 0;
+    final baseTotal = booking?.payableAmount ?? 0.0;
+    final hasPromo = booking?.hasPromotionalBonus ?? false;
+    final promoAmount = booking?.promotionalAmountValue ?? 0.0;
+    final promoDiscount = booking?.promotionalDiscountValue ?? 0.0;
+    final displayedSubtotal = hasPromo ? (baseTotal + promoAmount) : baseTotal;
+    final effectiveBase = (hasPromo && !_applyPromo) ? (baseTotal + promoDiscount) : baseTotal;
+    final taxBreakdown = Constant.getTaxBreakdown(effectiveBase, _paymentMethod);
+    final totalTaxAmount = Constant.calculateTotalTaxes(effectiveBase, _paymentMethod);
+    final finalPayableTotal = effectiveBase + totalTaxAmount;
     final visitLabel = booking?.visitingChargeLabel ?? '';
-    final visitAmount = booking?.visitingChargeAmount ?? 0;
-    final materialAmount = booking?.materialCostAmount ?? 0;
+    final visitAmount = booking?.visitingChargeAmount ?? 0.0;
+    final materialAmount = booking?.materialCostAmount ?? 0.0;
 
     return PopScope(
       canPop: false,
@@ -219,23 +247,105 @@ class _ServiceCompletedPaymentScreenState extends State<ServiceCompletedPaymentS
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Payment Summary'.tr, style: TextStyle(fontFamily: AppThemeData.semiBold, fontSize: 14)),
+                                Text('Payment Summary'.tr, style: const TextStyle(fontFamily: AppThemeData.semiBold, fontSize: 14)),
                                 const SizedBox(height: 10),
-                                ...booking.bookedServiceItems.map(
-                                  (e) => _priceRow(
-                                    e.name,
-                                    e.priceAvailable ? _money(e.minPrice) : (e.displayPrice.isNotEmpty ? e.displayPrice : 'Rate on visit'.tr),
-                                    isDarkMode,
-                                  ),
-                                ),
+                                if (booking.bookedServiceItems.isNotEmpty)
+                                  ...booking.bookedServiceItems.map((e) {
+                                    final isFirst = booking.bookedServiceItems.indexOf(e) == 0;
+                                    double itemPrice = e.priceAvailable ? e.minPrice : (double.tryParse(e.price.toString()) ?? 0.0);
+                                    if (hasPromo && isFirst && itemPrice + visitAmount < displayedSubtotal && promoAmount > 0) {
+                                      itemPrice += promoAmount;
+                                    }
+                                    return _priceRow(
+                                      e.name,
+                                      itemPrice > 0 ? _money(itemPrice) : (e.displayPrice.isNotEmpty ? e.displayPrice : 'Rate on visit'.tr),
+                                      isDarkMode,
+                                    );
+                                  }),
                                 if (visitAmount > 0)
                                   _priceRow('Visiting Charge'.tr, _money(visitAmount), isDarkMode)
                                 else if (visitLabel.isNotEmpty)
                                   _priceRow('Visiting Charge'.tr, visitLabel, isDarkMode),
                                 if (materialAmount > 0)
                                   _priceRow('Material Cost'.tr, _money(materialAmount), isDarkMode),
+                                if (hasPromo) ...[
+                                  const Divider(height: 16),
+                                  _priceRow('Booking Total'.tr, _money(displayedSubtotal), isDarkMode, bold: true),
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: _applyPromo ? Colors.green.withValues(alpha: 0.08) : Colors.grey.withValues(alpha: 0.08),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: _applyPromo ? Colors.green.withValues(alpha: 0.35) : Colors.grey.shade300,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.card_giftcard_rounded, color: Colors.green, size: 22),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                '🎁 Promotion Bonus'.tr,
+                                                style: TextStyle(
+                                                  fontFamily: AppThemeData.semiBold,
+                                                  fontSize: 13,
+                                                  color: _applyPromo ? Colors.green.shade800 : (isDarkMode ? AppThemeData.grey300Dark : Colors.grey.shade700),
+                                                ),
+                                              ),
+                                              Text(
+                                                'Exclusive service discount'.tr,
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: isDarkMode ? AppThemeData.grey400Dark : Colors.grey.shade600,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        Text(
+                                          '-${_money(promoDiscount)}',
+                                          style: TextStyle(
+                                            fontFamily: AppThemeData.bold,
+                                            fontSize: 14,
+                                            color: _applyPromo ? Colors.green : Colors.grey,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Transform.scale(
+                                          scale: 0.8,
+                                          child: Switch(
+                                            value: _applyPromo,
+                                            activeColor: Colors.green,
+                                            onChanged: (val) {
+                                              setState(() => _applyPromo = val);
+                                            },
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                                if (taxBreakdown.isNotEmpty) ...[
+                                  const Divider(height: 16),
+                                  ...taxBreakdown.map((t) => _priceRow(
+                                        t['label'] as String,
+                                        '+${_money(t['amount'] as double)}',
+                                        isDarkMode,
+                                        color: AppThemeData.primary200,
+                                      )),
+                                ],
                                 const Divider(height: 20),
-                                _priceRow('Total Amount'.tr, total > 0 ? _money(total) : booking.displayPayableLabel, isDarkMode, bold: true),
+                                _priceRow(
+                                  'Total Amount'.tr,
+                                  finalPayableTotal > 0 ? _money(finalPayableTotal) : booking.displayPayableLabel,
+                                  isDarkMode,
+                                  bold: true,
+                                ),
                               ],
                             ),
                           ),
@@ -245,7 +355,7 @@ class _ServiceCompletedPaymentScreenState extends State<ServiceCompletedPaymentS
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Select Payment Method'.tr, style: TextStyle(fontFamily: AppThemeData.semiBold, fontSize: 14)),
+                                Text('Select Payment Method'.tr, style: const TextStyle(fontFamily: AppThemeData.semiBold, fontSize: 14)),
                                 const SizedBox(height: 4),
                                 Text(
                                   '${'Wallet balance'.tr}: ${_money(_walletBalance)}',
@@ -256,7 +366,6 @@ class _ServiceCompletedPaymentScreenState extends State<ServiceCompletedPaymentS
                                   value: 'wallet',
                                   groupValue: _paymentMethod,
                                   activeColor: AppThemeData.primary200,
-
                                   title: Row(
                                     children: [
                                       Expanded(
@@ -264,13 +373,11 @@ class _ServiceCompletedPaymentScreenState extends State<ServiceCompletedPaymentS
                                           'Wallet Balance'.tr,
                                         ),
                                       ),
-
-                                      // Show Add Money button only when balance is insufficient
-                                      if (_walletBalance < total && total > 0)
+                                      if (_walletBalance < finalPayableTotal && finalPayableTotal > 0)
                                         InkWell(
                                           borderRadius: BorderRadius.circular(20),
                                           onTap: () {
-                                            Get.to(() =>  WalletScreen());
+                                            Get.to(() => WalletScreen());
                                           },
                                           child: Container(
                                             width: 34,
@@ -290,30 +397,30 @@ class _ServiceCompletedPaymentScreenState extends State<ServiceCompletedPaymentS
                                         ),
                                     ],
                                   ),
-
-                                  subtitle: _walletBalance < total && total > 0
+                                  subtitle: _walletBalance < finalPayableTotal && finalPayableTotal > 0
                                       ? Text(
-                                    'Insufficient balance'.tr,
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.orange.shade700,
-                                    ),
-                                  )
+                                          'Insufficient balance'.tr,
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.orange.shade700,
+                                          ),
+                                        )
                                       : Text(
-                                    _money(_walletBalance),
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: isDarkMode
-                                          ? AppThemeData.grey500Dark
-                                          : AppThemeData.grey500,
-                                    ),
-                                  ),
-
+                                          Constant.calculateTotalTaxes(effectiveBase, 'wallet') > 0
+                                              ? 'Pay ${_money(finalPayableTotal)} directly from wallet'
+                                              : 'Pay ${_money(finalPayableTotal)} directly from wallet (tax-exempt)'.tr,
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: isDarkMode
+                                                ? AppThemeData.grey500Dark
+                                                : AppThemeData.grey500,
+                                          ),
+                                        ),
                                   onChanged: booking.isPaid
                                       ? null
                                       : (v) => setState(
-                                        () => _paymentMethod = v ?? 'wallet',
-                                  ),
+                                            () => _paymentMethod = v ?? 'wallet',
+                                          ),
                                 ),
                                 RadioListTile<String>(
                                   value: 'upi',
@@ -346,11 +453,11 @@ class _ServiceCompletedPaymentScreenState extends State<ServiceCompletedPaymentS
                         context,
                         title: booking.isPaid
                             ? 'Already Paid'.tr
-                            : (_paying ? 'Processing...'.tr : '${'Pay'.tr} ${total > 0 ? _money(total) : booking.displayPayableLabel}'),
+                            : (_paying ? 'Processing...'.tr : '${'Pay'.tr} ${finalPayableTotal > 0 ? _money(finalPayableTotal) : booking.displayPayableLabel}'),
                         btnColor: AppThemeData.primary200,
                         txtColor: Colors.white,
                         radius: 12,
-                        onPress: (_paying || booking.isPaid || total <= 0) ? () {} : _pay,
+                        onPress: (_paying || booking.isPaid || finalPayableTotal <= 0) ? () {} : _pay,
                       ),
                     ),
                   ),
@@ -373,13 +480,13 @@ class _ServiceCompletedPaymentScreenState extends State<ServiceCompletedPaymentS
     );
   }
 
-  Widget _priceRow(String label, String value, bool isDarkMode, {bool bold = false}) {
+  Widget _priceRow(String label, String value, bool isDarkMode, {bool bold = false, Color? color}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         children: [
           Expanded(child: Text(label, style: TextStyle(fontSize: 13, fontFamily: bold ? AppThemeData.semiBold : AppThemeData.regular))),
-          Text(value, style: TextStyle(fontSize: 13, fontFamily: bold ? AppThemeData.bold : AppThemeData.semiBold, color: bold ? AppThemeData.primary200 : null)),
+          Text(value, style: TextStyle(fontSize: 13, fontFamily: bold ? AppThemeData.bold : AppThemeData.semiBold, color: color ?? (bold ? AppThemeData.primary200 : null))),
         ],
       ),
     );

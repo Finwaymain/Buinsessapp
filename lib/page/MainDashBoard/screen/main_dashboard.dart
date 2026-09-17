@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 import '../../../controller/login_conroller.dart';
 import '../../../utils/dark_theme_provider.dart';
-import '../../../utils/driver_dashboard_route.dart';
 import '../../../widget/permission_dialog.dart';
 import '../../home_screen/controller/main_home_controller.dart';
 import '../../in_progress_screen.dart';
@@ -17,12 +16,10 @@ import '../../features/AllServices/service_history_screen.dart';
 import '../../../controller/service_history_controller.dart';
 import '../../../controller/dash_board_controller.dart';
 import '../../../utils/Preferences.dart';
-import '../../../utils/onboarding_url.dart';
 import '../../auth_screens/phone_entry_screen.dart';
-import '../../web_view_screen/web_view_screen.dart';
 import '../../search_services/search_all_services_screen.dart';
 
-enum _DashboardMode { loading, native, web }
+enum _DashboardMode { loading, native }
 
 class MainDashboard extends StatefulWidget {
   const MainDashboard({super.key});
@@ -53,11 +50,8 @@ class _MainDashboardState extends State<MainDashboard> {
       );
       if (!mounted) return;
 
-      final userData = dashboardController.userModel.value.userData;
       setState(() {
-        _mode = shouldUseWebDashboard(userData)
-            ? _DashboardMode.web
-            : _DashboardMode.native;
+        _mode = _DashboardMode.native;
       });
     } catch (e) {
       if (!mounted) return;
@@ -75,7 +69,7 @@ class _MainDashboardState extends State<MainDashboard> {
 
   void _onTabSelected(int index) {
     if (index != 0) {
-      if (!(Preferences.getBoolean(Preferences.isLogin) ?? false)) {
+      if (!Preferences.getBoolean(Preferences.isLogin)) {
         Get.to(() => PhoneEntryScreen(mode: 'signup'), transition: Transition.rightToLeftWithFade);
         return;
       }
@@ -108,11 +102,6 @@ class _MainDashboardState extends State<MainDashboard> {
         backgroundColor: isDarkMode ? Colors.black : Colors.white,
         body: const Center(child: CircularProgressIndicator()),
       );
-    }
-
-    if (_mode == _DashboardMode.web) {
-      final url = OnboardingUrl.build('/onboarding/dashboard');
-      return WebViewScreen(url: url, title: 'Dashboard', showAppBar: false);
     }
 
     final themeChange = Provider.of<DarkThemeProvider>(context);
