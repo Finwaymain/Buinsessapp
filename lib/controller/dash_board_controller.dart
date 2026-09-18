@@ -25,6 +25,9 @@ import '../page/my_profile/my_profile_screen.dart';
 import '../page/web_view_screen/web_view_screen.dart';
 import '../page/MainDashBoard/screen/main_dashboard.dart';
 import '../page/food/food_ordering_screen.dart';
+import '../page/parcel_service/parcel_console_screen.dart';
+import '../page/parcel_service/all_parcel_screen.dart';
+import '../utils/driver_dashboard_route.dart';
 
 import '../page/privacy_policy/privacy_policy_screen.dart';
 import '../page/referral/referral_earn_screen.dart';
