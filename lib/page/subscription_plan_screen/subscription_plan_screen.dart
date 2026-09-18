@@ -1174,8 +1174,12 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
               color: isDark ? Colors.white : const Color(0xFF0F172A),
             ),
           ),
-          
-
+          const SizedBox(height: 6),
+          Text(
+            'Your $planName is now active, and $benefitsCountText benefits are now applicable to your business.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, height: 1.4, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+          ),
           const SizedBox(height: 24),
 
           // Plan Details Card
@@ -1265,6 +1269,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
         ? "${userData?.prenom ?? ''} ${userData?.nom ?? ''}".trim()
         : "Business Partner";
 
+    final SubscriptionPlanData activePlan = controller.selectedSubscriptionPlan.value;
     final String activePlanName = activePlan.name ?? userData?.subscriptionPlan?.name ?? "Subscription Plan";
     final String remainingDays = _calculateDaysRemaining(userData, activePlan);
     final String commissionSaved = _calculateTotalCommissionSaved(userData);
