@@ -77,7 +77,9 @@ class DriverKitItemModel {
   final List<String> sizes;
   final bool isCompulsory;
   final bool bookingRequired;
-  final String webviewUrl;
+  final double costPrice;
+  final String status;
+  final List<DriverKitProductModel> products;
 
   DriverKitItemModel({
     required this.id,
@@ -98,6 +100,9 @@ class DriverKitItemModel {
     required this.isCompulsory,
     required this.bookingRequired,
     required this.webviewUrl,
+    required this.costPrice,
+    required this.status,
+    required this.products,
   });
 
   factory DriverKitItemModel.fromJson(Map<String, dynamic> json) {
@@ -116,9 +121,19 @@ class DriverKitItemModel {
       sizeList = ['S', 'M', 'L', 'XL', 'XXL'];
     }
 
+    var rawProducts = json['products'];
+    List<DriverKitProductModel> prodList = [];
+    if (rawProducts is List) {
+      prodList = rawProducts
+          .whereType<Map<String, dynamic>>()
+          .map((p) => DriverKitProductModel.fromJson(p))
+          .toList();
+    }
+
     double p = (json['price'] is num) ? (json['price'] as num).toDouble() : double.tryParse(json['price']?.toString() ?? '0') ?? 0.0;
     double m = (json['mrp'] is num) ? (json['mrp'] as num).toDouble() : double.tryParse(json['mrp']?.toString() ?? '0') ?? (p * 1.5);
     double cb = (json['cashback_amount'] is num) ? (json['cashback_amount'] as num).toDouble() : double.tryParse(json['cashback_amount']?.toString() ?? '0') ?? 0.0;
+    double cp = (json['cost_price'] is num) ? (json['cost_price'] as num).toDouble() : double.tryParse(json['cost_price']?.toString() ?? '0') ?? 0.0;
 
     return DriverKitItemModel(
       id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
@@ -139,6 +154,44 @@ class DriverKitItemModel {
       isCompulsory: json['is_compulsory'] == true,
       bookingRequired: json['booking_required'] != false,
       webviewUrl: json['webview_url']?.toString() ?? '',
+      costPrice: cp,
+      status: json['status']?.toString() ?? 'published',
+      products: prodList,
+    );
+  }
+}
+
+class DriverKitProductModel {
+  final int? id;
+  final String name;
+  final String image;
+  final String variant;
+  final int quantity;
+  final bool isFree;
+  final double price;
+  final bool isMandatory;
+
+  DriverKitProductModel({
+    this.id,
+    required this.name,
+    required this.image,
+    required this.variant,
+    required this.quantity,
+    required this.isFree,
+    required this.price,
+    required this.isMandatory,
+  });
+
+  factory DriverKitProductModel.fromJson(Map<String, dynamic> json) {
+    return DriverKitProductModel(
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? ''),
+      name: json['name']?.toString() ?? '',
+      image: json['image']?.toString() ?? '',
+      variant: json['variant']?.toString() ?? '',
+      quantity: json['quantity'] is int ? json['quantity'] : int.tryParse(json['quantity']?.toString() ?? '1') ?? 1,
+      isFree: json['is_free'] == true || json['is_free'] == 1 || json['is_free']?.toString() == '1',
+      price: (json['price'] is num) ? (json['price'] as num).toDouble() : double.tryParse(json['price']?.toString() ?? '0') ?? 0.0,
+      isMandatory: json['is_mandatory'] != false && json['is_mandatory']?.toString() != '0',
     );
   }
 }

@@ -109,32 +109,51 @@ class DriverKitService extends GetxController {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // Top Warning Icon
+              // Top Image / Warning Icon
               Container(
-                width: 72,
-                height: 72,
+                width: 80,
+                height: 80,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [const Color(0xFFEF4444), const Color(0xFFDC2626)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  shape: BoxShape.circle,
+                  borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFEF4444).withValues(alpha: 0.35),
+                      color: const Color(0xFFEF4444).withValues(alpha: 0.3),
                       blurRadius: 14,
                       offset: const Offset(0, 5),
                     ),
                   ],
                 ),
-                child: const Center(
-                  child: Icon(
-                    Icons.lock_person_rounded,
-                    color: Colors.white,
-                    size: 36,
-                  ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: kit.image.isNotEmpty
+                      ? Image.network(
+                          kit.image,
+                          width: 80,
+                          height: 80,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const Center(
+                            child: Icon(
+                              Icons.lock_person_rounded,
+                              color: Colors.white,
+                              size: 36,
+                            ),
+                          ),
+                        )
+                      : const Center(
+                          child: Icon(
+                            Icons.lock_person_rounded,
+                            color: Colors.white,
+                            size: 36,
+                          ),
+                        ),
                 ),
               ),
+
 
               const SizedBox(height: 18),
 

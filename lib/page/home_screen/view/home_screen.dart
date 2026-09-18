@@ -916,10 +916,10 @@ class MainHomeScreen extends StatelessWidget {
             ),
             child: Row(
               children: [
-                // Left Icon
+                // Left Icon / Image
                 Container(
-                  width: 46,
-                  height: 46,
+                  width: 52,
+                  height: 52,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [AppThemeData.primary200, AppThemeData.primary300],
@@ -935,16 +935,37 @@ class MainHomeScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  child: Center(
-                    child: Icon(
-                      kitData.categoryCode == 'bike'
-                          ? Icons.two_wheeler_rounded
-                          : (kitData.categoryCode == 'home_service'
-                              ? Icons.home_repair_service_rounded
-                              : Icons.shopping_bag_rounded),
-                      color: Colors.white,
-                      size: 24,
-                    ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: kit.image.isNotEmpty
+                        ? Image.network(
+                            kit.image,
+                            width: 52,
+                            height: 52,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Center(
+                              child: Icon(
+                                kitData.categoryCode == 'bike'
+                                    ? Icons.two_wheeler_rounded
+                                    : (kitData.categoryCode == 'home_service'
+                                        ? Icons.home_repair_service_rounded
+                                        : Icons.shopping_bag_rounded),
+                                color: Colors.white,
+                                size: 26,
+                              ),
+                            ),
+                          )
+                        : Center(
+                            child: Icon(
+                              kitData.categoryCode == 'bike'
+                                  ? Icons.two_wheeler_rounded
+                                  : (kitData.categoryCode == 'home_service'
+                                      ? Icons.home_repair_service_rounded
+                                      : Icons.shopping_bag_rounded),
+                              color: Colors.white,
+                              size: 26,
+                            ),
+                          ),
                   ),
                 ),
                 const SizedBox(width: 14),
