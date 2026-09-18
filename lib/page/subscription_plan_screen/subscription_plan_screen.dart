@@ -1151,7 +1151,6 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
     final List<String> planBenefits = (rawBenefits.length >= 20 && rawBenefits.contains('Instant Payout / Daily Withdrawal'))
         ? []
         : rawBenefits;
-    final String benefitsCountText = planBenefits.isNotEmpty ? '${planBenefits.length} listed' : 'all';
 
 
     return SingleChildScrollView(
@@ -1293,14 +1292,19 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
     final String commissionSaved = _calculateTotalCommissionSaved(userData);
 
     // Active benefits list from admin panel (only points configured by admin)
-    List<String> activePerks = (activePlan.planPoints != null && activePlan.planPoints!.isNotEmpty)
-        ? List<String>.from(activePlan.planPoints!)
-        : (activePlan.benefitsList != null && activePlan.benefitsList!.isNotEmpty)
-            ? List<String>.from(activePlan.benefitsList!)
-            : (userData?.subscriptionPlan?.planPoints != null && userData!.subscriptionPlan!.planPoints!.isNotEmpty)
-                ? List<String>.from(userData!.subscriptionPlan!.planPoints)
-                : (userData?.subscriptionPlan?.benefitsList != null && userData!.subscriptionPlan!.benefitsList!.isNotEmpty)
-                    ? List<String>.from(userData!.subscriptionPlan!.benefitsList)
+    final planPts = activePlan.planPoints;
+    final benefitPts = activePlan.benefitsList;
+    final userPlanPts = userData?.subscriptionPlan?.planPoints;
+    final userBenefitPts = userData?.subscriptionPlan?.benefitsList;
+
+    List<String> activePerks = (planPts != null && planPts.isNotEmpty)
+        ? List<String>.from(planPts)
+        : (benefitPts != null && benefitPts.isNotEmpty)
+            ? List<String>.from(benefitPts)
+            : (userPlanPts != null && userPlanPts.isNotEmpty)
+                ? List<String>.from(userPlanPts)
+                : (userBenefitPts != null && userBenefitPts.isNotEmpty)
+                    ? List<String>.from(userBenefitPts)
                     : <String>[];
 
     // Purge legacy 26 fake bulk items if present
