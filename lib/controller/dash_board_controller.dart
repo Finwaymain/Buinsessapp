@@ -696,6 +696,10 @@ class DashBoardController extends GetxController with WidgetsBindingObserver {
     } else if (item.title == 'Marketplace'.tr) {
       final url = OnboardingUrl.build('/onboarding/marketplace.html');
       Get.to(() => WebViewScreen(url: url, title: 'Marketplace'.tr));
+    } else if (item.title == 'Delivery Console'.tr || item.title == 'Delivery Console') {
+      Get.to(() => const ParcelConsoleScreen());
+    } else if (item.title == 'All Deliveries'.tr || item.title == 'All Deliveries') {
+      Get.to(() => const AllParcelScreen());
     } else if (item.title == 'Food Ordering'.tr || item.title == 'Food Order'.tr) {
       Get.to(() => const FoodOrderingScreen());
     } else if (item.title == 'Update Categories'.tr) {
@@ -813,6 +817,19 @@ class DashBoardController extends GetxController with WidgetsBindingObserver {
         description: '',
         icon: 'assets/icons/ic_map.svg',
       ),
+      if (isDeliveryConsoleDriver(userModel.value.userData)) ...[
+        DrawerItem(
+          title: 'Delivery Console'.tr,
+          description: 'Manage incoming parcel & food delivery orders',
+          icon: 'assets/icons/ic_parcel_vehicle.svg',
+          section: 'Deliveries'.tr,
+        ),
+        DrawerItem(
+          title: 'All Deliveries'.tr,
+          description: 'View delivery order history & logs',
+          icon: 'assets/icons/ic_all_car.svg',
+        ),
+      ],
       DrawerItem(
         title: 'Marketplace'.tr,
         description: 'Buy and sell goods with other users and drivers',

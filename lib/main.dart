@@ -43,6 +43,7 @@ import 'package:flutter_callkit_incoming/entities/android_params.dart';
 import 'package:flutter_callkit_incoming/entities/ios_params.dart';
 import 'package:flutter_callkit_incoming/entities/notification_params.dart';
 import 'package:cabme_driver/controller/my_booking_controller.dart';
+import 'package:cabme_driver/page/parcel_service/parcel_console_screen.dart';
 import 'package:cabme_driver/page/booking/my_booking_screen.dart';
 import 'package:cabme_driver/page/booking/service_flow/service_booking_flow.dart';
 import 'package:cabme_driver/service/in_app_sound_service.dart';
@@ -332,9 +333,20 @@ class FirebaseService {
           message.data['tag'] == 'homeservicenotif' ||
           (message.data['booking_id'] != null && message.data['booking_id'].toString().isNotEmpty);
 
+      final bool isParcelRequest = message.data['tag'] == 'parcelnew' ||
+          message.data['order_type'] == 'parcel';
+
+      final bool isFoodDeliveryRequest = message.data['type'] == 'food_delivery' ||
+          message.data['tag'] == 'food_incoming';
+
       final bool isRideRequest = (message.data['statut'] == 'new' ||
-          message.data['tag'] == 'ridenewrider' ||
-          message.data['tag'] == 'parcelnew') && !isHomeServiceUpdate;
+          message.data['tag'] == 'ridenewrider') && !isHomeServiceUpdate && !isParcelRequest && !isFoodDeliveryRequest;
+
+      if (isParcelRequest || isFoodDeliveryRequest) {
+        InAppSoundService.playIncomingBookingAlert();
+        NotificationService.display(message);
+        return;
+      }
 
       if (isNewHomeServiceRequest) {
         InAppSoundService.playIncomingBookingAlert();
@@ -415,6 +427,15 @@ class FirebaseService {
           'receiverPhoto':
               json.decode(message.data['message'])['senderPhoto'].toString(),
         });
+        return;
+      }
+
+      // 2.5 Parcel or Food Delivery Request
+      if (message.data['tag'] == "parcelnew" ||
+          message.data['order_type'] == "parcel" ||
+          message.data['type'] == "food_delivery" ||
+          message.data['tag'] == "food_incoming") {
+        await Get.to(() => const ParcelConsoleScreen());
         return;
       }
 

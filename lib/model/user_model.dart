@@ -129,6 +129,9 @@ class UserData {
   String? onboardingCompleted; // 'yes' or 'no' — set by backend based on tj_conducteur_categories
   bool? isTransportCategory; // false = driver's selected categories are all non-vehicle (e.g. home services)
   bool? isHomeServiceProvider; // true = painter, plumber, electrician, etc.
+  bool? isDeliveryPartner; // true = Delivery & Logistics, Pickup, or Parcel
+  bool? isBikeRider; // true = Bike Rider
+  String? primaryConsole; // 'delivery', 'taxi', or 'home_service'
   String? alternatePhone;
   String? marketplaceEnabled;
   String? emailVerifiedAt;
@@ -326,6 +329,9 @@ class UserData {
     onboardingCompleted = json['onboarding_completed']?.toString();
     isTransportCategory = parseProfileBool(json['is_transport_category']);
     isHomeServiceProvider = parseProfileBool(json['is_home_service_provider']);
+    isDeliveryPartner = parseProfileBool(json['is_delivery_partner']);
+    isBikeRider = parseProfileBool(json['is_bike_rider']);
+    primaryConsole = json['primary_console']?.toString();
     alternatePhone = json['alternate_phone']?.toString();
     marketplaceEnabled = json['marketplace_enabled']?.toString();
     emailVerifiedAt = json['email_verified_at']?.toString();

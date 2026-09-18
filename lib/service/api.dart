@@ -140,13 +140,21 @@ class API {
   static const driverDetails = "${baseUrl}driver";
 
   //Parcel Service
-  static const parcelContirm = "${baseUrl}parcel-confirm";
+  static const parcelConfirm = "${baseUrl}parcel-confirm";
+  static const parcelContirm = parcelConfirm;
   static const parcelOnride = "${baseUrl}parcel-onride";
   static const parcelComplete = "${baseUrl}parcel-complete";
   static const parcelRejected = "${baseUrl}parcel-rejected";
   static const parcelSearch = "${baseUrl}search-driver-parcel-order";
   static const getDriverParcel = "${baseUrl}get-driver-parcel-orders";
   static const getParcelDetails = "${baseUrl}get-parcel-detail";
+
+  // Food Rider Service
+  static const foodRiderIncoming = "${baseUrl}food/rider/incoming";
+  static const foodRiderAccept = "${baseUrl}food/rider/orders/"; // + id + /accept
+  static const foodRiderActive = "${baseUrl}food/rider/active";
+  static const foodRiderStatus = "${baseUrl}food/rider/orders/"; // + id + /status
+  static const foodRiderDues = "${baseUrl}food/rider/dues";
 
   //SubscriptionAPI
   static const getSubscriptionPlans = "${baseUrl}get-subscription-plans";

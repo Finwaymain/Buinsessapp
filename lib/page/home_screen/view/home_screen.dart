@@ -434,7 +434,9 @@ class MainHomeScreen extends StatelessWidget {
                                   }
 
                                   final userData = controller.userModel.value.userData;
-                                  if (shouldShowOnlineStatus(userData)) {
+                                  if (isDeliveryConsoleDriver(userData)) {
+                                    Get.to(() => const ParcelConsoleScreen(), transition: Transition.rightToLeftWithFade);
+                                  } else if (shouldShowOnlineStatus(userData)) {
                                     Get.to(() => TaxiDashBoard(), transition: Transition.rightToLeftWithFade);
                                   } else {
                                     Get.to(() => const MyBookingScreen(), transition: Transition.rightToLeftWithFade);
@@ -473,9 +475,11 @@ class MainHomeScreen extends StatelessWidget {
                                           shape: BoxShape.circle,
                                         ),
                                         child: Icon(
-                                          shouldShowOnlineStatus(controller.userModel.value.userData)
-                                              ? Icons.directions_car_rounded
-                                              : Icons.event_available_rounded,
+                                          isDeliveryConsoleDriver(controller.userModel.value.userData)
+                                              ? Icons.local_shipping_rounded
+                                              : (shouldShowOnlineStatus(controller.userModel.value.userData)
+                                                  ? Icons.directions_car_rounded
+                                                  : Icons.event_available_rounded),
                                           color: AppThemeData.primary200,
                                           size: 32,
                                         ),
@@ -486,9 +490,11 @@ class MainHomeScreen extends StatelessWidget {
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              shouldShowOnlineStatus(controller.userModel.value.userData)
-                                                  ? "Ride Booking".tr
-                                                  : "My Booking".tr,
+                                              isDeliveryConsoleDriver(controller.userModel.value.userData)
+                                                  ? "Delivery Console".tr
+                                                  : (shouldShowOnlineStatus(controller.userModel.value.userData)
+                                                      ? "Ride Booking".tr
+                                                      : "My Booking".tr),
                                               style: TextStyle(
                                                 fontSize: 18,
                                                 fontFamily: AppThemeData.bold,
@@ -497,9 +503,11 @@ class MainHomeScreen extends StatelessWidget {
                                             ),
                                             const SizedBox(height: 4),
                                             Text(
-                                              shouldShowOnlineStatus(controller.userModel.value.userData)
-                                                  ? "View incoming ride requests, interactive map, and online status.".tr
-                                                  : "View incoming requests, active jobs, and booking history.".tr,
+                                              isDeliveryConsoleDriver(controller.userModel.value.userData)
+                                                  ? "Incoming parcel & food delivery requests, active orders, and live tracking.".tr
+                                                  : (shouldShowOnlineStatus(controller.userModel.value.userData)
+                                                      ? "View incoming ride requests, interactive map, and online status.".tr
+                                                      : "View incoming requests, active jobs, and booking history.".tr),
                                               style: TextStyle(
                                                 fontSize: 12,
                                                 fontFamily: AppThemeData.regular,
