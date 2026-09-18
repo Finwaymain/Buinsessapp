@@ -79,11 +79,11 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
         return "Expired";
       } catch (_) {}
     }
-    if (activePlan?.expiryDay != null) {
-      if (activePlan!.expiryDay == "-1") return "Lifetime Unlimited";
+    if (activePlan?.expiryDay != null && activePlan!.expiryDay!.isNotEmpty) {
+      if (activePlan.expiryDay == "-1") return "Lifetime Unlimited";
       return "${activePlan.expiryDay} Days Remaining";
     }
-    return "312 Days Remaining"; // Fallback aesthetic default
+    return "Active Plan";
   }
 
   String _formatExpiryDate(UserData? userData, SubscriptionPlanData? activePlan) {
@@ -96,7 +96,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
       }
     }
     if (activePlan?.expiryDay == "-1") return "Lifetime Unlimited";
-    return DateFormat('dd MMM yyyy').format(DateTime.now().add(const Duration(days: 312)));
+    return "";
   }
 
   // Calculate dynamic commission savings
@@ -104,9 +104,9 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
     final earned = double.tryParse(userData?.earnAmount ?? userData?.amount ?? '0') ?? 0;
     if (earned > 0) {
       final saved = (earned * 0.10).round();
-      return "₹${NumberFormat('#,##,###').format(saved > 12450 ? saved : 12450)}";
+      return "₹${NumberFormat('#,##,###').format(saved)}";
     }
-    return "₹12,450";
+    return "₹0";
   }
 
   @override
@@ -1143,9 +1143,14 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
     final plan = controller.selectedSubscriptionPlan.value;
     final planName = plan.name ?? "Subscription Plan";
     final planPrice = Constant().amountShow(amount: plan.price ?? '0.0');
-    final List<String> planBenefits = (plan.benefitsList != null && plan.benefitsList!.isNotEmpty)
-        ? plan.benefitsList!
-        : (plan.planPoints ?? []);
+    final List<String> rawBenefits = (plan.planPoints != null && plan.planPoints!.isNotEmpty)
+        ? List<String>.from(plan.planPoints!)
+        : (plan.benefitsList != null && plan.benefitsList!.isNotEmpty)
+            ? List<String>.from(plan.benefitsList!)
+            : [];
+    final List<String> planBenefits = (rawBenefits.length >= 20 && rawBenefits.contains('Instant Payout / Daily Withdrawal'))
+        ? []
+        : rawBenefits;
     final String benefitsCountText = planBenefits.isNotEmpty ? '${planBenefits.length} listed' : 'all';
 
 
@@ -1176,7 +1181,9 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
           ),
           const SizedBox(height: 6),
           Text(
-            'Your $planName is now active, and $benefitsCountText benefits are now applicable to your business.',
+            planBenefits.isNotEmpty
+                ? 'Your $planName is now active, and ${planBenefits.length} benefits are now applicable to your business.'
+                : 'Your $planName is now active with all standard business advantages.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 13, height: 1.4, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
           ),
@@ -1269,15 +1276,38 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
         ? "${userData?.prenom ?? ''} ${userData?.nom ?? ''}".trim()
         : "Business Partner";
 
-    final SubscriptionPlanData activePlan = controller.selectedSubscriptionPlan.value;
+    // Resolve the driver's active plan
+    SubscriptionPlanData? matchedPlan;
+    final planId = userData?.subscriptionPlanId;
+    if (planId != null && planId.isNotEmpty) {
+      for (var p in controller.subscriptionPlanList) {
+        if (p.id == planId) {
+          matchedPlan = p;
+          break;
+        }
+      }
+    }
+    final SubscriptionPlanData activePlan = matchedPlan ?? userData?.subscriptionPlan ?? controller.selectedSubscriptionPlan.value;
     final String activePlanName = activePlan.name ?? userData?.subscriptionPlan?.name ?? "Subscription Plan";
     final String remainingDays = _calculateDaysRemaining(userData, activePlan);
     final String commissionSaved = _calculateTotalCommissionSaved(userData);
 
-    // Active benefits list from admin panel (no hardcoded fallback)
-    final List<String> activePerks = (activePlan.benefitsList != null && activePlan.benefitsList!.isNotEmpty)
-        ? activePlan.benefitsList!
-        : (activePlan.planPoints ?? []);
+    // Active benefits list from admin panel (only points configured by admin)
+    List<String> activePerks = (activePlan.planPoints != null && activePlan.planPoints!.isNotEmpty)
+        ? List<String>.from(activePlan.planPoints!)
+        : (activePlan.benefitsList != null && activePlan.benefitsList!.isNotEmpty)
+            ? List<String>.from(activePlan.benefitsList!)
+            : (userData?.subscriptionPlan?.planPoints != null && userData!.subscriptionPlan!.planPoints!.isNotEmpty)
+                ? List<String>.from(userData!.subscriptionPlan!.planPoints)
+                : (userData?.subscriptionPlan?.benefitsList != null && userData!.subscriptionPlan!.benefitsList!.isNotEmpty)
+                    ? List<String>.from(userData!.subscriptionPlan!.benefitsList)
+                    : <String>[];
+
+    // Purge legacy 26 fake bulk items if present
+    if (activePerks.length >= 20 && activePerks.contains('Instant Payout / Daily Withdrawal')) {
+      activePerks = [];
+    }
+    activePerks = activePerks.where((p) => p.trim().isNotEmpty).toList();
 
 
     return SingleChildScrollView(
@@ -1449,7 +1479,9 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Your Active Plan Benefits (${activePerks.length} Unlocked)',
+                activePerks.isNotEmpty
+                    ? 'Your Active Plan Benefits (${activePerks.length} Unlocked)'
+                    : 'Your Active Plan Benefits',
                 style: TextStyle(
                   fontSize: 15,
                   fontFamily: AppThemeData.bold,
@@ -1461,58 +1493,85 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
           ),
           const SizedBox(height: 10),
 
-          // Single smooth scrollable list showing all active benefits with Active badges
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: activePerks.length,
-            itemBuilder: (context, idx) {
-              return Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.15),
-                        shape: BoxShape.circle,
+          // Benefits List or Empty State
+          if (activePerks.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.check_circle_outline_rounded, color: Colors.green, size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'All standard business features are active.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: isDark ? Colors.white70 : const Color(0xFF64748B),
                       ),
-                      child: const Icon(Icons.check_rounded, color: Colors.green, size: 14),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        activePerks[idx],
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontFamily: AppThemeData.medium,
-                          color: isDark ? Colors.white : const Color(0xFF334155),
+                  ),
+                ],
+              ),
+            )
+          else
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: activePerks.length,
+              itemBuilder: (context, idx) {
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.check_rounded, color: Colors.green, size: 14),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          activePerks[idx],
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontFamily: AppThemeData.medium,
+                            color: isDark ? Colors.white : const Color(0xFF334155),
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(4),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          'Active',
+                          style: TextStyle(fontSize: 10, color: Colors.green, fontFamily: AppThemeData.bold),
+                        ),
                       ),
-                      child: const Text(
-                        'Active',
-                        style: TextStyle(fontSize: 10, color: Colors.green, fontFamily: AppThemeData.bold),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
+                    ],
+                  ),
+                );
+              },
+            ),
           const SizedBox(height: 24),
 
           // Upgrade Plan Banner (Strict No-Downgrade explanation)
