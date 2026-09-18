@@ -227,7 +227,9 @@ class SubscriptionController extends GetxController {
                 selectedSubscriptionPlan.value = subscriptionPlanList[i];
               }
             }
-          } else {
+          } else if (subscriptionPlanList.isNotEmpty) {
+            selectedSubscriptionPlan.value = subscriptionPlanList.first;
+          } else if (model.data?.isNotEmpty == true) {
             selectedSubscriptionPlan.value = model.data!.first;
           }
         }

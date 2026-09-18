@@ -842,9 +842,9 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
     final plan = controller.selectedSubscriptionPlan.value;
     final userData = controller.userModel.value.userData ?? Constant.getUserData().userData;
 
-    final String planTitle = plan.name ?? 'Professional Plan';
-    final String planPrice = Constant().amountShow(amount: plan.price ?? '2500');
-    final String expiryText = plan.expiryDay == "-1" ? "Lifetime" : "${plan.expiryDay ?? '365'} Days";
+    final String planTitle = plan.name ?? 'Subscription Plan';
+    final String planPrice = Constant().amountShow(amount: plan.price ?? '0.0');
+    final String expiryText = plan.expiryDay == "-1" ? "Lifetime" : "${plan.expiryDay ?? '30'} Days";
     final double cashbackAmount = double.tryParse(plan.cashbackOnPurchase ?? '0') ?? 0;
 
     // Use only admin-configured benefits from API
@@ -890,18 +890,20 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppThemeData.primary200,
-                              borderRadius: BorderRadius.circular(6),
+                          if (plan.badge != null && plan.badge!.isNotEmpty) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppThemeData.primary200,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                plan.badge!,
+                                style: const TextStyle(fontSize: 10, color: Colors.white, fontFamily: AppThemeData.bold),
+                              ),
                             ),
-                            child: const Text(
-                              'Recommended',
-                              style: TextStyle(fontSize: 10, color: Colors.white, fontFamily: AppThemeData.bold),
-                            ),
-                          ),
+                          ],
                         ],
                       ),
                       const SizedBox(height: 4),
@@ -975,7 +977,9 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
 
           // Benefits Title
           Text(
-            'Key Benefits & Advantages (${benefitsList.length} Included)',
+            benefitsList.isNotEmpty
+                ? 'Key Benefits & Advantages (${benefitsList.length} Included)'
+                : 'Key Benefits & Advantages',
             style: TextStyle(
               fontSize: 16,
               fontFamily: AppThemeData.bold,
@@ -984,47 +988,74 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
           ),
           const SizedBox(height: 10),
 
-          // List of all benefits from admin panel
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: benefitsList.length,
-            itemBuilder: (context, idx) {
-              return Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9)),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 22,
-                      height: 22,
-                      decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.15),
-                        shape: BoxShape.circle,
+          // List of benefits from admin panel
+          if (benefitsList.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline_rounded, color: AppThemeData.primary200, size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'All standard business features are included in this plan.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: isDark ? Colors.white70 : const Color(0xFF64748B),
                       ),
-                      child: const Icon(Icons.check_rounded, color: Colors.green, size: 15),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        benefitsList[idx],
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontFamily: AppThemeData.medium,
-                          color: isDark ? Colors.white : const Color(0xFF334155),
+                  ),
+                ],
+              ),
+            )
+          else
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: benefitsList.length,
+              itemBuilder: (context, idx) {
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.check_rounded, color: Colors.green, size: 15),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          benefitsList[idx],
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontFamily: AppThemeData.medium,
+                            color: isDark ? Colors.white : const Color(0xFF334155),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
+                    ],
+                  ),
+                );
+              },
+            ),
           const SizedBox(height: 24),
 
           // Proceed to Payment Button with Email OTP Check & No Downgrade Check
@@ -1110,8 +1141,8 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
   // ===========================================================================
   Widget _buildActivatedSuccessScreen(bool isDark, SubscriptionController controller) {
     final plan = controller.selectedSubscriptionPlan.value;
-    final planName = plan.name ?? "Professional Plan";
-    final planPrice = Constant().amountShow(amount: plan.price ?? '2500');
+    final planName = plan.name ?? "Subscription Plan";
+    final planPrice = Constant().amountShow(amount: plan.price ?? '0.0');
     final List<String> planBenefits = (plan.benefitsList != null && plan.benefitsList!.isNotEmpty)
         ? plan.benefitsList!
         : (plan.planPoints ?? []);
@@ -1143,12 +1174,8 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
               color: isDark ? Colors.white : const Color(0xFF0F172A),
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            'Your $planName is now active, and $benefitsCountText benefits are now applicable to your business.',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, height: 1.4, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
-          ),
+          
+
           const SizedBox(height: 24),
 
           // Plan Details Card
@@ -1238,8 +1265,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
         ? "${userData?.prenom ?? ''} ${userData?.nom ?? ''}".trim()
         : "Business Partner";
 
-    final SubscriptionPlanData activePlan = controller.selectedSubscriptionPlan.value;
-    final String activePlanName = activePlan.name ?? userData?.subscriptionPlan?.name ?? "Professional Plan";
+    final String activePlanName = activePlan.name ?? userData?.subscriptionPlan?.name ?? "Subscription Plan";
     final String remainingDays = _calculateDaysRemaining(userData, activePlan);
     final String commissionSaved = _calculateTotalCommissionSaved(userData);
 
@@ -1714,7 +1740,7 @@ class _SubscriptionPlanScreenState extends State<SubscriptionPlanScreen> {
       'key': controller.paymentSettingModel.value.razorpay?.key ?? '',
       'amount': (controller.totalAmount.value * 100).toInt(),
       'name': 'FIINWAY Subscription',
-      'description': controller.selectedSubscriptionPlan.value.name ?? 'Professional Plan',
+      'description': controller.selectedSubscriptionPlan.value.name ?? 'Subscription Plan',
       'prefill': {
         'contact': controller.userModel.value.userData?.phone ?? '',
         'email': controller.userModel.value.userData?.email ?? '',
