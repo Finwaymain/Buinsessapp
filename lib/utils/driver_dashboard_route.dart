@@ -33,16 +33,29 @@ bool shouldShowOnlineStatus(UserData? userData) {
 /// Returns true if driver's primary mode is Delivery & Logistics / Pickup / Food / Bike Rider
 bool isDeliveryConsoleDriver(UserData? userData) {
   if (userData == null) return false;
-  if (userData.primaryConsole == 'delivery') return true;
-  if (userData.isDeliveryPartner == true) return true;
-  if (userData.isBikeRider == true) return true;
-  if (userData.parcelDelivery == 'yes') return true;
 
-  final cats = userData.selectedCategories ?? [];
-  for (final c in cats) {
-    // 12885: Pickup, 12888: Delivery & Logistics, 12889: Food Delivery, 12890: Parcel Delivery, 12882: Bike Rider
-    if (['12885', '12888', '12889', '12890', '12891', '12892', '12882'].contains(c.toString())) {
-      return true;
+  // If driver's primary console is taxi, they are a ride/transport driver
+  if (userData.primaryConsole == 'taxi') return false;
+
+  // If driver has Transport category and primary is not explicitly delivery, ride console takes precedence
+  final isTransport = parseProfileBool(userData.isTransportCategory);
+  if (isTransport == true && userData.primaryConsole != 'delivery') return false;
+
+  // Explicit delivery console
+  if (userData.primaryConsole == 'delivery') return true;
+
+  // Delivery partner (and not transport)
+  if (userData.isDeliveryPartner == true && isTransport != true) return true;
+
+  // If categories are present, only return true if not a transport driver
+  if (isTransport != true) {
+    if (userData.isBikeRider == true) return true;
+    final cats = userData.selectedCategories ?? [];
+    for (final c in cats) {
+      // 12885: Pickup, 12888: Delivery & Logistics, 12889: Food Delivery, 12890: Parcel Delivery, 12891: Pickup & Drop
+      if (['12885', '12888', '12889', '12890', '12891', '12892'].contains(c.toString())) {
+        return true;
+      }
     }
   }
 
