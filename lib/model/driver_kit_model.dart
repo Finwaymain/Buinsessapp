@@ -77,6 +77,7 @@ class DriverKitItemModel {
   final List<String> sizes;
   final bool isCompulsory;
   final bool bookingRequired;
+  final String webviewUrl;
   final double costPrice;
   final String status;
   final List<DriverKitProductModel> products;
