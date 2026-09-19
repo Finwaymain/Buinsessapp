@@ -604,7 +604,8 @@ class _ParcelOsmRouteViewScreenState extends State<ParcelOsmRouteViewScreen> {
                                       positiveButtonText: 'Yes'.tr,
                                       onPressPositive: () {
                                         Map<String, String> bodyParams = {
-                                          'id_pracel': parcelData!.id.toString(),
+                                           'id_parcel': parcelData!.id.toString(),
+                                           'id_pracel': parcelData!.id.toString(),
                                           'id_user': parcelData!.idUserApp.toString(),
                                           'driver_name': '${parcelData!.prenomConducteur.toString()} ${parcelData!.nomConducteur.toString()}',
                                           'from_id': Preferences.getInt(Preferences.userId).toString(),
