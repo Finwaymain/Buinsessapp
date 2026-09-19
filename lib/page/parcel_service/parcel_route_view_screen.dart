@@ -519,7 +519,7 @@ class _ParcelRouteViewScreenState extends State<ParcelRouteViewScreen> {
                         ),
                       ),
                       Visibility(
-                        visible: parcelData!.status == "on ride" ? true : false,
+                        visible: (parcelData!.status == "on ride" || parcelData!.status == "onride") ? true : false,
                         child: Expanded(
                           child: Padding(
                             padding: const EdgeInsets.only(bottom: 5),
@@ -560,7 +560,7 @@ class _ParcelRouteViewScreenState extends State<ParcelRouteViewScreen> {
                         ),
                       ),
                       Visibility(
-                        visible: parcelData!.status == "on ride" ? true : false,
+                        visible: (parcelData!.status == "on ride" || parcelData!.status == "onride") ? true : false,
                         child: Expanded(
                           child: Padding(
                             padding: const EdgeInsets.only(bottom: 5, left: 10),
@@ -788,7 +788,7 @@ class _ParcelRouteViewScreenState extends State<ParcelRouteViewScreen> {
       );
 
       result = await polylinePoints.getRouteBetweenCoordinates(request: resultdata);
-    } else if (parcelData!.status == "on ride") {
+    } else if (parcelData!.status == "on ride" || parcelData!.status == "onride") {
       PolylineRequest resultdata = PolylineRequest(
         origin: PointLatLng(dLat, dLng),
         destination: PointLatLng(destinationLatLong.latitude, destinationLatLong.longitude),
@@ -919,7 +919,7 @@ class _ParcelRouteViewScreenState extends State<ParcelRouteViewScreen> {
       CameraUpdate.newCameraPosition(
         CameraPosition(
           target: source,
-          zoom: parcelData!.status == "on ride" || parcelData!.status == "confirmed" ? 20 : 16,
+          zoom: parcelData!.status == "on ride" || parcelData!.status == "onride" || parcelData!.status == "confirmed" ? 20 : 16,
         ),
       ),
     );

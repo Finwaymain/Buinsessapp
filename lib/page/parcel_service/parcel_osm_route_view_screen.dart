@@ -518,7 +518,7 @@ class _ParcelOsmRouteViewScreenState extends State<ParcelOsmRouteViewScreen> {
                         ),
                       ),
                       Visibility(
-                        visible: parcelData!.status == "on ride" ? true : false,
+                        visible: (parcelData!.status == "on ride" || parcelData!.status == "onride") ? true : false,
                         child: Expanded(
                           child: Padding(
                             padding: const EdgeInsets.only(bottom: 5),
@@ -554,7 +554,7 @@ class _ParcelOsmRouteViewScreenState extends State<ParcelOsmRouteViewScreen> {
                         ),
                       ),
                       Visibility(
-                        visible: parcelData!.status == "on ride" ? true : false,
+                        visible: (parcelData!.status == "on ride" || parcelData!.status == "onride") ? true : false,
                         child: Expanded(
                           child: Padding(
                             padding: const EdgeInsets.only(bottom: 5, left: 10),
@@ -816,7 +816,7 @@ class _ParcelOsmRouteViewScreenState extends State<ParcelOsmRouteViewScreen> {
             longitude: double.parse(parcelData!.lngSource.toString()),
           ),
         );
-      } else if (parcelData!.status == "on ride") {
+      } else if (parcelData!.status == "on ride" || parcelData!.status == "onride") {
         drawRoad(
           startPoint: GeoPoint(latitude: dLat, longitude: dLng),
           lastPoint: GeoPoint(

@@ -43,6 +43,7 @@ import 'package:flutter_callkit_incoming/entities/android_params.dart';
 import 'package:flutter_callkit_incoming/entities/ios_params.dart';
 import 'package:flutter_callkit_incoming/entities/notification_params.dart';
 import 'package:cabme_driver/controller/my_booking_controller.dart';
+import 'package:cabme_driver/controller/parcel_service_controller.dart';
 import 'package:cabme_driver/page/parcel_service/parcel_console_screen.dart';
 import 'package:cabme_driver/page/booking/my_booking_screen.dart';
 import 'package:cabme_driver/page/booking/service_flow/service_booking_flow.dart';
@@ -347,6 +348,23 @@ class FirebaseService {
       if (isParcelRequest || isFoodDeliveryRequest) {
         InAppSoundService.playIncomingBookingAlert();
         NotificationService.display(message);
+        if (Get.isRegistered<ParcelServiceController>()) {
+          Get.find<ParcelServiceController>().searchParcel("");
+        }
+        Get.snackbar(
+          "New Parcel Request!".tr,
+          "${message.data['depart_name'] ?? 'Pickup'} -> ${message.data['destination_name'] ?? 'Dropoff'} (₹${message.data['montant'] ?? ''})",
+          duration: const Duration(seconds: 6),
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: AppThemeData.primary200,
+          colorText: Colors.black,
+          mainButton: TextButton(
+            onPressed: () {
+              Get.to(() => const ParcelConsoleScreen());
+            },
+            child: Text("VIEW".tr, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+          ),
+        );
         return;
       }
 
