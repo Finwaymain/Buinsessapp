@@ -105,7 +105,13 @@ class _ParcelConsoleScreenState extends State<ParcelConsoleScreen> with SingleTi
 
     final lat = Constant.currentLocation?.latitude;
     final lng = Constant.currentLocation?.longitude;
-    final driverId = Preferences.getInt(Preferences.userId).toString();
+    var driverId = Preferences.getInt(Preferences.userId).toString();
+    if (driverId == "0" || driverId.isEmpty) {
+      driverId = Preferences.getString(Preferences.userId);
+    }
+    if (driverId == "0" || driverId.isEmpty) {
+      driverId = dashboardController.userModel.value.userData?.id?.toString() ?? "";
+    }
 
     final urlParams = "?source_lat=${lat ?? ''}"
                       "&source_lng=${lng ?? ''}"
@@ -174,7 +180,20 @@ class _ParcelConsoleScreenState extends State<ParcelConsoleScreen> with SingleTi
         preferredSize: const Size.fromHeight(110.0),
         child: Column(
           children: [
-            AppbarCustom(title: consoleTitle),
+            AppbarCustom(
+              title: consoleTitle,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  tooltip: 'Refresh Requests'.tr,
+                  onPressed: () {
+                    ShowToastDialog.showToast("Refreshing requests...".tr);
+                    _fetchRequests();
+                    _fetchActiveOrders();
+                  },
+                ),
+              ],
+            ),
             Container(
               color: isDark ? AppThemeData.surface50Dark : AppThemeData.surface50,
               child: TabBar(
@@ -250,61 +269,109 @@ class _ParcelConsoleScreenState extends State<ParcelConsoleScreen> with SingleTi
                   color: isDark ? Colors.grey[400] : Colors.grey[600],
                 ),
               ),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  var driverId = Preferences.getInt(Preferences.userId).toString();
+                  if (driverId == "0" || driverId.isEmpty) {
+                    driverId = Preferences.getString(Preferences.userId);
+                  }
+                  await dashboardController.changeOnlineStatus({
+                    'id_driver': driverId,
+                    'online': 'yes',
+                  });
+                  dashboardController.isActive.value = true;
+                  _fetchRequests();
+                },
+                icon: const Icon(Icons.power_settings_new),
+                label: Text("Go Online".tr),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppThemeData.primary200,
+                  foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
             ],
           ),
         );
       }
 
       if (activeParcels.isEmpty && activeFood.isEmpty) {
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const SizedBox(
-                height: 300,
-                child: ScanningRadar(),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                _isFoodRider 
-                    ? "Scanning for Parcel & Food Deliveries...".tr
-                    : "Scanning for Parcel Deliveries...".tr,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontFamily: AppThemeData.medium,
-                  color: isDark ? Colors.grey[300] : Colors.grey[700],
-                ),
-              ),
-              if (_currentCity.isNotEmpty) ...[
-                const SizedBox(height: 6),
-                Text(
-                  "City: $_currentCity",
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontFamily: AppThemeData.regular,
-                    color: isDark ? Colors.grey[500] : Colors.grey[500],
+        return RefreshIndicator(
+          onRefresh: () async => _fetchRequests(),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: SizedBox(
+              height: MediaQuery.of(context).size.height * 0.7,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(
+                    height: 260,
+                    child: ScanningRadar(),
                   ),
-                ),
-              ],
-            ],
+                  const SizedBox(height: 20),
+                  Text(
+                    _isFoodRider 
+                        ? "Scanning for Parcel & Food Deliveries...".tr
+                        : "Scanning for Parcel Deliveries...".tr,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontFamily: AppThemeData.medium,
+                      color: isDark ? Colors.grey[300] : Colors.grey[700],
+                    ),
+                  ),
+                  if (_currentCity.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      "City: $_currentCity",
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontFamily: AppThemeData.regular,
+                        color: isDark ? Colors.grey[500] : Colors.grey[500],
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      _fetchRequests();
+                      ShowToastDialog.showToast("Searching for requests...".tr);
+                    },
+                    icon: const Icon(Icons.refresh, size: 18),
+                    label: Text("Refresh Now".tr),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppThemeData.primary200,
+                      side: BorderSide(color: AppThemeData.primary200),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         );
       }
 
       final totalItems = activeFood.length + activeParcels.length;
 
-      return ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: totalItems,
-        itemBuilder: (context, index) {
-          if (index < activeFood.length) {
-            final food = activeFood[index];
-            return _buildFoodRequestCard(food, isDark, themeChange);
-          } else {
-            final parcel = activeParcels[index - activeFood.length];
-            return _buildRequestCard(parcel, isDark, themeChange);
-          }
-        },
+      return RefreshIndicator(
+        onRefresh: () async => _fetchRequests(),
+        child: ListView.builder(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          itemCount: totalItems,
+          itemBuilder: (context, index) {
+            if (index < activeFood.length) {
+              final food = activeFood[index];
+              return _buildFoodRequestCard(food, isDark, themeChange);
+            } else {
+              final parcel = activeParcels[index - activeFood.length];
+              return _buildRequestCard(parcel, isDark, themeChange);
+            }
+          },
+        ),
       );
     });
   }
