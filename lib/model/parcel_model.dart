@@ -168,49 +168,66 @@ class ParcelData {
     destinationCity = json['destination_city'];
     senderName = json['sender_name'];
     senderPhone = json['sender_phone'];
-    receiverName = json['receiver_name'];
-    receiverPhone = json['receiver_phone'];
-    parcelWeight = json['parcel_weight'];
-    parcelImage = json['parcel_image'].cast<String>();
-    parcelType = json['parcel_type'];
-    parcelDate = json['parcel_date'];
-    parcelTime = json['parcel_time'];
-    receiveDate = json['receive_date'];
-    receiveTime = json['receive_time'];
-    status = json['status'];
-    note = json['note'].toString();
-    paymentStatus = json['payment_status'];
-    idPaymentMethod = json['id_payment_method'];
+    receiverName = json['receiver_name']?.toString();
+    receiverPhone = json['receiver_phone']?.toString();
+    parcelWeight = json['parcel_weight']?.toString();
+    if (json['parcel_image'] != null) {
+      if (json['parcel_image'] is List) {
+        parcelImage = (json['parcel_image'] as List).map((e) => e.toString()).toList();
+      } else if (json['parcel_image'] is String) {
+        try {
+          final decoded = json.decode(json['parcel_image']);
+          if (decoded is List) {
+            parcelImage = decoded.map((e) => e.toString()).toList();
+          } else {
+            parcelImage = [json['parcel_image'].toString()];
+          }
+        } catch (_) {
+          parcelImage = [json['parcel_image'].toString()];
+        }
+      }
+    } else {
+      parcelImage = [];
+    }
+    parcelType = json['parcel_type']?.toString();
+    parcelDate = json['parcel_date']?.toString();
+    parcelTime = json['parcel_time']?.toString();
+    receiveDate = json['receive_date']?.toString();
+    receiveTime = json['receive_time']?.toString();
+    status = json['status']?.toString();
+    note = json['note']?.toString();
+    paymentStatus = json['payment_status']?.toString();
+    idPaymentMethod = json['id_payment_method']?.toString();
 
-    duration = json['duration'];
-    distance = json['distance'];
-    distanceUnit = json['distance_unit'];
-    amount = json['amount'];
-    discount = json['discount'];
+    duration = json['duration']?.toString();
+    distance = json['distance']?.toString();
+    distanceUnit = json['distance_unit']?.toString();
+    amount = json['amount']?.toString();
+    discount = json['discount']?.toString();
     taxModel = taxList;
-    adminCommission = json['admin_commission'];
-    otp = json['otp'].toString();
-    rejectedDriverId = json['rejected_driver_id'];
-    createdAt = json['created_at'];
-    updatedAt = json['updated_at'];
-    libelle = json['libelle'];
-    paymentImage = json['payment_image'];
-    title = json['title'];
-    phone = json['phone'];
-    nomConducteur = json['nomConducteur'];
-    prenomConducteur = json['prenomConducteur'];
-    driverPhone = json['driver_phone'];
-    photoPath = json['photo_path'];
-    moyenne = json['moyenne'];
-    moyenneDriver = json['moyenne_driver'];
-    userPhone = json['user_phone'];
-    userPhoto = json['user_photo'];
-    userName = json['user_name'];
-    driverId = json['driver_id'];
-    driverName = json['driver_name'];
-    driverPhoto = json['driver_photo'];
-    tip = json['tip'];
-    parcelDimension = json['parcel_dimension'];
+    adminCommission = json['admin_commission']?.toString();
+    otp = json['otp']?.toString();
+    rejectedDriverId = json['rejected_driver_id']?.toString();
+    createdAt = json['created_at']?.toString();
+    updatedAt = json['updated_at']?.toString();
+    libelle = json['libelle']?.toString();
+    paymentImage = json['payment_image']?.toString();
+    title = json['title']?.toString();
+    phone = json['phone']?.toString();
+    nomConducteur = json['nomConducteur']?.toString();
+    prenomConducteur = json['prenomConducteur']?.toString();
+    driverPhone = json['driver_phone']?.toString();
+    photoPath = json['photo_path']?.toString();
+    moyenne = json['moyenne']?.toString();
+    moyenneDriver = json['moyenne_driver']?.toString();
+    userPhone = json['user_phone']?.toString();
+    userPhoto = json['user_photo']?.toString();
+    userName = json['user_name']?.toString();
+    driverId = json['driver_id']?.toString();
+    driverName = json['driver_name']?.toString();
+    driverPhoto = json['driver_photo']?.toString();
+    tip = json['tip']?.toString();
+    parcelDimension = json['parcel_dimension']?.toString();
   }
 
   Map<String, dynamic> toJson() {
