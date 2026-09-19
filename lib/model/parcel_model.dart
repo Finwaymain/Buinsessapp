@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:cabme_driver/model/tax_model.dart';
 
 class ParcelModel {
@@ -176,7 +177,7 @@ class ParcelData {
         parcelImage = (json['parcel_image'] as List).map((e) => e.toString()).toList();
       } else if (json['parcel_image'] is String) {
         try {
-          final decoded = json.decode(json['parcel_image']);
+          final decoded = jsonDecode(json['parcel_image']);
           if (decoded is List) {
             parcelImage = decoded.map((e) => e.toString()).toList();
           } else {
