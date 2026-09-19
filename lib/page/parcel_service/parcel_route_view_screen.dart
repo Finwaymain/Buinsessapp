@@ -82,6 +82,16 @@ class _ParcelRouteViewScreenState extends State<ParcelRouteViewScreen> {
         ParcelDetailsModel parcelDetails = ParcelDetailsModel.fromJson(response.data);
         if (parcelDetails.success == 'success' && parcelDetails.rideDetailsdata != null) {
           var data = parcelDetails.rideDetailsdata!;
+          if (data.status != null && data.status!.isNotEmpty && parcelData != null) {
+            if (parcelData!.status != data.status) {
+              if (mounted) {
+                setState(() {
+                  parcelData!.status = data.status;
+                });
+                getDirections(dLat: departureLatLong.latitude, dLng: departureLatLong.longitude);
+              }
+            }
+          }
           if (data.driverLatitude != null && data.driverLatitude!.isNotEmpty &&
               data.driverLongitude != null && data.driverLongitude!.isNotEmpty) {
             double dLat = double.parse(data.driverLatitude!);
@@ -187,7 +197,7 @@ class _ParcelRouteViewScreenState extends State<ParcelRouteViewScreen> {
                 SafeArea(
                   child: InkWell(
                     onTap: () {
-                      Get.back();
+                      Get.back(result: true);
                     },
                     child: const Padding(
                       padding: EdgeInsets.all(4.0),
@@ -356,118 +366,128 @@ class _ParcelRouteViewScreenState extends State<ParcelRouteViewScreen> {
                                             'driver_name': '${parcelData!.driverName}',
                                             'driver_id': Preferences.getInt(Preferences.userId).toString(),
                                           };
-                                          controllerParcelDetails.onRideParcel(bodyParams).then((value) {
-                                            if (value != null) {
-                                              Get.back();
-                                              showDialog(
-                                                  context: context,
-                                                  builder: (BuildContext context) {
-                                                    return CustomDialogBox(
-                                                      title: "On ride Successfully".tr,
-                                                      descriptions: "Parcel Successfully On ride.".tr,
-                                                      text: "Ok".tr,
-                                                      onPress: () {
-                                                        Get.back();
-                                                      },
-                                                      img: Image.asset('assets/images/green_checked.png'),
-                                                    );
-                                                  });
-                                            }
-                                          });
-                                        } else {
-                                          controllerParcelDetails.otpController = TextEditingController();
-                                          showDialog(
-                                            barrierColor: Colors.black26,
-                                            context: context,
-                                            builder: (context) {
-                                              return Dialog(
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius.circular(20),
-                                                ),
-                                                elevation: 0,
-                                                backgroundColor: Colors.transparent,
-                                                child: Container(
-                                                  height: 180,
-                                                  padding: const EdgeInsets.only(left: 10, top: 20, right: 10, bottom: 10),
-                                                  decoration:
-                                                      BoxDecoration(shape: BoxShape.rectangle, color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: const [
-                                                    BoxShadow(color: Colors.black, offset: Offset(0, 10), blurRadius: 10),
-                                                  ]),
-                                                  child: Column(
-                                                    children: [
-                                                      Text(
-                                                        "Enter OTP".tr,
-                                                        style: TextStyle(color: Colors.black.withValues(alpha: 0.60)),
-                                                      ),
-                                                      Pinput(
-                                                        controller: controllerParcelDetails.otpController,
-                                                        defaultPinTheme: PinTheme(
-                                                          height: 50,
-                                                          width: 50,
-                                                          textStyle: const TextStyle(letterSpacing: 0.60, fontSize: 16, color: Colors.black, fontWeight: FontWeight.w600),
-                                                          // margin: EdgeInsets.all(10),
-                                                          decoration: BoxDecoration(
-                                                            borderRadius: BorderRadius.circular(10),
-                                                            shape: BoxShape.rectangle,
-                                                            color: Colors.white,
-                                                            border: Border.all(color: ConstantColors.textFieldBoarderColor, width: 0.7),
-                                                          ),
-                                                        ),
-                                                        keyboardType: TextInputType.phone,
-                                                        textInputAction: TextInputAction.done,
-                                                        length: 6,
-                                                      ),
-                                                      // ignore: prefer_const_constructors
-                                                      SizedBox(
-                                                        height: 8,
-                                                      ),
-                                                      Row(
-                                                        children: [
-                                                          Expanded(
-                                                            child: ButtonThem.buildButton(
-                                                              context,
-                                                              title: 'done'.tr,
-                                                              btnHeight: 45,
-                                                              btnWidthRatio: 0.8,
-                                                              btnColor: AppThemeData.primary200,
-                                                              txtColor: Colors.white,
-                                                              onPress: () {
-                                                                if (controllerParcelDetails.otpController.text.toString().length == 6) {
-                                                                  controllerParcelDetails
-                                                                      .verifyOTP(
-                                                                    userId: parcelData!.idUserApp!.toString(),
-                                                                    rideId: parcelData!.id!.toString(),
-                                                                  )
-                                                                      .then((value) {
-                                                                    if (value != null && value['success'] == "success") {
-                                                                      Map<String, String> bodyParams = {
-                                                                        'id_parcel': parcelData!.id.toString(),
-                                                                        'id_user': parcelData!.idUserApp.toString(),
-                                                                        'driver_name': '${parcelData!.driverName}',
-                                                                        'driver_id': Preferences.getInt(Preferences.userId).toString(),
-                                                                        'otp': controllerParcelDetails.otpController.text.toString(),
-                                                                      };
-                                                                      controllerParcelDetails.onRideParcel(bodyParams).then((value) {
-                                                                        if (value != null) {
-                                                                          Get.back();
-                                                                          showDialog(
-                                                                              context: context,
-                                                                              builder: (BuildContext context) {
-                                                                                return CustomDialogBox(
-                                                                                  title: "On ride Successfully".tr,
-                                                                                  descriptions: "Parcel Successfully On ride.".tr,
-                                                                                  text: "Ok".tr,
-                                                                                  onPress: () {
-                                                                                    Get.back();
-                                                                                    Get.back();
-                                                                                  },
-                                                                                  img: Image.asset('assets/images/green_checked.png'),
-                                                                                );
-                                                                              });
-                                                                        }
-                                                                      });
-                                                                    }
-                                                                  });
+                                           controllerParcelDetails.onRideParcel(bodyParams).then((value) {
+                                             if (value != null) {
+                                               if (mounted) {
+                                                 setState(() {
+                                                   parcelData!.status = "onride";
+                                                 });
+                                                 getDirections(dLat: departureLatLong.latitude, dLng: departureLatLong.longitude);
+                                               }
+                                               showDialog(
+                                                   context: context,
+                                                   builder: (BuildContext context) {
+                                                     return CustomDialogBox(
+                                                       title: "On ride Successfully".tr,
+                                                       descriptions: "Parcel Successfully On ride.".tr,
+                                                       text: "Ok".tr,
+                                                       onPress: () {
+                                                         Get.back();
+                                                       },
+                                                       img: Image.asset('assets/images/green_checked.png'),
+                                                     );
+                                                   });
+                                             }
+                                           });
+                                         } else {
+                                           controllerParcelDetails.otpController = TextEditingController();
+                                           showDialog(
+                                             barrierColor: Colors.black26,
+                                             context: context,
+                                             builder: (context) {
+                                               return Dialog(
+                                                 shape: RoundedRectangleBorder(
+                                                   borderRadius: BorderRadius.circular(20),
+                                                 ),
+                                                 elevation: 0,
+                                                 backgroundColor: Colors.transparent,
+                                                 child: Container(
+                                                   height: 180,
+                                                   padding: const EdgeInsets.only(left: 10, top: 20, right: 10, bottom: 10),
+                                                   decoration:
+                                                       BoxDecoration(shape: BoxShape.rectangle, color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: const [
+                                                     BoxShadow(color: Colors.black, offset: Offset(0, 10), blurRadius: 10),
+                                                   ]),
+                                                   child: Column(
+                                                     children: [
+                                                       Text(
+                                                         "Enter OTP".tr,
+                                                         style: TextStyle(color: Colors.black.withValues(alpha: 0.60)),
+                                                       ),
+                                                       Pinput(
+                                                         controller: controllerParcelDetails.otpController,
+                                                         defaultPinTheme: PinTheme(
+                                                           height: 50,
+                                                           width: 50,
+                                                           textStyle: const TextStyle(letterSpacing: 0.60, fontSize: 16, color: Colors.black, fontWeight: FontWeight.w600),
+                                                           // margin: EdgeInsets.all(10),
+                                                           decoration: BoxDecoration(
+                                                             borderRadius: BorderRadius.circular(10),
+                                                             shape: BoxShape.rectangle,
+                                                             color: Colors.white,
+                                                             border: Border.all(color: ConstantColors.textFieldBoarderColor, width: 0.7),
+                                                           ),
+                                                         ),
+                                                         keyboardType: TextInputType.phone,
+                                                         textInputAction: TextInputAction.done,
+                                                         length: 6,
+                                                       ),
+                                                       // ignore: prefer_const_constructors
+                                                       SizedBox(
+                                                         height: 8,
+                                                       ),
+                                                       Row(
+                                                         children: [
+                                                           Expanded(
+                                                             child: ButtonThem.buildButton(
+                                                               context,
+                                                               title: 'done'.tr,
+                                                               btnHeight: 45,
+                                                               btnWidthRatio: 0.8,
+                                                               btnColor: AppThemeData.primary200,
+                                                               txtColor: Colors.white,
+                                                               onPress: () {
+                                                                 if (controllerParcelDetails.otpController.text.toString().length == 6) {
+                                                                   controllerParcelDetails
+                                                                       .verifyOTP(
+                                                                     userId: parcelData!.idUserApp!.toString(),
+                                                                     rideId: parcelData!.id!.toString(),
+                                                                   )
+                                                                       .then((value) {
+                                                                     if (value != null && value['success'] == "success") {
+                                                                       Map<String, String> bodyParams = {
+                                                                         'id_parcel': parcelData!.id.toString(),
+                                                                         'id_user': parcelData!.idUserApp.toString(),
+                                                                         'driver_name': '${parcelData!.driverName}',
+                                                                         'driver_id': Preferences.getInt(Preferences.userId).toString(),
+                                                                         'otp': controllerParcelDetails.otpController.text.toString(),
+                                                                       };
+                                                                       controllerParcelDetails.onRideParcel(bodyParams).then((value) {
+                                                                         if (value != null) {
+                                                                           Get.back();
+                                                                           if (mounted) {
+                                                                             setState(() {
+                                                                               parcelData!.status = "onride";
+                                                                             });
+                                                                             getDirections(dLat: departureLatLong.latitude, dLng: departureLatLong.longitude);
+                                                                           }
+                                                                           showDialog(
+                                                                               context: context,
+                                                                               builder: (BuildContext context) {
+                                                                                 return CustomDialogBox(
+                                                                                   title: "On ride Successfully".tr,
+                                                                                   descriptions: "Parcel Successfully On ride.".tr,
+                                                                                   text: "Ok".tr,
+                                                                                   onPress: () {
+                                                                                     Get.back();
+                                                                                   },
+                                                                                   img: Image.asset('assets/images/green_checked.png'),
+                                                                                 );
+                                                                               });
+                                                                         }
+                                                                       });
+                                                                     }
+                                                                   });
                                                                 } else {
                                                                   ShowToastDialog.showToast('Please Enter OTP');
                                                                 }

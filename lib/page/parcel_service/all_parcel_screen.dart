@@ -69,10 +69,11 @@ class AllParcelScreen extends StatelessWidget {
 
           if (Constant.liveTrackingMapType == "inappmap") {
             if (Constant.selectedMapType == "osm") {
-              Get.to(const ParcelOsmRouteViewScreen(), arguments: argumentData);
+              await Get.to(const ParcelOsmRouteViewScreen(), arguments: argumentData);
             } else {
-              Get.to(const ParcelRouteViewScreen(), arguments: argumentData);
+              await Get.to(const ParcelRouteViewScreen(), arguments: argumentData);
             }
+            controller.getParcel();
           } else {
             Constant.redirectMap(
               latitude: double.parse(data.latDestination!),
@@ -476,31 +477,35 @@ class AllParcelScreen extends StatelessWidget {
                                                                       )
                                                                           .then((value) {
                                                                         if (value != null && value['success'] == "success") {
-                                                                          Map<String, String> bodyParams = {
-                                                                            'id_parcel': data.id.toString(),
-                                                                            'id_user': data.idUserApp.toString(),
-                                                                            'driver_name': '${data.driverName}',
-                                                                            'driver_id': Preferences.getInt(Preferences.userId).toString(),
-                                                                          };
+                                                                           Map<String, String> bodyParams = {
+                                                                             'id_parcel': data.id.toString(),
+                                                                             'id_user': data.idUserApp.toString(),
+                                                                             'driver_name': '${data.driverName}',
+                                                                             'driver_id': Preferences.getInt(Preferences.userId).toString(),
+                                                                             'otp': controller.otpController.value.text.toString(),
+                                                                           };
 
-                                                                          controller.onRideParcel(bodyParams).then((value) {
-                                                                            if (value != null) {
-                                                                              showDialog(
-                                                                                  context: context,
-                                                                                  builder: (BuildContext context) {
-                                                                                    return CustomDialogBox(
-                                                                                      title: "On ride Successfully".tr,
-                                                                                      descriptions: "Parcel Successfully On ride.".tr,
-                                                                                      text: "Ok".tr,
-                                                                                      onPress: () {
-                                                                                        Get.back();
-                                                                                        controller.getParcel();
-                                                                                      },
-                                                                                      img: Image.asset('assets/images/green_checked.png'),
-                                                                                    );
-                                                                                  });
-                                                                            }
-                                                                          });
+                                                                           controller.onRideParcel(bodyParams).then((value) {
+                                                                             if (value != null) {
+                                                                               Get.back();
+                                                                               data.status = "onride";
+                                                                               controller.update();
+                                                                               showDialog(
+                                                                                   context: context,
+                                                                                   builder: (BuildContext context) {
+                                                                                     return CustomDialogBox(
+                                                                                       title: "On ride Successfully".tr,
+                                                                                       descriptions: "Parcel Successfully On ride.".tr,
+                                                                                       text: "Ok".tr,
+                                                                                       onPress: () {
+                                                                                         Get.back();
+                                                                                         controller.getParcel();
+                                                                                       },
+                                                                                       img: Image.asset('assets/images/green_checked.png'),
+                                                                                     );
+                                                                                   });
+                                                                             }
+                                                                           });
                                                                         }
                                                                       });
                                                                     } else {

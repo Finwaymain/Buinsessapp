@@ -85,6 +85,18 @@ class _ParcelOsmRouteViewScreenState extends State<ParcelOsmRouteViewScreen> {
         ParcelDetailsModel parcelDetails = ParcelDetailsModel.fromJson(response.data);
         if (parcelDetails.success == 'success' && parcelDetails.rideDetailsdata != null) {
           var data = parcelDetails.rideDetailsdata!;
+          if (data.status != null && data.status!.isNotEmpty && parcelData != null) {
+            if (parcelData!.status != data.status) {
+              if (mounted) {
+                setState(() {
+                  parcelData!.status = data.status;
+                });
+                if (departureLatLong != null) {
+                  getDirections(dLat: departureLatLong!.latitude, dLng: departureLatLong!.longitude);
+                }
+              }
+            }
+          }
           if (data.driverLatitude != null && data.driverLatitude!.isNotEmpty &&
               data.driverLongitude != null && data.driverLongitude!.isNotEmpty) {
             double dLat = double.parse(data.driverLatitude!);
@@ -185,7 +197,7 @@ class _ParcelOsmRouteViewScreenState extends State<ParcelOsmRouteViewScreen> {
                 SafeArea(
                   child: InkWell(
                     onTap: () {
-                      Get.back();
+                      Get.back(result: true);
                     },
                     child: const Padding(
                       padding: EdgeInsets.all(4.0),
@@ -354,25 +366,31 @@ class _ParcelOsmRouteViewScreenState extends State<ParcelOsmRouteViewScreen> {
                                             'driver_name': '${parcelData!.driverName}',
                                             'driver_id': Preferences.getInt(Preferences.userId).toString(),
                                           };
-                                          controllerParcelDetails.onRideParcel(bodyParams).then((value) {
-                                            if (value != null) {
-                                              Get.back();
-                                              showDialog(
-                                                  context: context,
-                                                  builder: (BuildContext context) {
-                                                    return CustomDialogBox(
-                                                      title: "On ride Successfully".tr,
-                                                      descriptions: "Parcel Successfully On ride.".tr,
-                                                      text: "Ok".tr,
-                                                      onPress: () {
-                                                        Get.back();
-                                                        Get.back();
-                                                      },
-                                                      img: Image.asset('assets/images/green_checked.png'),
-                                                    );
-                                                  });
-                                            }
-                                          });
+                                           controllerParcelDetails.onRideParcel(bodyParams).then((value) {
+                                             if (value != null) {
+                                               if (mounted) {
+                                                 setState(() {
+                                                   parcelData!.status = "onride";
+                                                 });
+                                                 if (departureLatLong != null) {
+                                                   getDirections(dLat: departureLatLong!.latitude, dLng: departureLatLong!.longitude);
+                                                 }
+                                               }
+                                               showDialog(
+                                                   context: context,
+                                                   builder: (BuildContext context) {
+                                                     return CustomDialogBox(
+                                                       title: "On ride Successfully".tr,
+                                                       descriptions: "Parcel Successfully On ride.".tr,
+                                                       text: "Ok".tr,
+                                                       onPress: () {
+                                                         Get.back();
+                                                       },
+                                                       img: Image.asset('assets/images/green_checked.png'),
+                                                     );
+                                                   });
+                                             }
+                                           });
                                         } else {
                                           controllerParcelDetails.otpController = TextEditingController();
                                           showDialog(
@@ -446,25 +464,32 @@ class _ParcelOsmRouteViewScreenState extends State<ParcelOsmRouteViewScreen> {
                                                                         'driver_id': Preferences.getInt(Preferences.userId).toString(),
                                                                         'otp': controllerParcelDetails.otpController.text.toString(),
                                                                       };
-                                                                      controllerParcelDetails.onRideParcel(bodyParams).then((value) {
-                                                                        if (value != null) {
-                                                                          Get.back();
-                                                                          showDialog(
-                                                                              context: context,
-                                                                              builder: (BuildContext context) {
-                                                                                return CustomDialogBox(
-                                                                                  title: "On ride Successfully".tr,
-                                                                                  descriptions: "Parcel Successfully On ride.".tr,
-                                                                                  text: "Ok".tr,
-                                                                                  onPress: () {
-                                                                                    Get.back();
-                                                                                    Get.back();
-                                                                                  },
-                                                                                  img: Image.asset('assets/images/green_checked.png'),
-                                                                                );
-                                                                              });
-                                                                        }
-                                                                      });
+                                                                       controllerParcelDetails.onRideParcel(bodyParams).then((value) {
+                                                                         if (value != null) {
+                                                                           Get.back();
+                                                                           if (mounted) {
+                                                                             setState(() {
+                                                                               parcelData!.status = "onride";
+                                                                             });
+                                                                             if (departureLatLong != null) {
+                                                                               getDirections(dLat: departureLatLong!.latitude, dLng: departureLatLong!.longitude);
+                                                                             }
+                                                                           }
+                                                                           showDialog(
+                                                                               context: context,
+                                                                               builder: (BuildContext context) {
+                                                                                 return CustomDialogBox(
+                                                                                   title: "On ride Successfully".tr,
+                                                                                   descriptions: "Parcel Successfully On ride.".tr,
+                                                                                   text: "Ok".tr,
+                                                                                   onPress: () {
+                                                                                     Get.back();
+                                                                                   },
+                                                                                   img: Image.asset('assets/images/green_checked.png'),
+                                                                                 );
+                                                                               });
+                                                                         }
+                                                                       });
                                                                     }
                                                                   });
                                                                 } else {

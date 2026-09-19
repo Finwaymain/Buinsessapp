@@ -1480,10 +1480,11 @@ class _ParcelConsoleScreenState extends State<ParcelConsoleScreen> with SingleTi
 
           if (Constant.liveTrackingMapType == "inappmap") {
             if (Constant.selectedMapType == "osm") {
-              Get.to(const ParcelOsmRouteViewScreen(), arguments: argumentData);
+              await Get.to(const ParcelOsmRouteViewScreen(), arguments: argumentData);
             } else {
-              Get.to(const ParcelRouteViewScreen(), arguments: argumentData);
+              await Get.to(const ParcelRouteViewScreen(), arguments: argumentData);
             }
+            _fetchActiveOrders();
           } else {
             Constant.redirectMap(
               latitude: double.parse(data.latDestination!),
