@@ -88,7 +88,8 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
   final bool isRideRequest = message.data['statut'] == 'new' ||
       message.data['tag'] == 'ridenewrider' ||
-      message.data['tag'] == 'parcelnew';
+      message.data['tag'] == 'parcelnew' ||
+      message.data['tag'] == 'parcelbike';
 
   if (isRideRequest) {
     try {
@@ -334,6 +335,7 @@ class FirebaseService {
           (message.data['booking_id'] != null && message.data['booking_id'].toString().isNotEmpty);
 
       final bool isParcelRequest = message.data['tag'] == 'parcelnew' ||
+          message.data['tag'] == 'parcelbike' ||
           message.data['order_type'] == 'parcel';
 
       final bool isFoodDeliveryRequest = message.data['type'] == 'food_delivery' ||
@@ -432,6 +434,7 @@ class FirebaseService {
 
       // 2.5 Parcel or Food Delivery Request
       if (message.data['tag'] == "parcelnew" ||
+          message.data['tag'] == "parcelbike" ||
           message.data['order_type'] == "parcel" ||
           message.data['type'] == "food_delivery" ||
           message.data['tag'] == "food_incoming") {
@@ -451,7 +454,7 @@ class FirebaseService {
             return;
           }
         } catch (e) {
-          log('Error parsing rideData on tap: $e');
+          log('Error showing incoming ride screen: $e');
         }
         await Get.to(() => const MainDashboard());
         return;
@@ -465,8 +468,11 @@ class FirebaseService {
           if (rideData.id != null &&
               rideData.id!.isNotEmpty &&
               rideData.id != 'null') {
-            var argumentData = {'type': rideData.statut, 'data': rideData};
-            if (Constant.liveTrackingMapType == "inappmap") {
+            var argumentData = {
+              'type': message.data['statut'].toString(),
+              'data': rideData,
+            };
+            if (Constant.liveTrackingMapType == 'inappmap') {
               if (Constant.selectedMapType == 'osm') {
                 await Get.to(() => const RouteOsmViewScreen(),
                     arguments: argumentData);
@@ -617,7 +623,8 @@ class NotificationService {
 
       final isRideRequest = message.data['statut'] == 'new' ||
           message.data['tag'] == 'ridenewrider' ||
-          message.data['tag'] == 'parcelnew';
+          message.data['tag'] == 'parcelnew' ||
+          message.data['tag'] == 'parcelbike';
 
       final bool isAlert = isHomeService || isRideRequest;
 
@@ -638,7 +645,7 @@ class NotificationService {
           final sName = message.data['service_name'] ?? 'Home Service';
           body = 'New request for $sName. Tap to view and accept.';
         } else if (isRideRequest) {
-          final isParcel = message.data['tag'] == 'parcelnew';
+          final isParcel = message.data['tag'] == 'parcelnew' || message.data['tag'] == 'parcelbike' || message.data['order_type'] == 'parcel';
           title = isParcel ? 'New Parcel Delivery Request!' : 'New Ride Request!';
           final depart = message.data['depart_name'] ?? '';
           final dest = message.data['destination_name'] ?? '';
