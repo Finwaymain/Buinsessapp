@@ -92,6 +92,19 @@ class _ParcelRouteViewScreenState extends State<ParcelRouteViewScreen> {
               }
             }
           }
+          if (data.paymentStatus != null && data.paymentStatus!.isNotEmpty && parcelData != null) {
+            if (parcelData!.paymentStatus != data.paymentStatus) {
+              if (mounted) {
+                setState(() {
+                  parcelData!.paymentStatus = data.paymentStatus;
+                });
+                if (data.paymentStatus.toString().toLowerCase() == 'yes') {
+                  ShowToastDialog.showToast('Customer payment received! Destination navigation unlocked.'.tr);
+                  getDirections(dLat: departureLatLong.latitude, dLng: departureLatLong.longitude);
+                }
+              }
+            }
+          }
           if (data.driverLatitude != null && data.driverLatitude!.isNotEmpty &&
               data.driverLongitude != null && data.driverLongitude!.isNotEmpty) {
             double dLat = double.parse(data.driverLatitude!);
@@ -135,15 +148,59 @@ class _ParcelRouteViewScreenState extends State<ParcelRouteViewScreen> {
       destinationLatLong = LatLng(double.parse(parcelData!.latDestination.toString()), double.parse(parcelData!.lngDestination.toString()));
       // await getDriver();
 
-      if (parcelData!.status == "onride" || parcelData!.status == 'confirmed') {
+      if (parcelData!.status == "onride" || parcelData!.status == 'confirmed' || parcelData!.status == "on ride") {
         _fetchDriverLocation();
-        _driverLocationTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+        _driverLocationTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
           _fetchDriverLocation();
         });
       } else {
         getDirections(dLat: 0.0, dLng: 0.0);
       }
     }
+  }
+
+  Future<void> _confirmCashReceived() async {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black26,
+      builder: (context) {
+        return CustomAlertDialog(
+          title: "Confirm Cash Payment".tr,
+          negativeButtonText: "No".tr,
+          positiveButtonText: "Yes, Received".tr,
+          onPressNegative: () => Get.back(),
+          onPressPositive: () async {
+            Get.back();
+            ShowToastDialog.showLoader("Confirming cash payment...".tr);
+            try {
+              final response = await Dio().post(
+                API.parcelPayByCase,
+                data: {
+                  'id_parcel': parcelData!.id.toString(),
+                  'id_driver': Preferences.getInt(Preferences.userId).toString(),
+                  'amount': parcelData!.amount.toString(),
+                  'paymethod': 'Cash',
+                },
+                options: Options(headers: API.header),
+              );
+              ShowToastDialog.closeLoader();
+              if (response.statusCode == 200 && response.data['success']?.toString().toLowerCase() == 'success') {
+                setState(() {
+                  parcelData!.paymentStatus = 'yes';
+                });
+                ShowToastDialog.showToast("Cash payment confirmed! Destination navigation unlocked.".tr);
+                getDirections(dLat: departureLatLong.latitude, dLng: departureLatLong.longitude);
+              } else {
+                ShowToastDialog.showToast(response.data['error']?.toString() ?? 'Payment confirmation failed');
+              }
+            } catch (e) {
+              ShowToastDialog.closeLoader();
+              ShowToastDialog.showToast("Error confirming payment: $e");
+            }
+          },
+        );
+      },
+    );
   }
 
   Future<void> setIcons() async {
@@ -309,6 +366,28 @@ class _ParcelRouteViewScreenState extends State<ParcelRouteViewScreen> {
                     ),
                   ),
                 ),
+                if ((parcelData!.status == "on ride" || parcelData!.status == "onride") && parcelData!.paymentStatus.toString().toLowerCase() != "yes")
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF3CD),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFFFEEBA)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.info_outline, color: Color(0xFF856404), size: 18),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            "Waiting for customer payment (${Constant().amountShow(amount: parcelData!.amount)} via Cash, UPI, or Wallet). You can navigate to destination once payment is completed.".tr,
+                            style: const TextStyle(fontSize: 12, color: Color(0xFF856404), fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 10),
                   child: Row(
@@ -543,39 +622,55 @@ class _ParcelRouteViewScreenState extends State<ParcelRouteViewScreen> {
                         child: Expanded(
                           child: Padding(
                             padding: const EdgeInsets.only(bottom: 5),
-                            child: ButtonThem.buildBorderButton(
-                              context,
-                              title: 'START RIDE'.tr,
-                              btnHeight: 45,
-                              btnWidthRatio: 0.8,
-                              btnColor: Colors.white,
-                              txtColor: Colors.black.withValues(alpha: 0.60),
-                              btnBorderColor: Colors.black.withValues(alpha: 0.20),
-                              onPress: () async {
-                                if (Constant.liveTrackingMapType == "inappmap") {
-                                  _mapcontroller?.animateCamera(
-                                    CameraUpdate.newCameraPosition(
-                                      CameraPosition(
-                                        target: LatLng(
-                                          double.parse(parcelData!.latDestination.toString()),
-                                          double.parse(parcelData!.lngDestination.toString()),
+                            child: Builder(builder: (context) {
+                              final isPaid = parcelData!.paymentStatus.toString().toLowerCase() == "yes";
+                              if (!isPaid) {
+                                return ButtonThem.buildButton(
+                                  context,
+                                  title: 'CASH RECEIVED'.tr,
+                                  btnHeight: 45,
+                                  btnWidthRatio: 0.8,
+                                  btnColor: AppThemeData.warning200,
+                                  txtColor: Colors.white,
+                                  onPress: () async {
+                                    await _confirmCashReceived();
+                                  },
+                                );
+                              }
+                              return ButtonThem.buildBorderButton(
+                                context,
+                                title: 'START RIDE'.tr,
+                                btnHeight: 45,
+                                btnWidthRatio: 0.8,
+                                btnColor: Colors.white,
+                                txtColor: Colors.black.withValues(alpha: 0.60),
+                                btnBorderColor: Colors.black.withValues(alpha: 0.20),
+                                onPress: () async {
+                                  if (Constant.liveTrackingMapType == "inappmap") {
+                                    _mapcontroller?.animateCamera(
+                                      CameraUpdate.newCameraPosition(
+                                        CameraPosition(
+                                          target: LatLng(
+                                            double.parse(parcelData!.latDestination.toString()),
+                                            double.parse(parcelData!.lngDestination.toString()),
+                                          ),
+                                          zoom: 16.0,
                                         ),
-                                        zoom: 16.0,
                                       ),
-                                    ),
-                                  );
-                                  ShowToastDialog.showToast('Navigating to destination');
-                                } else {
-                                  String googleUrl =
-                                      'https://www.google.com/maps/search/?api=1&query=${double.parse(parcelData!.latDestination.toString())},${double.parse(parcelData!.lngDestination.toString())}';
-                                  if (await canLaunch(googleUrl)) {
-                                    await launch(googleUrl);
+                                    );
+                                    ShowToastDialog.showToast('Navigating to destination');
                                   } else {
-                                    throw 'Could not open the map.';
+                                    String googleUrl =
+                                        'https://www.google.com/maps/search/?api=1&query=${double.parse(parcelData!.latDestination.toString())},${double.parse(parcelData!.lngDestination.toString())}';
+                                    if (await canLaunch(googleUrl)) {
+                                      await launch(googleUrl);
+                                    } else {
+                                      throw 'Could not open the map.';
+                                    }
                                   }
-                                }
-                              },
-                            ),
+                                },
+                              );
+                            }),
                           ),
                         ),
                       ),
@@ -584,58 +679,65 @@ class _ParcelRouteViewScreenState extends State<ParcelRouteViewScreen> {
                         child: Expanded(
                           child: Padding(
                             padding: const EdgeInsets.only(bottom: 5, left: 10),
-                            child: ButtonThem.buildButton(
-                              context,
-                              title: 'COMPLETE'.tr,
-                              btnHeight: 45,
-                              btnWidthRatio: 0.8,
-                              btnColor: AppThemeData.primary200,
-                              txtColor: Colors.black,
-                              onPress: () async {
-                                showDialog(
-                                  barrierColor: Colors.black26,
-                                  context: context,
-                                  builder: (context) {
-                                    return CustomAlertDialog(
-                                      title: "Do you want to complete this parcel?".tr,
-                                      onPressNegative: () {
-                                        Get.back();
-                                      },
-                                      negativeButtonText: 'No'.tr,
-                                      positiveButtonText: 'Yes'.tr,
-                                      onPressPositive: () {
-                                        Map<String, String> bodyParams = {
-                                           'id_parcel': parcelData!.id.toString(),
-                                           'id_pracel': parcelData!.id.toString(),
-                                          'id_user': parcelData!.idUserApp.toString(),
-                                          'driver_name': '${parcelData!.prenomConducteur.toString()} ${parcelData!.nomConducteur.toString()}',
-                                          'from_id': Preferences.getInt(Preferences.userId).toString(),
-                                        };
-                                        controllerParcelDetails.setCompletedRequest(bodyParams, parcelData!).then((value) {
-                                          if (value != null) {
-                                            Get.back();
-                                            showDialog(
-                                                context: context,
-                                                builder: (BuildContext context) {
-                                                  return CustomDialogBox(
-                                                    title: "Completed Successfully".tr,
-                                                    descriptions: "Parcel Successfully completed.".tr,
-                                                    text: "Ok".tr,
-                                                    onPress: () {
-                                                      Get.back();
-                                                      Get.back();
-                                                    },
-                                                    img: Image.asset('assets/images/green_checked.png'),
-                                                  );
-                                                });
-                                          }
-                                        });
-                                      },
-                                    );
-                                  },
-                                );
-                              },
-                            ),
+                            child: Builder(builder: (context) {
+                              final isPaid = parcelData!.paymentStatus.toString().toLowerCase() == "yes";
+                              return ButtonThem.buildButton(
+                                context,
+                                title: 'COMPLETE'.tr,
+                                btnHeight: 45,
+                                btnWidthRatio: 0.8,
+                                btnColor: isPaid ? AppThemeData.primary200 : Colors.grey[400]!,
+                                txtColor: Colors.black,
+                                onPress: () async {
+                                  if (!isPaid) {
+                                    ShowToastDialog.showToast("Customer must complete payment before parcel can be completed.".tr);
+                                    return;
+                                  }
+                                  showDialog(
+                                    barrierColor: Colors.black26,
+                                    context: context,
+                                    builder: (context) {
+                                      return CustomAlertDialog(
+                                        title: "Do you want to complete this parcel?".tr,
+                                        onPressNegative: () {
+                                          Get.back();
+                                        },
+                                        negativeButtonText: 'No'.tr,
+                                        positiveButtonText: 'Yes'.tr,
+                                        onPressPositive: () {
+                                          Map<String, String> bodyParams = {
+                                             'id_parcel': parcelData!.id.toString(),
+                                             'id_pracel': parcelData!.id.toString(),
+                                            'id_user': parcelData!.idUserApp.toString(),
+                                            'driver_name': '${parcelData!.prenomConducteur.toString()} ${parcelData!.nomConducteur.toString()}',
+                                            'from_id': Preferences.getInt(Preferences.userId).toString(),
+                                          };
+                                          controllerParcelDetails.setCompletedRequest(bodyParams, parcelData!).then((value) {
+                                            if (value != null) {
+                                              Get.back();
+                                              showDialog(
+                                                  context: context,
+                                                  builder: (BuildContext context) {
+                                                    return CustomDialogBox(
+                                                      title: "Completed Successfully".tr,
+                                                      descriptions: "Parcel Successfully completed.".tr,
+                                                      text: "Ok".tr,
+                                                      onPress: () {
+                                                        Get.back();
+                                                        Get.back();
+                                                      },
+                                                      img: Image.asset('assets/images/green_checked.png'),
+                                                    );
+                                                  });
+                                            }
+                                          });
+                                        },
+                                      );
+                                    },
+                                  );
+                                },
+                              );
+                            }),
                           ),
                         ),
                       ),
@@ -797,6 +899,8 @@ class _ParcelRouteViewScreenState extends State<ParcelRouteViewScreen> {
     List<LatLng> polylineCoordinates = [];
     PolylineResult result;
 
+    final isPaid = parcelData!.paymentStatus.toString().toLowerCase() == "yes";
+
     if (parcelData!.status.toString() == "confirmed") {
       PolylineRequest resultdata = PolylineRequest(
         origin: PointLatLng(dLat, dLng),
@@ -810,23 +914,38 @@ class _ParcelRouteViewScreenState extends State<ParcelRouteViewScreen> {
 
       result = await polylinePoints.getRouteBetweenCoordinates(request: resultdata);
     } else if (parcelData!.status == "on ride" || parcelData!.status == "onride") {
-      PolylineRequest resultdata = PolylineRequest(
-        origin: PointLatLng(dLat, dLng),
-        destination: PointLatLng(destinationLatLong.latitude, destinationLatLong.longitude),
-        mode: TravelMode.driving,
-        optimizeWaypoints: true,
-      );
+      if (isPaid) {
+        PolylineRequest resultdata = PolylineRequest(
+          origin: PointLatLng(dLat, dLng),
+          destination: PointLatLng(destinationLatLong.latitude, destinationLatLong.longitude),
+          mode: TravelMode.driving,
+          optimizeWaypoints: true,
+        );
 
-      result = await polylinePoints.getRouteBetweenCoordinates(request: resultdata);
+        result = await polylinePoints.getRouteBetweenCoordinates(request: resultdata);
+      } else {
+        // Destination is locked until customer pays
+        _markers.remove('Destination');
+        polyLines.clear();
+        if (mounted) setState(() {});
+        return;
+      }
     } else {
-      PolylineRequest resultdata = PolylineRequest(
-        origin: PointLatLng(departureLatLong.latitude, departureLatLong.longitude),
-        destination: PointLatLng(destinationLatLong.latitude, destinationLatLong.longitude),
-        mode: TravelMode.driving,
-        optimizeWaypoints: true,
-      );
+      if (isPaid) {
+        PolylineRequest resultdata = PolylineRequest(
+          origin: PointLatLng(departureLatLong.latitude, departureLatLong.longitude),
+          destination: PointLatLng(destinationLatLong.latitude, destinationLatLong.longitude),
+          mode: TravelMode.driving,
+          optimizeWaypoints: true,
+        );
 
-      result = await polylinePoints.getRouteBetweenCoordinates(request: resultdata);
+        result = await polylinePoints.getRouteBetweenCoordinates(request: resultdata);
+      } else {
+        _markers.remove('Destination');
+        polyLines.clear();
+        if (mounted) setState(() {});
+        return;
+      }
     }
 
     _markers['Departure'] = Marker(
@@ -839,12 +958,16 @@ class _ParcelRouteViewScreenState extends State<ParcelRouteViewScreen> {
       icon: departureIcon!,
     );
 
-    _markers['Destination'] = Marker(
-      markerId: const MarkerId('Destination'),
-      infoWindow: const InfoWindow(title: "Destination"),
-      position: destinationLatLong,
-      icon: destinationIcon!,
-    );
+    if (isPaid) {
+      _markers['Destination'] = Marker(
+        markerId: const MarkerId('Destination'),
+        infoWindow: const InfoWindow(title: "Destination"),
+        position: destinationLatLong,
+        icon: destinationIcon!,
+      );
+    } else {
+      _markers.remove('Destination');
+    }
 
     if (result.points.isNotEmpty) {
       for (var point in result.points) {

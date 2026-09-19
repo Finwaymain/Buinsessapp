@@ -148,6 +148,7 @@ class API {
   static const parcelSearch = "${baseUrl}search-driver-parcel-order";
   static const getDriverParcel = "${baseUrl}get-driver-parcel-orders";
   static const getParcelDetails = "${baseUrl}get-parcel-detail";
+  static const parcelPayByCase = "${baseUrl}parcel-payment-by-cash";
 
   // Food Rider Service
   static const foodRiderIncoming = "${baseUrl}food/rider/incoming";
