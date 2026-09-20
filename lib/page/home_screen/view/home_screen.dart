@@ -67,6 +67,7 @@ import 'package:http/http.dart' as http;
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 
 
+import 'package:geolocator/geolocator.dart';
 import '../../coming_soon/coming_soon_screen.dart';
 
 class MainHomeScreen extends StatelessWidget {
@@ -726,9 +727,34 @@ class MainHomeScreen extends StatelessWidget {
                                   VerticalIconWithText(
                                     icon: Icons.fastfood_outlined,
                                     text: 'Food Order',
-                                    onTap: () {
+                                    onTap: () async {
+                                      String lat = '';
+                                      String lng = '';
+                                      try {
+                                        Position? position = await Geolocator.getLastKnownPosition();
+                                        if (position == null) {
+                                          position = await Geolocator.getCurrentPosition(
+                                            desiredAccuracy: LocationAccuracy.medium,
+                                            timeLimit: const Duration(seconds: 3),
+                                          );
+                                        }
+                                        if (position != null) {
+                                          lat = position.latitude.toString();
+                                          lng = position.longitude.toString();
+                                        }
+                                      } catch (_) {}
+
+                                      final url = OnboardingUrl.build(
+                                        '/onboarding/food.html',
+                                        extra: {
+                                          if (lat.isNotEmpty) 'lat': lat,
+                                          if (lng.isNotEmpty) 'lng': lng,
+                                          if (lat.isNotEmpty) 'latitude': lat,
+                                          if (lng.isNotEmpty) 'longitude': lng,
+                                        },
+                                      );
                                       Get.to(
-                                        () => const FoodOrderingScreen(),
+                                        () => WebViewScreen(url: url, title: 'Food Ordering'.tr),
                                         transition: Transition.rightToLeftWithFade,
                                       );
                                     },

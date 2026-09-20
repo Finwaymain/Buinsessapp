@@ -32,15 +32,58 @@ class OnboardingUrl {
     return '';
   }
 
+  static String driverName() {
+    final user = Constant.getUserData().userData;
+    if (user != null) {
+      final prenom = user.prenom ?? '';
+      final nom = user.nom ?? '';
+      final full = '$prenom $nom'.trim();
+      if (full.isNotEmpty) return full;
+    }
+    final userStr = Preferences.getString(Preferences.user);
+    if (userStr.isNotEmpty) {
+      try {
+        final map = jsonDecode(userStr);
+        final name = (map['name'] ?? map['userData']?['name'] ?? map['prenom'] ?? map['userData']?['prenom'] ?? '').toString();
+        if (name.isNotEmpty) return name;
+      } catch (_) {}
+    }
+    return '';
+  }
+
+  static String walletBalance() {
+    final user = Constant.getUserData().userData;
+    if (user != null && user.amount != null) {
+      return user.amount.toString();
+    }
+    final userStr = Preferences.getString(Preferences.user);
+    if (userStr.isNotEmpty) {
+      try {
+        final map = jsonDecode(userStr);
+        final amt = (map['amount'] ?? map['userData']?['amount'] ?? '').toString();
+        if (amt.isNotEmpty) return amt;
+      } catch (_) {}
+    }
+    return '0';
+  }
+
   static String build(
     String path, {
     Map<String, String> extra = const {},
   }) {
     final params = <String, String>{
       'accesstoken': accessToken(),
+      'token': accessToken(),
       'driver_id': driverId(),
       'id_driver': driverId(),
+      'user_id': driverId(),
+      'id_user': driverId(),
       'phone': phone(),
+      'name': driverName(),
+      'username': driverName(),
+      'customer_name': driverName(),
+      'wallet_balance': walletBalance(),
+      'balance': walletBalance(),
       'user_type': 'driver',
       'user_cat': 'driver',
       ...extra,
