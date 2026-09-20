@@ -73,6 +73,7 @@ class DriverKitItemModel {
   final String cashbackFormatted;
   final int stockQuantity;
   final String image;
+  final List<String> images;
   final List<String> itemsIncluded;
   final List<String> sizes;
   final bool isCompulsory;
@@ -96,6 +97,7 @@ class DriverKitItemModel {
     required this.cashbackFormatted,
     required this.stockQuantity,
     required this.image,
+    this.images = const [],
     required this.itemsIncluded,
     required this.sizes,
     required this.isCompulsory,
@@ -111,6 +113,12 @@ class DriverKitItemModel {
     List<String> items = [];
     if (rawItems is List) {
       items = rawItems.map((e) => e.toString()).toList();
+    }
+
+    var rawImages = json['images'];
+    List<String> imgList = [];
+    if (rawImages is List) {
+      imgList = rawImages.map((e) => e.toString()).toList();
     }
 
     var rawSizes = json['sizes'];
@@ -150,6 +158,7 @@ class DriverKitItemModel {
       cashbackFormatted: json['cashback_formatted']?.toString() ?? '₹${cb.toStringAsFixed(0)}',
       stockQuantity: json['stock_quantity'] is int ? json['stock_quantity'] : int.tryParse(json['stock_quantity']?.toString() ?? '500') ?? 500,
       image: json['image']?.toString() ?? '',
+      images: imgList,
       itemsIncluded: items,
       sizes: sizeList,
       isCompulsory: json['is_compulsory'] == true,
