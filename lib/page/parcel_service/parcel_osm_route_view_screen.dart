@@ -146,6 +146,8 @@ class _ParcelOsmRouteViewScreenState extends State<ParcelOsmRouteViewScreen> {
               Map<String, String> body = {
                 'id_parcel': parcelData!.id.toString(),
                 'id_driver': Preferences.getInt(Preferences.userId).toString(),
+                'amount': parcelData!.amount.toString(),
+                'paymethod': 'Cash',
               };
               final response = await Dio().post(
                 API.parcelPayByCase,
@@ -153,7 +155,7 @@ class _ParcelOsmRouteViewScreenState extends State<ParcelOsmRouteViewScreen> {
                 options: Options(headers: API.header),
               );
               ShowToastDialog.closeLoader();
-              if (response.statusCode == 200 && response.data['success'] == 'success') {
+              if (response.statusCode == 200 && response.data['success']?.toString().toLowerCase() == 'success') {
                 setState(() {
                   parcelData!.paymentStatus = "yes";
                 });
@@ -162,7 +164,7 @@ class _ParcelOsmRouteViewScreenState extends State<ParcelOsmRouteViewScreen> {
                   getDirections(dLat: departureLatLong!.latitude, dLng: departureLatLong!.longitude);
                 }
               } else {
-                ShowToastDialog.showToast(response.data['error'] ?? "Failed to confirm cash payment".tr);
+                ShowToastDialog.showToast(response.data['error']?.toString() ?? "Failed to confirm cash payment".tr);
               }
             } catch (e) {
               ShowToastDialog.closeLoader();
