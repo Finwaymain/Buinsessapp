@@ -78,7 +78,7 @@ class DriverKitService extends GetxController {
   /// If kit is mandatory and not purchased, blocks access and shows prompt
   bool checkBookingAccessWithPrompt() {
     final data = kitData.value;
-    if (data == null) return true;
+    if (data == null || data.kit == null) return true;
 
     final bool isCompulsory = data.isCompulsory;
     final bool hasPurchased = data.hasPurchased;

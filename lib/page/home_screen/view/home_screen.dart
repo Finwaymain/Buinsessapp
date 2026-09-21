@@ -894,6 +894,13 @@ class MainHomeScreen extends StatelessWidget {
   }
 
   Widget _buildPartnerKitHorizontalCard(BuildContext context, bool isDark) {
+    // 1. Guard: Only display the driver kit card if the driver has completed onboarding.
+    // Driver kit is strictly dependent on the service/category selected during onboarding.
+    final userData = controller.userModel.value.userData;
+    if (userData == null || userData.onboardingCompleted != 'yes') {
+      return const SizedBox.shrink();
+    }
+
     final kitService = Get.isRegistered<DriverKitService>()
         ? Get.find<DriverKitService>()
         : Get.put(DriverKitService());
