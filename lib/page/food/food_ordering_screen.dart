@@ -54,6 +54,9 @@ class _FoodOrderingScreenState extends State<FoodOrderingScreen> {
         if (lng.isNotEmpty) 'lng': lng,
         if (lat.isNotEmpty) 'latitude': lat,
         if (lng.isNotEmpty) 'longitude': lng,
+        if (Constant.kGoogleApiKey != null && Constant.kGoogleApiKey!.isNotEmpty)
+          'google_map_api_key': Constant.kGoogleApiKey!,
+        'city': 'Ujjain',
       },
     );
 
