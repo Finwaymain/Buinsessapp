@@ -410,7 +410,7 @@ class MainHomeScreen extends StatelessWidget {
                             const DashboardStatusSection(),
 
                             // Full horizontal card for Driver Partner Welcome Kit
-                            _buildPartnerKitHorizontalCard(context, isDark),
+                            _buildPartnerKitHorizontalCard(context, isDark, controller),
 
                             // Primary hero action — all-purpose booking console
                             Padding(
@@ -893,10 +893,11 @@ class MainHomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPartnerKitHorizontalCard(BuildContext context, bool isDark) {
+  Widget _buildPartnerKitHorizontalCard(BuildContext context, bool isDark, [DashBoardController? controller]) {
     // 1. Guard: Only display the driver kit card if the driver has completed onboarding.
     // Driver kit is strictly dependent on the service/category selected during onboarding.
-    final userData = controller.userModel.value.userData;
+    final dashController = controller ?? (Get.isRegistered<DashBoardController>() ? Get.find<DashBoardController>() : null);
+    final userData = dashController?.userModel.value.userData ?? Constant.getUserData().userData;
     if (userData == null || userData.onboardingCompleted != 'yes') {
       return const SizedBox.shrink();
     }
