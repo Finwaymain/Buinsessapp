@@ -8,7 +8,6 @@ import 'package:provider/provider.dart';
 import 'package:cabme_driver/utils/dark_theme_provider.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:geolocator/geolocator.dart';
 
 import 'package:cabme_driver/utils/Preferences.dart';
 import 'package:cabme_driver/page/auth_screens/phone_entry_screen.dart';
@@ -52,6 +51,9 @@ class _WebViewScreenState extends State<WebViewScreen> {
 
     if (controller.platform is AndroidWebViewController) {
       AndroidWebViewController androidController = controller.platform as AndroidWebViewController;
+      androidController.setOnPlatformPermissionRequest((request) async {
+        request.grant();
+      });
       androidController.setOnShowFileSelector((FileSelectorParams params) async {
         final themeChange = Provider.of<DarkThemeProvider>(context, listen: false);
         final isDark = themeChange.getThem();

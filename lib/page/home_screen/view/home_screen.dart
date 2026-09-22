@@ -512,7 +512,7 @@ class MainHomeScreen extends StatelessWidget {
                                             const SizedBox(height: 4),
                                             Text(
                                               isFoodDeliveryDriver(controller.userModel.value.userData)
-                                                  ? "Incoming food orders, restaurant pickups, active deliveries, and OTP verification.".tr
+                                                  ? "Incoming food orders".tr
                                                   : (isDeliveryConsoleDriver(controller.userModel.value.userData)
                                                       ? "Incoming parcel delivery requests, active orders, and live tracking.".tr
                                                       : (shouldShowOnlineStatus(controller.userModel.value.userData)
