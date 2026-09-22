@@ -48,6 +48,7 @@ import 'package:cabme_driver/page/parcel_service/parcel_console_screen.dart';
 import 'package:cabme_driver/page/booking/my_booking_screen.dart';
 import 'package:cabme_driver/page/booking/service_flow/service_booking_flow.dart';
 import 'package:cabme_driver/service/in_app_sound_service.dart';
+import 'package:cabme_driver/page/food/food_delivery_console_screen.dart';
 
 
 
@@ -339,13 +340,35 @@ class FirebaseService {
           message.data['tag'] == 'parcelbike' ||
           message.data['order_type'] == 'parcel';
 
-      final bool isFoodDeliveryRequest = message.data['type'] == 'food_delivery' ||
+      final bool isFoodDeliveryRequest = message.data['tag'] == 'food_delivery' ||
+          message.data['type'] == 'food_delivery' ||
+          message.data['order_type'] == 'food' ||
           message.data['tag'] == 'food_incoming';
 
       final bool isRideRequest = (message.data['statut'] == 'new' ||
           message.data['tag'] == 'ridenewrider') && !isHomeServiceUpdate && !isParcelRequest && !isFoodDeliveryRequest;
 
-      if (isParcelRequest || isFoodDeliveryRequest) {
+      if (isFoodDeliveryRequest) {
+        InAppSoundService.playIncomingBookingAlert();
+        NotificationService.display(message);
+        Get.snackbar(
+          "New Food Delivery Order!".tr,
+          "${message.data['restaurant_name'] ?? 'Restaurant'} (₹${message.data['montant'] ?? ''})",
+          duration: const Duration(seconds: 6),
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.orange.shade700,
+          colorText: Colors.white,
+          mainButton: TextButton(
+            onPressed: () {
+              Get.to(() => const FoodDeliveryConsoleScreen());
+            },
+            child: Text("VIEW".tr, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        );
+        return;
+      }
+
+      if (isParcelRequest) {
         InAppSoundService.playIncomingBookingAlert();
         NotificationService.display(message);
         if (Get.isRegistered<ParcelServiceController>()) {
@@ -450,12 +473,19 @@ class FirebaseService {
         return;
       }
 
-      // 2.5 Parcel or Food Delivery Request
+      // 2.5 Food Delivery Request
+      if (message.data['tag'] == "food_delivery" ||
+          message.data['type'] == "food_delivery" ||
+          message.data['order_type'] == "food" ||
+          message.data['tag'] == "food_incoming") {
+        await Get.to(() => const FoodDeliveryConsoleScreen());
+        return;
+      }
+
+      // 2.6 Parcel Request
       if (message.data['tag'] == "parcelnew" ||
           message.data['tag'] == "parcelbike" ||
-          message.data['order_type'] == "parcel" ||
-          message.data['type'] == "food_delivery" ||
-          message.data['tag'] == "food_incoming") {
+          message.data['order_type'] == "parcel") {
         await Get.to(() => const ParcelConsoleScreen());
         return;
       }

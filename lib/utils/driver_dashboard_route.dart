@@ -61,3 +61,14 @@ bool isDeliveryConsoleDriver(UserData? userData) {
 
   return false;
 }
+
+/// Returns true if driver is registered specifically for Food Delivery (12889 or 'Food Delivery')
+bool isFoodDeliveryDriver(UserData? userData) {
+  if (userData == null) return false;
+  final cats = userData.selectedCategories ?? [];
+  for (final c in cats) {
+    final str = c.toString().toLowerCase();
+    if (str == '12889' || str.contains('food delivery')) return true;
+  }
+  return false;
+}

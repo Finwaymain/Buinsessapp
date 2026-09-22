@@ -30,6 +30,7 @@ import '../../features/SmartValue/ScanAndTransfer/view/scanner_and_transfer_scre
 import '../../in_progress_screen.dart';
 import '../../parcel_service/parcel_console_screen.dart';
 import '../../food/food_ordering_screen.dart';
+import '../../food/food_delivery_console_screen.dart';
 import '../../booking/my_booking_screen.dart';
 import '../../contact_us/customer_support_screen.dart';
 import '../../features/SmartValue/AccountDetails/view/account_details.dart';
@@ -435,7 +436,9 @@ class MainHomeScreen extends StatelessWidget {
                                   }
 
                                   final userData = controller.userModel.value.userData;
-                                  if (isDeliveryConsoleDriver(userData)) {
+                                  if (isFoodDeliveryDriver(userData)) {
+                                    Get.to(() => const FoodDeliveryConsoleScreen(), transition: Transition.rightToLeftWithFade);
+                                  } else if (isDeliveryConsoleDriver(userData)) {
                                     Get.to(() => const ParcelConsoleScreen(), transition: Transition.rightToLeftWithFade);
                                   } else if (shouldShowOnlineStatus(userData)) {
                                     Get.to(() => TaxiDashBoard(), transition: Transition.rightToLeftWithFade);
@@ -476,11 +479,13 @@ class MainHomeScreen extends StatelessWidget {
                                           shape: BoxShape.circle,
                                         ),
                                         child: Icon(
-                                          isDeliveryConsoleDriver(controller.userModel.value.userData)
-                                              ? Icons.local_shipping_rounded
-                                              : (shouldShowOnlineStatus(controller.userModel.value.userData)
-                                                  ? Icons.directions_car_rounded
-                                                  : Icons.event_available_rounded),
+                                          isFoodDeliveryDriver(controller.userModel.value.userData)
+                                              ? Icons.fastfood_rounded
+                                              : (isDeliveryConsoleDriver(controller.userModel.value.userData)
+                                                  ? Icons.local_shipping_rounded
+                                                  : (shouldShowOnlineStatus(controller.userModel.value.userData)
+                                                      ? Icons.directions_car_rounded
+                                                      : Icons.event_available_rounded)),
                                           color: AppThemeData.primary200,
                                           size: 32,
                                         ),
@@ -491,11 +496,13 @@ class MainHomeScreen extends StatelessWidget {
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              isDeliveryConsoleDriver(controller.userModel.value.userData)
-                                                  ? "Delivery Console".tr
-                                                  : (shouldShowOnlineStatus(controller.userModel.value.userData)
-                                                      ? "Ride Booking".tr
-                                                      : "My Booking".tr),
+                                              isFoodDeliveryDriver(controller.userModel.value.userData)
+                                                  ? "Food Delivery Console".tr
+                                                  : (isDeliveryConsoleDriver(controller.userModel.value.userData)
+                                                      ? "Delivery Console".tr
+                                                      : (shouldShowOnlineStatus(controller.userModel.value.userData)
+                                                          ? "Ride Booking".tr
+                                                          : "My Booking".tr)),
                                               style: TextStyle(
                                                 fontSize: 18,
                                                 fontFamily: AppThemeData.bold,
@@ -504,11 +511,13 @@ class MainHomeScreen extends StatelessWidget {
                                             ),
                                             const SizedBox(height: 4),
                                             Text(
-                                              isDeliveryConsoleDriver(controller.userModel.value.userData)
-                                                  ? "Incoming parcel & food delivery requests, active orders, and live tracking.".tr
-                                                  : (shouldShowOnlineStatus(controller.userModel.value.userData)
-                                                      ? "View incoming ride requests, interactive map, and online status.".tr
-                                                      : "View incoming requests, active jobs, and booking history.".tr),
+                                              isFoodDeliveryDriver(controller.userModel.value.userData)
+                                                  ? "Incoming food orders, restaurant pickups, active deliveries, and OTP verification.".tr
+                                                  : (isDeliveryConsoleDriver(controller.userModel.value.userData)
+                                                      ? "Incoming parcel delivery requests, active orders, and live tracking.".tr
+                                                      : (shouldShowOnlineStatus(controller.userModel.value.userData)
+                                                          ? "View incoming ride requests, interactive map, and online status.".tr
+                                                          : "View incoming requests, active jobs, and booking history.".tr)),
                                               style: TextStyle(
                                                 fontSize: 12,
                                                 fontFamily: AppThemeData.regular,
