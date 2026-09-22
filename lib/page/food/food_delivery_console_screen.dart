@@ -628,7 +628,7 @@ class _FoodDeliveryConsoleScreenState extends State<FoodDeliveryConsoleScreen> w
                   children: [
                     Text(
                       'Order #${order['order_number']}',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -641,7 +641,7 @@ class _FoodDeliveryConsoleScreenState extends State<FoodDeliveryConsoleScreen> w
                         style: TextStyle(
                           color: _getStatusColor(status),
                           fontWeight: FontWeight.bold,
-                          fontSize: 12,
+                          fontSize: 11,
                         ),
                       ),
                     ),
