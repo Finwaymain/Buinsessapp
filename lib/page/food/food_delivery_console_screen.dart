@@ -228,13 +228,19 @@ class _FoodDeliveryConsoleScreenState extends State<FoodDeliveryConsoleScreen> w
   }
 
   void _promptPickupOtp(dynamic order) {
+    // If restaurant already confirmed handover, directly proceed!
+    if (order['order_status'] == 'food_picked_up') {
+      _updateOrderStatus(order['id'], 'picked_up');
+      return;
+    }
+
     final textController = TextEditingController();
     Get.defaultDialog(
-      title: 'Enter Pickup OTP'.tr,
+      title: 'Pickup Handover Code'.tr,
       content: Column(
         children: [
           Text(
-            'Ask the restaurant for their 4-digit pickup code to verify food handover.'.tr,
+            'Enter the 4-digit Handover Code displayed on the restaurant\'s screen to collect the food parcel.'.tr,
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 13, color: Colors.grey),
           ),
@@ -259,7 +265,7 @@ class _FoodDeliveryConsoleScreenState extends State<FoodDeliveryConsoleScreen> w
       onConfirm: () {
         final otp = textController.text.trim();
         if (otp.length != 4) {
-          Get.snackbar('Invalid OTP'.tr, 'Please enter a valid 4-digit OTP'.tr,
+          Get.snackbar('Invalid Code'.tr, 'Please enter the 4-digit code shown on the restaurant screen'.tr,
               backgroundColor: Colors.orange, colorText: Colors.white);
           return;
         }
@@ -696,9 +702,20 @@ class _FoodDeliveryConsoleScreenState extends State<FoodDeliveryConsoleScreen> w
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
-                        onPressed: () => _promptPickupOtp(order),
-                        icon: const Icon(Icons.qr_code_scanner),
-                        label: Text('Enter Pickup OTP & Take Food'.tr, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        onPressed: () {
+                          if (order['order_status'] == 'food_picked_up') {
+                            _updateOrderStatus(order['id'], 'out_for_delivery');
+                          } else {
+                            _promptPickupOtp(order);
+                          }
+                        },
+                        icon: const Icon(Icons.check_circle_outline),
+                        label: Text(
+                          order['order_status'] == 'food_picked_up'
+                              ? 'Food Handed Over - Start Delivery'.tr
+                              : 'Enter Handover Code & Take Food'.tr,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ),
                 ],
