@@ -67,6 +67,22 @@ class OnboardingUrl {
     return '0';
   }
 
+  static String pocketNumber() {
+    final user = Constant.getUserData().userData;
+    if (user != null && (user.acNo?.isNotEmpty ?? false)) {
+      return user.acNo!;
+    }
+    final userStr = Preferences.getString(Preferences.user);
+    if (userStr.isNotEmpty) {
+      try {
+        final map = jsonDecode(userStr);
+        final ac = (map['ac_no'] ?? map['userData']?['ac_no'] ?? map['pocket_number'] ?? map['userData']?['pocket_number'] ?? '').toString();
+        if (ac.isNotEmpty) return ac;
+      } catch (_) {}
+    }
+    return '';
+  }
+
   static String build(
     String path, {
     Map<String, String> extra = const {},
@@ -79,11 +95,15 @@ class OnboardingUrl {
       'user_id': driverId(),
       'id_user': driverId(),
       'phone': phone(),
+      'mobile': phone(),
       'name': driverName(),
       'username': driverName(),
       'customer_name': driverName(),
       'wallet_balance': walletBalance(),
       'balance': walletBalance(),
+      'pocket_number': pocketNumber(),
+      'ac_no': pocketNumber(),
+      'acNo': pocketNumber(),
       'user_type': 'driver',
       'user_cat': 'driver',
       ...extra,
