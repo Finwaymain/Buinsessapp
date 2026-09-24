@@ -430,9 +430,9 @@ class WalletOverviewTab extends StatelessWidget {
                   _loanCard(
                     isDark: isDark,
                     width: cardWidth,
-                    bgColor: isDark ? const Color(0xFF064E3B).withValues(alpha: 0.3) : const Color(0xFFEDFDF4),
-                    borderColor: isDark ? const Color(0xFF065F46) : const Color(0xFFDCFCE7),
-                    iconBgColor: isDark ? const Color(0xFF065F46) : const Color(0xFFDCFCE7),
+                    bgColor: const Color(0xFFEBFAF3),
+                    borderColor: const Color(0xFFDCFCE7),
+                    iconBgColor: const Color(0xFFDCFCE7),
                     iconColor: const Color(0xFF16A34A),
                     imageAsset: 'assets/images/loan_interest_free.png',
                     fallbackIcon: Icons.savings_rounded,
@@ -452,9 +452,9 @@ class WalletOverviewTab extends StatelessWidget {
                   _loanCard(
                     isDark: isDark,
                     width: cardWidth,
-                    bgColor: isDark ? const Color(0xFF1E3A8A).withValues(alpha: 0.3) : const Color(0xFFEFF6FF),
-                    borderColor: isDark ? const Color(0xFF1E40AF) : const Color(0xFFDBEAFE),
-                    iconBgColor: isDark ? const Color(0xFF1E40AF) : const Color(0xFFDBEAFE),
+                    bgColor: const Color(0xFFEDF5FF),
+                    borderColor: const Color(0xFFDBEAFE),
+                    iconBgColor: const Color(0xFFDBEAFE),
                     iconColor: const Color(0xFF2563EB),
                     imageAsset: 'assets/images/loan_zero_cibil.png',
                     fallbackIcon: Icons.assignment_turned_in_rounded,
@@ -474,9 +474,9 @@ class WalletOverviewTab extends StatelessWidget {
                   _loanCard(
                     isDark: isDark,
                     width: cardWidth,
-                    bgColor: isDark ? const Color(0xFF78350F).withValues(alpha: 0.3) : const Color(0xFFFFFBEB),
-                    borderColor: isDark ? const Color(0xFF92400E) : const Color(0xFFFEF3C7),
-                    iconBgColor: isDark ? const Color(0xFF92400E) : const Color(0xFFFEF3C7),
+                    bgColor: const Color(0xFFFEF4E8),
+                    borderColor: const Color(0xFFFED7AA),
+                    iconBgColor: const Color(0xFFFED7AA),
                     iconColor: const Color(0xFFEA580C),
                     imageAsset: 'assets/images/loan_low_cibil.png',
                     fallbackIcon: Icons.speed_rounded,
@@ -533,8 +533,8 @@ class WalletOverviewTab extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 38,
-              height: 38,
+              width: 32,
+              height: 32,
               decoration: BoxDecoration(
                 color: iconBgColor,
                 shape: BoxShape.circle,
@@ -542,18 +542,15 @@ class WalletOverviewTab extends StatelessWidget {
               child: ClipOval(
                 child: Image.asset(
                   imageAsset,
-                  width: 38,
-                  height: 38,
+                  width: 32,
+                  height: 32,
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => Icon(
                     fallbackIcon,
                     color: iconColor,
-                    size: 20,
+                    size: 18,
                   ),
                 ),
-              ),
-            ),
-                size: 20,
               ),
             ),
             const SizedBox(height: 10),
@@ -562,10 +559,10 @@ class WalletOverviewTab extends StatelessWidget {
               maxLines: 2,
               style: TextStyle(
                 fontFamily: AppThemeData.bold,
-                fontSize: 12.5,
+                fontSize: 10,
                 fontWeight: FontWeight.w700,
-                color: isDark ? Colors.white : const Color(0xFF0F172A),
-                height: 1.2,
+                color: const Color(0xFF0F172A),
+                height: 1.1,
               ),
             ),
             const SizedBox(height: 4),
@@ -575,12 +572,12 @@ class WalletOverviewTab extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontFamily: AppThemeData.semiBold,
-                fontSize: 11,
+                fontSize: 9,
                 fontWeight: FontWeight.w600,
                 color: subtitleColor,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Container(
               width: double.infinity,
               height: 28,
@@ -598,7 +595,7 @@ class WalletOverviewTab extends StatelessWidget {
                     'Apply Now',
                     style: TextStyle(
                       fontFamily: AppThemeData.bold,
-                      fontSize: 10.5,
+                      fontSize: 10,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
                     ),
@@ -606,7 +603,7 @@ class WalletOverviewTab extends StatelessWidget {
                   SizedBox(width: 2),
                   Icon(
                     Icons.chevron_right_rounded,
-                    size: 14,
+                    size: 12,
                     color: Colors.white,
                   ),
                 ],

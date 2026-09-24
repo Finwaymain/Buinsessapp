@@ -15,6 +15,7 @@ import '../../../service/driver_kit_service.dart';
 import '../../../service/device_readiness_service.dart';
 import '../../../service/location_connectivity_manager.dart';
 import '../../../widget/device_readiness_bar.dart';
+import 'home_banner_slider.dart';
 
 /// Online toggle + today's stats, shown on the driver home screen right
 /// below the greeting/onboarding-status header. Kept as a standalone
@@ -172,6 +173,7 @@ class _DashboardStatusSectionState extends State<DashboardStatusSection> {
                 ),
               ),
               const DeviceReadinessBar(),
+              const HomeBannerSlider(appType: 'driver'),
               const SizedBox(height: 16),
             ],
 

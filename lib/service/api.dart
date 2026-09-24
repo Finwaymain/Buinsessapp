@@ -18,6 +18,7 @@ class API {
 
   static const userSignUP = "${baseUrl}user";
   static const userLogin = "${baseUrl}user-login";
+  static const bannerHome = "${baseUrl}get-banners";
   
   // MPIN Auth Endpoints
   static const authSendOtp = "${baseUrl}auth/send-otp";
