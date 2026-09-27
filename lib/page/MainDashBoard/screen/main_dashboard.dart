@@ -62,7 +62,7 @@ class _MainDashboardState extends State<MainDashboard> {
 
   final List<Widget> _screens = [
     MainHomeScreen(),
-    const SizedBox.shrink(), // index 1: Loans tab — navigates imperatively via _onTabSelected
+    const FinanceScreen(isTab: true), // index 1: Loans tab (keeps bottom nav visible)
     const InProgressScreen(),
     const ServiceHistoryScreen(showScaffold: false),
     WalletScreen(isTab: true),
@@ -74,10 +74,6 @@ class _MainDashboardState extends State<MainDashboard> {
         Get.to(() => PhoneEntryScreen(mode: 'signup'), transition: Transition.rightToLeftWithFade);
         return;
       }
-    }
-    if (index == 1) {
-      Get.to(() => const FinanceScreen());
-      return;
     }
     if (index == 3) {
       const tag = 'service_history_false';
@@ -117,8 +113,8 @@ class _MainDashboardState extends State<MainDashboard> {
       builder: (controller) {
         return Scaffold(
           backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          appBar: CustomAppBar(),
-          drawer: CustomDrawer(),
+          appBar: currentIndex == 1 ? null : CustomAppBar(),
+          drawer: currentIndex == 1 ? null : CustomDrawer(),
           body: Stack(
             children: [
               Positioned.fill(
