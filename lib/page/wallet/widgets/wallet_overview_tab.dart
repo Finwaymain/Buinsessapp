@@ -11,6 +11,7 @@ import 'package:cabme_driver/themes/constant_colors.dart';
 import 'package:cabme_driver/utils/Preferences.dart';
 import 'package:cabme_driver/utils/dark_theme_provider.dart';
 import 'package:cabme_driver/page/web_view_screen/web_view_screen.dart';
+import 'package:cabme_driver/page/finance/finance_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
@@ -651,10 +652,7 @@ class WalletOverviewTab extends StatelessWidget {
       final uri = Uri.parse("https://api.fiinway.com/finance$subPath")
           .replace(queryParameters: queryParams);
 
-      Get.to(() => WebViewScreen(
-            url: uri.toString(),
-            title: title,
-          ));
+      Get.to(() => FinanceScreen(initialUrl: uri.toString()));
     });
   }
 }

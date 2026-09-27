@@ -45,7 +45,7 @@ class CustomBottomNavBar extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _navItem(Icons.home, 0, themeChange),
-                _navItem(Icons.search, 1, themeChange),
+                _navItem(Icons.account_balance_outlined, 1, themeChange),
                 const SizedBox(width: 60,),
                 _navItem(Icons.home_repair_service_outlined, 3, themeChange),
                 _navItem(Icons.receipt_long, 4,themeChange),
