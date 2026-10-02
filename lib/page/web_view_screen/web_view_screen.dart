@@ -142,6 +142,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onNavigationRequest: (NavigationRequest request) {
+            debugPrint('WebView :: Navigation Request :: ${request.url}');
             if (widget.onNavigationRequest != null) {
               return widget.onNavigationRequest!(request);
             }
@@ -186,10 +187,6 @@ class _WebViewScreenState extends State<WebViewScreen> {
                 hasError = true;
               });
             }
-          },
-          onNavigationRequest: (NavigationRequest request) {
-            debugPrint('WebView :: Navigation Request :: ${request.url}');
-            return NavigationDecision.navigate;
           },
         ),
       )

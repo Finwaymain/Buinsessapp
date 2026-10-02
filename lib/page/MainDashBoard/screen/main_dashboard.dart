@@ -17,7 +17,6 @@ import '../../../controller/service_history_controller.dart';
 import '../../../controller/dash_board_controller.dart';
 import '../../../utils/Preferences.dart';
 import '../../auth_screens/phone_entry_screen.dart';
-import '../../search_services/search_all_services_screen.dart';
 import '../../finance/finance_screen.dart';
 
 enum _DashboardMode { loading, native }
@@ -62,7 +61,7 @@ class _MainDashboardState extends State<MainDashboard> {
 
   final List<Widget> _screens = [
     MainHomeScreen(),
-    const FinanceScreen(isTab: true), // index 1: Loans tab (keeps bottom nav visible)
+    const SizedBox.shrink(), // index 1: Loans tab — navigates imperatively via _onTabSelected
     const InProgressScreen(),
     const ServiceHistoryScreen(showScaffold: false),
     WalletScreen(isTab: true),
@@ -74,6 +73,10 @@ class _MainDashboardState extends State<MainDashboard> {
         Get.to(() => PhoneEntryScreen(mode: 'signup'), transition: Transition.rightToLeftWithFade);
         return;
       }
+    }
+    if (index == 1) {
+      Get.to(() => const FinanceScreen());
+      return;
     }
     if (index == 3) {
       const tag = 'service_history_false';
