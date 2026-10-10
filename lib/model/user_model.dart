@@ -135,6 +135,7 @@ class UserData {
   String? alternatePhone;
   String? marketplaceEnabled;
   String? emailVerifiedAt;
+  String? upiQrData;
 
   UserData({
     this.id,
@@ -230,12 +231,14 @@ class UserData {
     this.alternatePhone,
     this.marketplaceEnabled,
     this.emailVerifiedAt,
+    this.upiQrData,
   });
 
   UserData.fromJson(Map<String, dynamic> json) {
     id = json['id']?.toString();
     mPin = json['m_pin']?.toString();
     acNo = json['ac_no']?.toString();
+    upiQrData = json['upi_qr_data']?.toString();
     startDate = json['start_date']?.toString();
     endDate = json['end_date']?.toString();
     startDate2 = json['start_date2']?.toString();
@@ -438,6 +441,7 @@ class UserData {
     data['alternate_phone'] = alternatePhone;
     data['marketplace_enabled'] = marketplaceEnabled;
     data['email_verified_at'] = emailVerifiedAt;
+    data['upi_qr_data'] = upiQrData;
     return data;
   }
 }

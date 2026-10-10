@@ -148,6 +148,8 @@ class TransactionHistoryDisplay {
         return Icons.workspace_premium_rounded;
       case 'topup':
         return Icons.account_balance_wallet_rounded;
+      case 'upi':
+        return Icons.qr_code_2_rounded;
       case 'withdraw':
         return Icons.south_west_rounded;
       case 'reward':
@@ -180,6 +182,8 @@ class TransactionHistoryDisplay {
         return const Color(0xFFD97706);
       case 'topup':
         return const Color(0xFF059669);
+      case 'upi':
+        return const Color(0xFF0284C7);
       case 'withdraw':
         return const Color(0xFF2563EB);
       case 'reward':
@@ -212,6 +216,8 @@ class TransactionHistoryDisplay {
         return const Color(0xFFFEF9C3);
       case 'topup':
         return const Color(0xFFD1FAE5);
+      case 'upi':
+        return const Color(0xFFE0F2FE);
       case 'withdraw':
         return const Color(0xFFDBEAFE);
       case 'reward':
