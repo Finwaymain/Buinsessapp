@@ -11,10 +11,11 @@ void main() {
     test('converts raw 12-digit account number into valid NPCI UPI intent URI', () {
       final upiUri = QRController.sanitizeUpiQr('708098765432', name: 'Suresh Yadav');
       expect(upiUri, startsWith('upi://pay?'));
-      expect(upiUri, contains('pa=fiinway@icici'));
+      expect(upiUri, contains('pa=fiinway782717.rzp@rxairtel'));
       expect(upiUri, contains('tr=708098765432'));
       expect(upiUri, contains('tn=Fiinway%20Wallet%20708098765432'));
-      expect(upiUri, contains('mc=5411'));
+      expect(upiUri, contains('mc=5817'));
+      expect(upiUri, contains('mode=19'));
       expect(upiUri, contains('cu=INR'));
     });
 
