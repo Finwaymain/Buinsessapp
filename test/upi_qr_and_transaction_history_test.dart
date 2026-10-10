@@ -12,7 +12,7 @@ void main() {
       final upiUri = QRController.sanitizeUpiQr('708098765432', name: 'Suresh Yadav');
       expect(upiUri, startsWith('upi://pay?'));
       expect(upiUri, contains('pa=fiinway782717.rzp@rxairtel'));
-      expect(upiUri, contains('tr=708098765432'));
+      expect(upiUri, contains('tr=Tm8NeVRNVXdRRaqrv2'));
       expect(upiUri, contains('tn=Fiinway%20Wallet%20708098765432'));
       expect(upiUri, contains('mc=5817'));
       expect(upiUri, contains('mode=19'));
@@ -28,7 +28,8 @@ void main() {
     test('generates UPI URI when rawData is null using driver acNo', () {
       final upiUri = QRController.sanitizeUpiQr(null, acNo: '708011223344', name: 'Vikram');
       expect(upiUri, startsWith('upi://pay?'));
-      expect(upiUri, contains('tr=708011223344'));
+      expect(upiUri, contains('tr=Tm8NeVRNVXdRRaqrv2'));
+      expect(upiUri, contains('tn=Fiinway%20Wallet%20708011223344'));
       expect(upiUri, contains('pn=Fiinway%20-%20Vikram'));
     });
   });
