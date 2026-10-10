@@ -123,6 +123,7 @@ class AccountData {
     String? adminCommission;
 
     String? driverOnRide;
+    String? upiQrData;
 
     static int? _asInt(dynamic value) {
         if (value == null) return null;

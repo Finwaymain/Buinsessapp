@@ -4,7 +4,33 @@ import 'package:cabme_driver/model/user_model.dart';
 import 'package:cabme_driver/model/transaction_history_model.dart';
 import 'package:cabme_driver/page/wallet/utils/transaction_history_display.dart';
 
+import 'package:cabme_driver/page/features/SmartValue/MyQR/controller/qr_controller.dart';
+
 void main() {
+  group('Driver QRController UPI Sanitization & Formatting', () {
+    test('converts raw 12-digit account number into valid NPCI UPI intent URI', () {
+      final upiUri = QRController.sanitizeUpiQr('708098765432', name: 'Suresh Yadav');
+      expect(upiUri, startsWith('upi://pay?'));
+      expect(upiUri, contains('pa=fiinway@icici'));
+      expect(upiUri, contains('tr=708098765432'));
+      expect(upiUri, contains('tn=Fiinway%20Wallet%20708098765432'));
+      expect(upiUri, contains('cu=INR'));
+    });
+
+    test('preserves already-formatted UPI URI', () {
+      const existingUri = 'upi://pay?pa=custom@razorpay&pn=Fiinway&tr=708098765432&cu=INR';
+      final result = QRController.sanitizeUpiQr(existingUri, acNo: '708098765432');
+      expect(result, existingUri);
+    });
+
+    test('generates UPI URI when rawData is null using driver acNo', () {
+      final upiUri = QRController.sanitizeUpiQr(null, acNo: '708011223344', name: 'Vikram');
+      expect(upiUri, startsWith('upi://pay?'));
+      expect(upiUri, contains('tr=708011223344'));
+      expect(upiUri, contains('pn=Fiinway%20-%20Vikram'));
+    });
+  });
+
   group('Driver UserData upiQrData serialization', () {
     test('UserData.fromJson parses upi_qr_data correctly', () {
       final json = {
