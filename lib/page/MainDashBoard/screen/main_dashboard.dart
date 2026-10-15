@@ -17,7 +17,7 @@ import '../../../controller/service_history_controller.dart';
 import '../../../controller/dash_board_controller.dart';
 import '../../../utils/Preferences.dart';
 import '../../auth_screens/phone_entry_screen.dart';
-import '../../finance/finance_screen.dart';
+import '../../search_services/search_all_services_screen.dart';
 
 enum _DashboardMode { loading, native }
 
