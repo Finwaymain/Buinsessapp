@@ -394,7 +394,7 @@ class WalletController extends GetxController with GetSingleTickerProviderStateM
     return null;
   }
 
-  Future<dynamic> setAmount(String amount) async {
+  Future<dynamic> setAmount(String amount, {String? paymentId}) async {
     print('00000000AMOUNT : $amount');
     try {
       ShowToastDialog.showLoader("Please wait");
@@ -402,7 +402,8 @@ class WalletController extends GetxController with GetSingleTickerProviderStateM
         'id_user': Preferences.getInt(Preferences.userId),
         'cat_user': "driver",
         'amount': amount,
-        'transaction_id': DateTime.now().microsecondsSinceEpoch.toString(),
+        'transaction_id': (paymentId != null && paymentId.isNotEmpty) ? paymentId : DateTime.now().microsecondsSinceEpoch.toString(),
+        if (paymentId != null && paymentId.isNotEmpty) 'payment_id': paymentId,
         'paymethod': selectedRadioTile!.value,
       };
       final response = await http.post(Uri.parse(API.amount), headers: API.header, body: jsonEncode(bodyParams));

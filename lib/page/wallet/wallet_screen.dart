@@ -856,7 +856,7 @@ class _WalletScreenState extends State<WalletScreen> {
     while (Get.isDialogOpen == true || Get.isBottomSheetOpen == true) {
       Get.back();
     }
-    walletController.setAmount(walletController.amountController.value.text).then((value) {
+    walletController.setAmount(walletController.amountController.value.text, paymentId: response.paymentId).then((value) {
       ShowToastDialog.closeLoader();
       if (value != null) {
         showSnackBarAlert(
